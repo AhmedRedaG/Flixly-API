@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
 
@@ -13,10 +14,40 @@ export const postRegister = async (req, res, next) => {
 
     res
       .status(201)
-      .json({ message: "User registered successfully", data: userSafeData });
+      .json({ message: "User registered successfully", user: userSafeData });
   } catch (err) {
     next(err);
   }
 };
 
-export const postLogin = (req, res, next) => {};
+export const postLogin = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(401).json({ message: "Invalid email or password" });
+
+    const matchedPasswords = await bcrypt.compare(password, user.password);
+    if (!matchedPasswords)
+      return res.status(401).json({ message: "Invalid email or password" });
+
+    const userSafeData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+    const jwtToken = jwt.sign(userSafeData, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({
+      message: "User loggedIn successfully",
+      token: jwtToken,
+      user: userSafeData,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
