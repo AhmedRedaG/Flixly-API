@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { postRegister, postLogin } from "../controllers/auth.js";
 
-import validationResult, * as validation from "../middlewares/validation.js";
+import validationResult, * as validation from "../middlewares/isValid.js";
 
 const router = Router();
 
