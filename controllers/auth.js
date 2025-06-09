@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
+import { cookie } from "express-validator";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -42,16 +43,67 @@ export const postLogin = async (req, res, next) => {
       email: user.email,
       role: user.role,
     };
-    const jwtToken = jwt.sign(userSafeData, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const accessToken = jwt.sign(
+      userSafeData,
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+    const refreshToken = jwt.sign(
+      userSafeData,
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/api/v1/auth/refresh",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
     res.status(200).json({
       message: "User loggedIn successfully",
-      token: jwtToken,
+      accessToken,
       user: userSafeData,
     });
   } catch (err) {
     next(err);
   }
+};
+
+export const postRefresh = async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) return res.status(401).json({ message: "No refreshToken exist" });
+
+  try {
+    const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    const { iat, exp, ...userSafeData } = user;
+    const newAccessToken = jwt.sign(
+      userSafeData,
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    res.status(200).json({
+      message: "New accessToken created successfully",
+      accessToken: newAccessToken,
+    });
+  } catch (err) {
+    res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+};
+
+export const postLogout = (req, res) => {
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.status(200).json({ message: "User logged out" });
 };

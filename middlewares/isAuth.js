@@ -11,7 +11,7 @@ const isAuth = async (req, res, next) => {
 
   const token = authorizationHeader.split(" ")[1];
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
   } catch (err) {
     return res.status(401).json({ message: "Invalid token" });
   }

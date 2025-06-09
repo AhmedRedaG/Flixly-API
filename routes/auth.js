@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { postRegister, postLogin } from "../controllers/auth.js";
+import * as authController from "../controllers/auth.js";
 
 import validationResult, * as validation from "../middlewares/isValid.js";
 
@@ -15,13 +15,17 @@ router.post(
     validation.confirmPassword,
     validationResult,
   ],
-  postRegister
+  authController.postRegister
 );
 
 router.post(
   "/login",
   [validation.email, validation.password, validationResult],
-  postLogin
+  authController.postLogin
 );
+
+router.post("/refresh", authController.postRefresh);
+
+router.post("/logout", authController.postLogout);
 
 export default router;
