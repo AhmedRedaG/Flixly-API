@@ -7,6 +7,10 @@ export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
 
   try {
+    const userExisted = await User.findOne({ email });
+    if (userExisted)
+      return res.status(409).json({ message: "Email already in use" });
+
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = new User({ name, email, password: hashedPassword });
     const savedUser = await user.save();
