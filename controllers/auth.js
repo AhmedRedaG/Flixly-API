@@ -2,7 +2,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
-import { cookie } from "express-validator";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -62,7 +61,7 @@ export const postLogin = async (req, res, next) => {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
       secure: process.env.NODE_ENV === "production",
-      path: "/api/v1/auth/refresh",
+      path: "/api/v1/auth",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     res.status(200).json({
@@ -100,10 +99,16 @@ export const postRefresh = async (req, res) => {
 };
 
 export const postLogout = (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) {
+    return res.status(200).json({ message: "User already logged out" });
+  }
+
   res.clearCookie("refreshToken", {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
     secure: process.env.NODE_ENV === "production",
+    path: "/api/v1/auth",
   });
-  res.status(200).json({ message: "User logged out" });
+  return res.status(200).json({ message: "User logged out successfully" });
 };
