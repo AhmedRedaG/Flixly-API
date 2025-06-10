@@ -3,6 +3,12 @@ import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
 
+import {
+  getSafeData,
+  clearRefreshTokenCookie,
+  createRefreshTokenCookie,
+} from "../utilities/authHelper.js";
+
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
 
@@ -14,12 +20,7 @@ export const postRegister = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = new User({ name, email, password: hashedPassword });
     const user = await newUser.save();
-    const userSafeData = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
+    const userSafeData = getSafeData(user);
 
     res
       .status(201)
@@ -41,13 +42,7 @@ export const postLogin = async (req, res, next) => {
     if (!matchedPasswords)
       return res.status(401).json({ message: "Invalid email or password" });
 
-    const userSafeData = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-
+    const userSafeData = getSafeData(user);
     const refreshToken = jwt.sign(
       userSafeData,
       process.env.REFRESH_TOKEN_SECRET,
@@ -55,13 +50,7 @@ export const postLogin = async (req, res, next) => {
         expiresIn: "7d",
       }
     );
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/api/v1/auth",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    createRefreshTokenCookie(res, refreshToken);
 
     user.refreshTokens.push(refreshToken);
     const saveNewRefreshToken = await user.save();
@@ -111,13 +100,7 @@ export const postRefresh = async (req, res, next) => {
     if (refreshTokenIndex === -1)
       return res.status(403).json({ message: "Invalid refresh token" });
 
-    const userSafeData = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-
+    const userSafeData = getSafeData(user);
     const newRefreshToken = jwt.sign(
       userSafeData,
       process.env.REFRESH_TOKEN_SECRET,
@@ -125,13 +108,7 @@ export const postRefresh = async (req, res, next) => {
         expiresIn: "7d",
       }
     );
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/api/v1/auth",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    createRefreshTokenCookie(res, newRefreshToken);
 
     user.refreshTokens[refreshTokenIndex] = newRefreshToken;
     await user.save();
@@ -163,12 +140,7 @@ export const postLogout = async (req, res, next) => {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     userId = decoded._id;
   } catch (err) {
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/api/v1/auth",
-    });
+    clearRefreshTokenCookie(res);
     return res.status(200).json({ message: "User logged out successfully" });
   }
 
@@ -184,12 +156,7 @@ export const postLogout = async (req, res, next) => {
     else user.refreshTokens = [];
     await user.save();
 
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/api/v1/auth",
-    });
+    clearRefreshTokenCookie(res);
     res.status(200).json({ message: "User logged out successfully" });
   } catch (err) {
     next(err);
