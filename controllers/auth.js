@@ -93,9 +93,12 @@ export const postRefresh = async (req, res, next) => {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     userId = decoded._id;
   } catch (err) {
-    return res
-      .status(403)
-      .json({ message: "Invalid or expired refresh token" });
+    return res.status(403).json({
+      message:
+        err.name === "TokenExpiredError"
+          ? "Refresh token expired"
+          : "Refresh token invalid",
+    });
   }
 
   try {
@@ -160,7 +163,13 @@ export const postLogout = async (req, res, next) => {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     userId = decoded._id;
   } catch (err) {
-    return res.status(200).json({ message: "User already logged out" });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/api/v1/auth",
+    });
+    return res.sendStatus(204);
   }
 
   try {
