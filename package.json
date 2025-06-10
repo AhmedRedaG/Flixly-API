@@ -1,5 +1,5 @@
 {
-  "name": "cat-jwt-task",
+  "name": "jwt-authentication-api",
   "version": "1.0.0",
   "main": "app.js",
   "type": "module",
@@ -9,7 +9,7 @@
   "keywords": [],
   "author": "Ahmed Reda",
   "license": "ISC",
-  "description": "simple JWT implementation",
+  "description": "robust and secure authentication system",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
