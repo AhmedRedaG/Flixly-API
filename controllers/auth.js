@@ -134,7 +134,7 @@ export const postRefresh = async (req, res, next) => {
     });
 
     user.refreshTokens[refreshTokenIndex] = newRefreshToken;
-    user.save();
+    await user.save();
 
     const newAccessToken = jwt.sign(
       userSafeData,
@@ -169,7 +169,7 @@ export const postLogout = async (req, res, next) => {
       secure: process.env.NODE_ENV === "production",
       path: "/api/v1/auth",
     });
-    return res.sendStatus(204);
+    return res.status(200).json({ message: "User logged out successfully" });
   }
 
   try {
@@ -182,7 +182,7 @@ export const postLogout = async (req, res, next) => {
         (rt) => rt !== refreshToken
       );
     else user.refreshTokens = [];
-    user.save();
+    await user.save();
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
