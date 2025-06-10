@@ -12,9 +12,14 @@ export const postRegister = async (req, res, next) => {
       return res.status(409).json({ message: "Email already in use" });
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = new User({ name, email, password: hashedPassword });
-    const savedUser = await user.save();
-    const { password: _, ...userSafeData } = savedUser.toObject();
+    const newUser = new User({ name, email, password: hashedPassword });
+    const user = await newUser.save();
+    const userSafeData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
 
     res
       .status(201)
