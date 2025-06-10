@@ -88,15 +88,15 @@ export const postRefresh = async (req, res, next) => {
   if (!refreshToken)
     return res.status(401).json({ message: "No refreshToken exist" });
 
-  let userId = null;
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-    if (!err) userId = decoded._id;
-  });
-
-  if (!userId)
+  let userId;
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    userId = decoded._id;
+  } catch (err) {
     return res
       .status(403)
       .json({ message: "Invalid or expired refresh token" });
+  }
 
   try {
     const user = await User.findOne({ _id: userId });
@@ -131,7 +131,7 @@ export const postRefresh = async (req, res, next) => {
     });
 
     user.refreshTokens[refreshTokenIndex] = newRefreshToken;
-    const saveNewRefreshToken = await user.save();
+    user.save();
 
     const newAccessToken = jwt.sign(
       userSafeData,
@@ -155,28 +155,25 @@ export const postLogout = async (req, res, next) => {
     return res.status(200).json({ message: "User already logged out" });
   }
 
-  let userId = null;
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-    if (!err) userId = decoded._id;
-  });
-
-  if (!userId)
+  let userId;
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    userId = decoded._id;
+  } catch (err) {
     return res.status(200).json({ message: "User already logged out" });
+  }
 
   try {
     const user = await User.findOne({ _id: userId });
     if (!user) return res.status(401).json({ message: "User not found" });
 
-    const logoutCase = req.query.case || "crr";
-    if (logoutCase === "crr") {
+    const logoutFullCase = req.query.full;
+    if (!logoutFullCase)
       user.refreshTokens = user.refreshTokens.filter(
         (rt) => rt !== refreshToken
       );
-    } else {
-      user.refreshTokens = [];
-    }
-
-    const saveNewRefreshTokenList = await user.save();
+    else user.refreshTokens = [];
+    user.save();
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
