@@ -47,13 +47,7 @@ export const postLogin = async (req, res, next) => {
       email: user.email,
       role: user.role,
     };
-    const accessToken = jwt.sign(
-      userSafeData,
-      process.env.ACCESS_TOKEN_SECRET,
-      {
-        expiresIn: "15m",
-      }
-    );
+
     const refreshToken = jwt.sign(
       userSafeData,
       process.env.REFRESH_TOKEN_SECRET,
@@ -61,7 +55,6 @@ export const postLogin = async (req, res, next) => {
         expiresIn: "7d",
       }
     );
-
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
@@ -69,6 +62,17 @@ export const postLogin = async (req, res, next) => {
       path: "/api/v1/auth",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+
+    user.refreshTokens.push(refreshToken);
+    const saveNewRefreshToken = await user.save();
+
+    const accessToken = jwt.sign(
+      userSafeData,
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
     res.status(200).json({
       message: "User loggedIn successfully",
       accessToken,
@@ -79,13 +83,56 @@ export const postLogin = async (req, res, next) => {
   }
 };
 
-export const postRefresh = async (req, res) => {
-  const token = req.cookies.refreshToken;
-  if (!token) return res.status(401).json({ message: "No refreshToken exist" });
+export const postRefresh = async (req, res, next) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken)
+    return res.status(401).json({ message: "No refreshToken exist" });
+
+  let userId = null;
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+    if (!err) userId = decoded._id;
+  });
+
+  if (!userId)
+    return res
+      .status(403)
+      .json({ message: "Invalid or expired refresh token" });
 
   try {
-    const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-    const { iat, exp, ...userSafeData } = user;
+    const user = await User.findOne({ _id: userId });
+    if (!user) return res.status(401).json({ message: "User not found" });
+
+    const refreshTokenIndex = user.refreshTokens.findIndex(
+      (rf) => rf === refreshToken
+    );
+    if (refreshTokenIndex === -1)
+      return res.status(403).json({ message: "Invalid refresh token" });
+
+    const userSafeData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    const newRefreshToken = jwt.sign(
+      userSafeData,
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/api/v1/auth",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    user.refreshTokens[refreshTokenIndex] = newRefreshToken;
+    const saveNewRefreshToken = await user.save();
+
     const newAccessToken = jwt.sign(
       userSafeData,
       process.env.ACCESS_TOKEN_SECRET,
@@ -93,27 +140,52 @@ export const postRefresh = async (req, res) => {
         expiresIn: "15m",
       }
     );
-
     res.status(200).json({
       message: "New accessToken created successfully",
       accessToken: newAccessToken,
     });
   } catch (err) {
-    res.status(403).json({ message: "Invalid or expired refresh token" });
+    next(err);
   }
 };
 
-export const postLogout = (req, res) => {
-  const token = req.cookies?.refreshToken;
-  if (!token) {
+export const postLogout = async (req, res, next) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (!refreshToken) {
     return res.status(200).json({ message: "User already logged out" });
   }
 
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/api/v1/auth",
+  let userId = null;
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+    if (!err) userId = decoded._id;
   });
-  return res.status(200).json({ message: "User logged out successfully" });
+
+  if (!userId)
+    return res.status(200).json({ message: "User already logged out" });
+
+  try {
+    const user = await User.findOne({ _id: userId });
+    if (!user) return res.status(401).json({ message: "User not found" });
+
+    const logoutCase = req.query.case || "crr";
+    if (logoutCase === "crr") {
+      user.refreshTokens = user.refreshTokens.filter(
+        (rt) => rt !== refreshToken
+      );
+    } else {
+      user.refreshTokens = [];
+    }
+
+    const saveNewRefreshTokenList = await user.save();
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/api/v1/auth",
+    });
+    res.status(200).json({ message: "User logged out successfully" });
+  } catch (err) {
+    next(err);
+  }
 };
