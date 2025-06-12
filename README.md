@@ -4,14 +4,14 @@ A robust and secure authentication system built with Node.js and Express, featur
 
 ## Features
 
-- 🔐 Secure JWT-based authentication
-- 🔄 Refresh token rotation for enhanced security
-- 🚀 Express.js REST API
+- 🔐 Secure JWT-based authentication with dual token system
+- 🔄 Refresh token rotation with multi-device support
+- 🚀 Express.js REST API with proper error handling
 - 📦 MongoDB integration with Mongoose
-- 🔒 Password hashing with bcrypt
-- 🛡️ Rate limiting protection
-- 🍪 HTTP-only cookie based refresh token
-- ✨ Input validation
+- 🔒 Advanced password validation and security
+- 🛡️ Sophisticated rate limiting protection
+- 🍪 Environment-aware HTTP-only cookie configuration
+- ✨ Comprehensive input validation and sanitization
 - 🚫 Protection against common security vulnerabilities
 
 ## Tech Stack
@@ -24,6 +24,9 @@ A robust and secure authentication system built with Node.js and Express, featur
 - Cookie Parser
 - Express Rate Limit
 - Express Validator
+- JSend Middleware
+- Helmet
+- CORS
 - dotenv
 
 ## Prerequisites
@@ -36,23 +39,28 @@ A robust and secure authentication system built with Node.js and Express, featur
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
+
 3. Create a `.env` file in the root directory with the following variables:
+
 ```env
-PORT=8080                                  # Server port (default: 8080)
+PORT=3000                                  # Server port (default: 3000)
 MONGODB_URI=your_mongodb_connection_string # MongoDB connection string
 ACCESS_TOKEN_SECRET=your_secret_key        # JWT access token secret
 REFRESH_TOKEN_SECRET=your_secret_key       # JWT refresh token secret
 ```
 
 4. Start the development server:
+
 ```bash
 npm start
 ```
 
 The server uses nodemon for development, which will automatically restart when you make changes.
+
 ```env
 ACCESS_TOKEN_SECRET=your_access_token_secret
 REFRESH_TOKEN_SECRET=your_refresh_token_secret
@@ -64,7 +72,7 @@ PORT=3000
 
 ```
 ├── app.js                 # Application entry point
-├── controllers/          
+├── controllers/
 │   ├── auth.js           # Authentication controllers
 │   └── user.js           # User data controllers
 ├── middlewares/
@@ -77,12 +85,14 @@ PORT=3000
 │   ├── auth.js           # Authentication routes
 │   └── user.js           # User routes
 └── utilities/
-    └── authHelper.js     # Authentication helper functions
+    ├── JwtHelper.js      # JWT helper class
+    └── CookieHelper.js   # Cookies helper class
 ```
 
 ## Database Schema
 
 ### User Model
+
 ```javascript
 {
   name: { type: String, required: true },
@@ -103,8 +113,9 @@ All API endpoints are prefixed with `/api/v1/`
 ### Authentication Routes (`/api/v1/auth`)
 
 #### Register a new user
+
 - **POST** `/api/v1/auth/register`
-- **Body:** 
+- **Body:**
   ```json
   {
     "name": "string",
@@ -121,16 +132,19 @@ All API endpoints are prefixed with `/api/v1/`
 - Creates a new user account
 
 #### Login
+
 - **POST** `/auth/login`
 - **Body:** `{ "email": "string", "password": "string" }`
 - Returns access token and sets refresh token cookie
 
 #### Refresh Token
+
 - **POST** `/auth/refresh`
 - **Cookies:** Required refresh token
 - Issues new access token using refresh token
 
 #### Logout
+
 - **POST** `/auth/logout`
 - **Cookies:** Required refresh token
 - **Query Params:** `full=true` (optional, logs out from all devices)
@@ -139,6 +153,7 @@ All API endpoints are prefixed with `/api/v1/`
 ### Protected Routes (`/api/v1`)
 
 #### Get User Data
+
 - **GET** `/api/v1/user`
 - **Headers:** `Authorization: Bearer <access_token>`
 - Returns the current user's data
@@ -146,70 +161,181 @@ All API endpoints are prefixed with `/api/v1/`
 
 ## Security Features
 
-1. **Rate Limiting**
-   - Maximum 5 attempts per 15 minutes for authentication routes
-   - Protection against brute force attacks
-   - Clear error messages with retry timing
+1. **Complete Token Management**
 
-2. **Strong Input Validation**
-   - Name validation: Letters and spaces only
-   - Email validation and normalization
-   - Strong password requirements
-   - Password confirmation check
+   - Access Token: 15 minutes expiration
+   - Refresh Token: 7 days expiration
+   - Token rotation on every refresh
+   - Multi-device support (stores last 5 tokens)
+   - Selective logout (single device or all devices)
+   - Automatic token cleanup and management
 
-3. **Authentication Middleware**
-   - Validates JWT tokens on protected routes
-   - Proper Bearer token format validation
-   - Clear error messages for token issues
+2. **HTTP-only Cookie Management**
 
-4. **Refresh Token Rotation**
-   - New refresh token issued with every refresh
-   - Old tokens are invalidated
-
-2. **HTTP-only Cookies**
-   - Refresh tokens stored in HTTP-only cookies
+   - Refresh tokens in HTTP-only cookies
+   - Environment-based security settings:
+     - Strict SameSite in production
+     - Secure flag in production
+     - Path-restricted to `/api/v1/auth`
+   - 7-day cookie expiration
    - Protected against XSS attacks
 
-3. **Rate Limiting**
-   - Protects against brute force attacks
-   - Limits repeated requests from same IP
+3. **Rate Limiting Protection**
 
-4. **Password Security**
-   - Passwords hashed using bcrypt
-   - Salted hashing for enhanced security
+   - 5 attempts per 15-minute window
+   - Applies to all authentication endpoints
+   - Standardized error messages
+   - Protection against brute force
+
+4. **Input Validation & Sanitization**
+
+   - Name: 3-256 characters, letters and spaces
+   - Email: Validation and normalization
+   - Password:
+     - Strong password requirements
+     - Maximum length of 64 characters
+     - Special characters required
+   - Password confirmation matching
+
+5. **Token Verification & Authorization**
+
+   - Bearer token format validation
+   - Proper token expiration handling
+   - Clear error messages for:
+     - Missing authorization
+     - Invalid token format
+     - Expired tokens
+     - Invalid tokens
+
+6. **Additional Security Measures**
+   - CORS protection
+   - Helmet security headers
+   - Express security best practices
+   - JSend response standardization
+   - MongoDB best practices
+   - Environment-based configuration
 
 ## Error Handling
 
-The API implements consistent error handling with appropriate HTTP status codes:
+The API implements consistent error handling with jsend format and appropriate HTTP status codes:
 
 - `400` - Bad Request (Invalid input)
-- `401` - Unauthorized (Invalid credentials)
-- `403` - Forbidden (Invalid token)
+- `401` - Unauthorized (Invalid credentials, Missing authorization header)
+- `403` - Forbidden (Invalid/Expired token)
 - `409` - Conflict (Email already exists)
-- `429` - Too Many Requests (Rate limit exceeded)
+- `422` - Unprocessable Entity (Validation failed)
+- `429` - Too Many Requests (Rate limit exceeded with 15-minute window)
 - `500` - Internal Server Error
 
-## Usage Example
+All error responses follow the jsend format:
+
+````json
+{
+  "status": "error",
+  "message": "error message"
+}
+
+```json
+{
+  "status": "fail",
+  "data": {
+    "field": "failure message"
+  }
+}
+````
+
+Success responses:
+
+```json
+{
+  "status": "success",
+  "data": {
+    // Response data
+  }
+}
+```
+
+## Usage Examples
+
+### Registration
 
 ```javascript
-// Login Request
-fetch('http://your-api/auth/login', {
+// Register Request
+fetch('http://your-api/api/v1/auth/register', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'password123'
+    name: "Ahmed Reda",
+    email: "ahmed@example.com",
+    password: "StrongPass123!",
+    confirmPassword: "StrongPass123!"
   })
 });
 
-// Using Access Token
-fetch('http://your-api/protected-route', {
+// Response
+{
+  "status": "success",
+  "data": {
+    "user": {
+      "_id": "user_id",
+      "name": "Ahmed Reda",
+      "email": "ahmed@example.com",
+      "role": "user"
+    }
+  }
+}
+```
+
+### Login
+
+```javascript
+// Login Request
+fetch('http://your-api/api/v1/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'ahmed@example.com',
+    password: 'StrongPass123!'
+  })
+});
+
+// Response
+{
+  "status": "success",
+  "data": {
+    "accessToken": "your_access_token",
+    "user": {
+      "_id": "user_id",
+      "name": "Ahmed Reda",
+      "email": "ahmed@example.com",
+      "role": "user"
+    }
+  }
+}
+// Note: Refresh token is set in HTTP-only cookie
+```
+
+### Protected Route Access
+
+```javascript
+// Accessing Protected Route
+fetch('http://your-api/api/v1/user', {
   headers: {
     'Authorization': 'Bearer your_access_token'
   }
 });
+
+// Response
+{
+  "status": "success",
+  "data": {
+    // Response data
+  }
+}
 ```
 
 ## Best Practices Implemented

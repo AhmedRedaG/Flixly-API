@@ -28,7 +28,7 @@ app.use((err, req, res, next) => {
   res.jsend.error(err.message);
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 connect(MONGODB_URI)
   .then(() => app.listen(PORT))
