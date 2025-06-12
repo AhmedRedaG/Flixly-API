@@ -2,17 +2,17 @@ import dotenv from "dotenv";
 import express from "express";
 import { connect } from "mongoose";
 import cookieParser from "cookie-parser";
+import jsendMiddleware from "jsend-middleware";
 
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/user.js";
-import jsend from "./middlewares/jsend.js";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
-app.use(jsend());
+app.use(jsendMiddleware());
 
 app.use("/api/v1/auth/", authRouter);
 app.use("/api/v1/", userRouter);
