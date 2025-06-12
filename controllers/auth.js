@@ -15,16 +15,14 @@ export const postRegister = async (req, res, next) => {
   try {
     const userExisted = await User.findOne({ email });
     if (userExisted)
-      return res.status(409).json({ message: "Email already in use" });
+      return res.jsend.fail({ email: "Email already in use" }, 409);
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = new User({ name, email, password: hashedPassword });
     const user = await newUser.save();
     const userSafeData = getSafeData(user);
 
-    res
-      .status(201)
-      .json({ message: "User registered successfully", user: userSafeData });
+    res.jsend.success({ user: userSafeData });
   } catch (err) {
     next(err);
   }
@@ -35,12 +33,11 @@ export const postLogin = async (req, res, next) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user)
-      return res.status(401).json({ message: "Invalid email or password" });
+    if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);
 
     const matchedPasswords = await bcrypt.compare(password, user.password);
     if (!matchedPasswords)
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.jsend.fail({ password: "Invalid password" }, 401);
 
     const userSafeData = getSafeData(user);
     const refreshToken = jwt.sign(
@@ -62,11 +59,8 @@ export const postLogin = async (req, res, next) => {
         expiresIn: "15m",
       }
     );
-    res.status(200).json({
-      message: "User loggedIn successfully",
-      accessToken,
-      user: userSafeData,
-    });
+
+    res.jsend.success({ accessToken, user: userSafeData });
   } catch (err) {
     next(err);
   }
@@ -75,30 +69,33 @@ export const postLogin = async (req, res, next) => {
 export const postRefresh = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)
-    return res.status(401).json({ message: "No refreshToken exist" });
+    return res.jsend.fail({ refreshToken: "No refreshToken exist" }, 401);
 
   let userId;
   try {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     userId = decoded._id;
   } catch (err) {
-    return res.status(403).json({
-      message:
-        err.name === "TokenExpiredError"
-          ? "Refresh token expired"
-          : "Refresh token invalid",
-    });
+    return res.jsend.fail(
+      {
+        refreshToken:
+          err.name === "TokenExpiredError"
+            ? "Refresh token expired"
+            : "Refresh token invalid",
+      },
+      403
+    );
   }
 
   try {
     const user = await User.findOne({ _id: userId });
-    if (!user) return res.status(401).json({ message: "User not found" });
+    if (!user) return res.jsend.fail({ user: "User not found" }, 401);
 
     const refreshTokenIndex = user.refreshTokens.findIndex(
       (rf) => rf === refreshToken
     );
     if (refreshTokenIndex === -1)
-      return res.status(403).json({ message: "Invalid refresh token" });
+      return res.jsend.fail({ refreshTokens: "Invalid refresh token" }, 403);
 
     const userSafeData = getSafeData(user);
     const newRefreshToken = jwt.sign(
@@ -120,10 +117,7 @@ export const postRefresh = async (req, res, next) => {
         expiresIn: "15m",
       }
     );
-    res.status(200).json({
-      message: "New accessToken created successfully",
-      accessToken: newAccessToken,
-    });
+    res.jsend.success({ accessToken: newAccessToken });
   } catch (err) {
     next(err);
   }
@@ -132,7 +126,7 @@ export const postRefresh = async (req, res, next) => {
 export const postLogout = async (req, res, next) => {
   const refreshToken = req.cookies?.refreshToken;
   if (!refreshToken) {
-    return res.status(200).json({ message: "User already logged out" });
+    return res.jsend.success();
   }
 
   let userId;
@@ -141,12 +135,12 @@ export const postLogout = async (req, res, next) => {
     userId = decoded._id;
   } catch (err) {
     clearRefreshTokenCookie(res);
-    return res.status(200).json({ message: "User logged out successfully" });
+    return res.jsend.success();
   }
 
   try {
     const user = await User.findOne({ _id: userId });
-    if (!user) return res.status(401).json({ message: "User not found" });
+    if (!user) return res.jsend.fail({ user: "User not found" }, 401);
 
     const logoutFullCase = req.query.full;
     if (!logoutFullCase)
@@ -157,7 +151,7 @@ export const postLogout = async (req, res, next) => {
     await user.save();
 
     clearRefreshTokenCookie(res);
-    res.status(200).json({ message: "User logged out successfully" });
+    res.jsend.success();
   } catch (err) {
     next(err);
   }

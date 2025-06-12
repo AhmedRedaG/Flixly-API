@@ -5,23 +5,23 @@ import cookieParser from "cookie-parser";
 
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/user.js";
+import jsend from "./middlewares/jsend.js";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(jsend());
 
 app.use("/api/v1/auth/", authRouter);
 app.use("/api/v1/", userRouter);
 
 app.use((req, res) => {
-  res.status(404).json({ message: "Source location not found" });
+  res.jsend.fail({ url: "Source location not found" }, 404);
 });
 app.use((err, req, res, next) => {
-  res
-    .status(500)
-    .json({ message: "Internal server error!", error: err.message });
+  res.jsend.error(err.message);
 });
 
 const PORT = process.env.PORT || 8080;

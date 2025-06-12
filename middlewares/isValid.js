@@ -32,7 +32,7 @@ const result = (req, res, next) => {
   if (!validationErrors.isEmpty()) {
     const errors = {};
     validationErrors.array().forEach((err) => (errors[err.path] = err.msg));
-    return res.status(422).json({ message: "Validation failed", errors });
+    return res.jsend.fail({ ...errors }, 422);
   }
 
   next();
