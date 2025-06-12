@@ -1,4 +1,4 @@
-import jwtHelper from "../utilities/jwtHelper.js";
+import JwtHelper from "../utilities/JwtHelper.js";
 
 const isAuth = async (req, res, next) => {
   const authorizationHeader = req.get("Authorization");
@@ -17,7 +17,7 @@ const isAuth = async (req, res, next) => {
 
   const accessToken = authorizationHeader.split(" ")[1];
   try {
-    req.user = jwtHelper.verifyAccessToken(accessToken);
+    req.user = JwtHelper.verifyAccessToken(accessToken);
   } catch (err) {
     return res.jsend.fail(
       {

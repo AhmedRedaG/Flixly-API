@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 
 import User from "../models/user.js";
-import jwtHelper from "../utilities/jwtHelper.js";
+import JwtHelper from "../utilities/JwtHelper.js";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -13,7 +13,7 @@ export const postRegister = async (req, res, next) => {
   const hashedPassword = await bcrypt.hash(password, 12);
   const newUser = new User({ name, email, password: hashedPassword });
   const user = await newUser.save();
-  const userSafeData = jwtHelper.getSafeData(user);
+  const userSafeData = JwtHelper.getSafeData(user);
 
   res.jsend.success({ user: userSafeData });
 };
@@ -28,14 +28,14 @@ export const postLogin = async (req, res, next) => {
   if (!matchedPasswords)
     return res.jsend.fail({ password: "Invalid password" }, 401);
 
-  const userSafeData = jwtHelper.getSafeData(user);
-  const refreshToken = jwtHelper.createRefreshToken(userSafeData);
-  jwtHelper.createRefreshTokenCookie(res, refreshToken);
+  const userSafeData = JwtHelper.getSafeData(user);
+  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
+  JwtHelper.createRefreshTokenCookie(res, refreshToken);
 
   user.refreshTokens.push(refreshToken);
   await user.save();
 
-  const accessToken = jwtHelper.createAccessToken(userSafeData);
+  const accessToken = JwtHelper.createAccessToken(userSafeData);
   res.jsend.success({ accessToken, user: userSafeData });
 };
 
@@ -46,7 +46,7 @@ export const postRefresh = async (req, res, next) => {
 
   let userId;
   try {
-    const decoded = jwtHelper.verifyRefreshToken(refreshToken);
+    const decoded = JwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
     return res.jsend.fail(
@@ -69,15 +69,15 @@ export const postRefresh = async (req, res, next) => {
   if (refreshTokenIndex === -1)
     return res.jsend.fail({ refreshTokens: "Invalid refresh token" }, 403);
 
-  const userSafeData = jwtHelper.getSafeData(user);
-  const newRefreshToken = jwtHelper.createRefreshToken(userSafeData);
-  jwtHelper.createRefreshTokenCookie(res, newRefreshToken);
+  const userSafeData = JwtHelper.getSafeData(user);
+  const newRefreshToken = JwtHelper.createRefreshToken(userSafeData);
+  JwtHelper.createRefreshTokenCookie(res, newRefreshToken);
 
   user.refreshTokens[refreshTokenIndex] = newRefreshToken;
   user.refreshTokens = user.refreshTokens.slice(-5);
   await user.save();
 
-  const newAccessToken = jwtHelper.createAccessToken(userSafeData);
+  const newAccessToken = JwtHelper.createAccessToken(userSafeData);
   res.jsend.success({ accessToken: newAccessToken });
 };
 
@@ -89,10 +89,10 @@ export const postLogout = async (req, res, next) => {
 
   let userId;
   try {
-    const decoded = jwtHelper.verifyRefreshToken(refreshToken);
+    const decoded = JwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
-    jwtHelper.clearRefreshTokenCookie(res);
+    JwtHelper.clearRefreshTokenCookie(res);
     return res.jsend.success();
   }
 
@@ -105,6 +105,6 @@ export const postLogout = async (req, res, next) => {
   else user.refreshTokens = [];
   await user.save();
 
-  jwtHelper.clearRefreshTokenCookie(res);
+  JwtHelper.clearRefreshTokenCookie(res);
   res.jsend.success();
 };
