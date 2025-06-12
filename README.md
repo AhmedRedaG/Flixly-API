@@ -229,20 +229,19 @@ The API implements consistent error handling with jsend format and appropriate H
 
 All error responses follow the jsend format:
 
-````json
+```json
 {
   "status": "error",
   "message": "error message"
 }
 
-```json
 {
   "status": "fail",
   "data": {
     "field": "failure message"
   }
 }
-````
+```
 
 Success responses:
 
