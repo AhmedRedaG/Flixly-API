@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwtHelper from "../utilities/jwtHelper.js";
 
 const isAuth = async (req, res, next) => {
   const authorizationHeader = req.get("Authorization");
@@ -15,16 +15,16 @@ const isAuth = async (req, res, next) => {
     );
   }
 
-  const token = authorizationHeader.split(" ")[1];
+  const accessToken = authorizationHeader.split(" ")[1];
   try {
-    req.user = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.user = jwtHelper.verifyAccessToken(accessToken);
   } catch (err) {
     return res.jsend.fail(
       {
         accessToken:
           err.name === "TokenExpiredError"
-            ? "Refresh token expired"
-            : "Refresh token invalid",
+            ? "Access token expired"
+            : "Access token invalid",
       },
       403
     );

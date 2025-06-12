@@ -1,13 +1,7 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 import User from "../models/user.js";
-
-import {
-  getSafeData,
-  clearRefreshTokenCookie,
-  createRefreshTokenCookie,
-} from "../utilities/authHelper.js";
+import jwtHelper from "../utilities/jwtHelper.js";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -19,7 +13,7 @@ export const postRegister = async (req, res, next) => {
   const hashedPassword = await bcrypt.hash(password, 12);
   const newUser = new User({ name, email, password: hashedPassword });
   const user = await newUser.save();
-  const userSafeData = getSafeData(user);
+  const userSafeData = jwtHelper.getSafeData(user);
 
   res.jsend.success({ user: userSafeData });
 };
@@ -34,23 +28,14 @@ export const postLogin = async (req, res, next) => {
   if (!matchedPasswords)
     return res.jsend.fail({ password: "Invalid password" }, 401);
 
-  const userSafeData = getSafeData(user);
-  const refreshToken = jwt.sign(
-    userSafeData,
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: "7d",
-    }
-  );
-  createRefreshTokenCookie(res, refreshToken);
+  const userSafeData = jwtHelper.getSafeData(user);
+  const refreshToken = jwtHelper.createRefreshToken(userSafeData);
+  jwtHelper.createRefreshTokenCookie(res, refreshToken);
 
   user.refreshTokens.push(refreshToken);
-  const saveNewRefreshToken = await user.save();
+  await user.save();
 
-  const accessToken = jwt.sign(userSafeData, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
-  });
-
+  const accessToken = jwtHelper.createAccessToken(userSafeData);
   res.jsend.success({ accessToken, user: userSafeData });
 };
 
@@ -61,7 +46,7 @@ export const postRefresh = async (req, res, next) => {
 
   let userId;
   try {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const decoded = jwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
     return res.jsend.fail(
@@ -84,26 +69,14 @@ export const postRefresh = async (req, res, next) => {
   if (refreshTokenIndex === -1)
     return res.jsend.fail({ refreshTokens: "Invalid refresh token" }, 403);
 
-  const userSafeData = getSafeData(user);
-  const newRefreshToken = jwt.sign(
-    userSafeData,
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: "7d",
-    }
-  );
-  createRefreshTokenCookie(res, newRefreshToken);
+  const userSafeData = jwtHelper.getSafeData(user);
+  const newRefreshToken = jwtHelper.createRefreshToken(userSafeData);
+  jwtHelper.createRefreshTokenCookie(res, newRefreshToken);
 
   user.refreshTokens[refreshTokenIndex] = newRefreshToken;
   await user.save();
 
-  const newAccessToken = jwt.sign(
-    userSafeData,
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: "15m",
-    }
-  );
+  const newAccessToken = jwtHelper.createAccessToken(userSafeData);
   res.jsend.success({ accessToken: newAccessToken });
 };
 
@@ -115,10 +88,10 @@ export const postLogout = async (req, res, next) => {
 
   let userId;
   try {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const decoded = jwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
-    clearRefreshTokenCookie(res);
+    jwtHelper.clearRefreshTokenCookie(res);
     return res.jsend.success();
   }
 
@@ -131,6 +104,6 @@ export const postLogout = async (req, res, next) => {
   else user.refreshTokens = [];
   await user.save();
 
-  clearRefreshTokenCookie(res);
+  jwtHelper.clearRefreshTokenCookie(res);
   res.jsend.success();
 };
