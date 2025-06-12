@@ -74,6 +74,7 @@ export const postRefresh = async (req, res, next) => {
   jwtHelper.createRefreshTokenCookie(res, newRefreshToken);
 
   user.refreshTokens[refreshTokenIndex] = newRefreshToken;
+  user.refreshTokens = user.refreshTokens.slice(-5);
   await user.save();
 
   const newAccessToken = jwtHelper.createAccessToken(userSafeData);
