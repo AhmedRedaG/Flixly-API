@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 
 import User from "../models/user.js";
 import JwtHelper from "../utilities/JwtHelper.js";
+import CookieHelper from "../utilities/CookieHelper.js";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -30,7 +31,7 @@ export const postLogin = async (req, res, next) => {
 
   const userSafeData = JwtHelper.getSafeData(user);
   const refreshToken = JwtHelper.createRefreshToken(userSafeData);
-  JwtHelper.createRefreshTokenCookie(res, refreshToken);
+  CookieHelper.createRefreshTokenCookie(res, refreshToken);
 
   user.refreshTokens.push(refreshToken);
   await user.save();
@@ -71,7 +72,7 @@ export const postRefresh = async (req, res, next) => {
 
   const userSafeData = JwtHelper.getSafeData(user);
   const newRefreshToken = JwtHelper.createRefreshToken(userSafeData);
-  JwtHelper.createRefreshTokenCookie(res, newRefreshToken);
+  CookieHelper.createRefreshTokenCookie(res, newRefreshToken);
 
   user.refreshTokens[refreshTokenIndex] = newRefreshToken;
   user.refreshTokens = user.refreshTokens.slice(-5);
@@ -92,7 +93,7 @@ export const postLogout = async (req, res, next) => {
     const decoded = JwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
-    JwtHelper.clearRefreshTokenCookie(res);
+    CookieHelper.clearRefreshTokenCookie(res);
     return res.jsend.success();
   }
 
@@ -105,6 +106,6 @@ export const postLogout = async (req, res, next) => {
   else user.refreshTokens = [];
   await user.save();
 
-  JwtHelper.clearRefreshTokenCookie(res);
+  CookieHelper.clearRefreshTokenCookie(res);
   res.jsend.success();
 };
