@@ -40,6 +40,21 @@ export const postLogin = async (req, res, next) => {
   res.jsend.success({ accessToken, user: userSafeData });
 };
 
+export const authWithGoogle = async (req, res, next) => {
+  const userGoogleId = req.userGoogleId;
+  const user = await User.findOne({ googleId: userGoogleId });
+
+  const userSafeData = JwtHelper.getSafeData(user);
+  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
+  CookieHelper.createRefreshTokenCookie(res, refreshToken);
+
+  user.refreshTokens.push(refreshToken);
+  await user.save();
+
+  const accessToken = JwtHelper.createAccessToken(userSafeData);
+  res.jsend.success({ accessToken, user: userSafeData });
+};
+
 export const postRefresh = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)

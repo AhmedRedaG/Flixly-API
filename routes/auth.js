@@ -1,4 +1,5 @@
 import { Router } from "express";
+import passport from "passport";
 
 import * as authController from "../controllers/auth.js";
 
@@ -25,6 +26,17 @@ router.post(
   rateLimiter,
   [validation.email, validation.password, validationResult],
   authController.postLogin
+);
+
+router.get("/google", passport.authenticate("google", { scope: "profile" }));
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/",
+  }),
+  authController.authWithGoogle
 );
 
 router.post("/refresh", rateLimiter, authController.postRefresh);
