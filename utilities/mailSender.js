@@ -17,7 +17,7 @@ const sendMail = async (mail) => {
 export const sendResetPasswordMail = async (user, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
   const mail = {
-    from: process.env.SERVER_MAIL,
+    from: '"JWT-AUTH" <process.env.SERVER_MAIL>',
     to: user.email,
     subject: "Reset Your Password",
     text: `
