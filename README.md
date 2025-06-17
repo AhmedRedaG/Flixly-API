@@ -9,6 +9,7 @@ A robust and secure authentication system built with Node.js and Express, featur
 - 🚀 Express.js REST API with proper error handling
 - 📦 MongoDB integration with Mongoose
 - 🔑 Google OAuth 2.0 authentication support
+- 📧 Password reset with email verification
 - 🔒 Advanced password validation and security
 - 🛡️ Sophisticated rate limiting protection
 - 🍪 Environment-aware HTTP-only cookie configuration
@@ -22,6 +23,7 @@ A robust and secure authentication system built with Node.js and Express, featur
 - MongoDB (with Mongoose)
 - JSON Web Tokens (JWT)
 - Passport.js with Google OAuth 2.0
+- Nodemailer
 - bcrypt
 - Cookie Parser
 - Express Rate Limit
@@ -53,8 +55,12 @@ PORT=3000                                  # Server port (default: 3000)
 MONGODB_URI=your_mongodb_connection_string # MongoDB connection string
 ACCESS_TOKEN_SECRET=your_secret_key        # JWT access token secret
 REFRESH_TOKEN_SECRET=your_secret_key       # JWT refresh token secret
+RESET_TOKEN_SECRET=your_secret_key         # Password reset token secret
 GOOGLE_CLIENT_ID=your_google_client_id     # Google OAuth client ID
 GOOGLE_CLIENT_SECRET=your_google_secret    # Google OAuth client secret
+SERVER_MAIL=your_email@gmail.com          # Email for sending password reset
+SERVER_MAIL_PASS=your_email_app_password  # Email app password for SMTP
+FRONTEND_URL=http://your-frontend-url     # Frontend URL for reset password page
 ```
 
 4. Start the development server:
@@ -92,7 +98,8 @@ PORT=3000
 │   └── user.js           # User routes
 └── utilities/
     ├── JwtHelper.js      # JWT helper class
-    └── CookieHelper.js   # Cookies helper class
+    ├── CookieHelper.js   # Cookies helper class
+    └── mailSender.js     # sending mail functions
 ```
 
 ## Database Schema
@@ -102,12 +109,19 @@ PORT=3000
 ```javascript
 {
   name: { type: String, required: true },
-  email: { type: String, required: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
   password: { type: String }, // Optional for OAuth users
   googleId: { type: String, unique: true, sparse: true }, // For Google OAuth
   role: { type: String, default: "user" },
-  refreshTokens: [String],
-  timestamps: true
+  refreshTokens: [String], // Store active refresh tokens
+  resetToken: { type: String }, // For password reset functionality
+  timestamps: true // Automatically adds createdAt and updatedAt
 }
 ```
 
@@ -144,19 +158,6 @@ All API endpoints are prefixed with `/api/v1/`
 - **Body:** `{ "email": "string", "password": "string" }`
 - Returns access token and sets refresh token cookie
 
-#### Refresh Token
-
-- **POST** `/auth/refresh`
-- **Cookies:** Required refresh token
-- Issues new access token using refresh token
-
-#### Logout
-
-- **POST** `/auth/logout`
-- **Cookies:** Required refresh token
-- **Query Params:** `full=true` (optional, logs out from all devices)
-- Invalidates refresh token(s)
-
 #### Google OAuth Authentication
 
 - **GET** `/auth/google`
@@ -168,9 +169,59 @@ All API endpoints are prefixed with `/api/v1/`
 
 - **GET** `/auth/google/callback`
 - Handles Google OAuth callback
-- Creates/authenticates user and returns tokens
+- Creates/authenticates user
 - Sets refresh token in HTTP-only cookie
 - Returns access token and user data
+
+#### Request Password Reset
+
+- **POST** `/auth/request-password-reset`
+- **Body:** `{ "email": "string" }`
+- Sends password reset link to email
+- Rate limited for security
+- Returns success message when email is sent
+
+#### Reset Password with Token
+
+- **PATCH** `/auth/reset-password/:resetToken`
+- **Params:** `resetToken` from email link
+- **Body:** `{ "password": "string" }`
+- Validates reset token (1-hour expiration)
+- Checks if token was already used
+- Updates password and invalidates all refresh tokens
+- Returns success message
+
+#### Change Password (Authenticated)
+
+- **PATCH** `/auth/change-password`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Body:**
+  ```json
+  {
+    "oldPassword": "string",
+    "newPassword": "string"
+  }
+  ```
+- Verifies old password
+- Updates to new password
+- Invalidates all refresh tokens
+- Returns success message
+
+#### Refresh Token
+
+- **POST** `/auth/refresh`
+- **Cookies:** Required refresh token
+- Issues new access token
+- Rotates refresh token
+- Maintains last 5 refresh tokens only
+
+#### Logout
+
+- **POST** `/auth/logout`
+- **Cookies:** Required refresh token
+- **Query Params:** `full=true` (optional, logs out from all devices)
+- Invalidates refresh token(s)
+- Clears refresh token cookie
 
 ### Protected Routes (`/api/v1`)
 
