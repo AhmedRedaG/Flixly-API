@@ -4,6 +4,7 @@ import passport from "passport";
 import * as authController from "../controllers/auth.js";
 
 import validationResult, * as validation from "../middlewares/isValid.js";
+import isAuth from "../middlewares/isAuth.js";
 import rateLimiter from "../middlewares/rateLimiter.js";
 
 const router = Router();
@@ -37,6 +38,13 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   authController.authWithGoogle
+);
+
+router.patch(
+  "/change-password",
+  isAuth,
+  [validation.password, validationResult],
+  authController.patchChangePassword
 );
 
 router.post(
