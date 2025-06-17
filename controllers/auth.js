@@ -41,7 +41,7 @@ export const postLogin = async (req, res, next) => {
 };
 
 export const authWithGoogle = async (req, res, next) => {
-  const userGoogleId = req.userGoogleId;
+  const userGoogleId = req.user; // google id only
   const user = await User.findOne({ googleId: userGoogleId });
 
   const userSafeData = JwtHelper.getSafeData(user);
