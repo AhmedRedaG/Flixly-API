@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import User from "../models/user.js";
 import JwtHelper from "../utilities/JwtHelper.js";
 import CookieHelper from "../utilities/CookieHelper.js";
+import { sendResetPasswordMail } from "../utilities/mailSender.js";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -56,7 +57,22 @@ export const authWithGoogle = async (req, res, next) => {
   res.jsend.success({ accessToken, user: userSafeData });
 };
 
-export const postRequestPasswordReset = async (req, res, next) => {};
+export const postRequestPasswordReset = async (req, res, next) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);
+
+  const payload = {
+    _id: user._id,
+    email: user.email,
+    type: "reset",
+  };
+  const resetToken = JwtHelper.createResetToken(payload);
+
+  const sendMailResult = await sendResetPasswordMail(user, resetToken);
+  res.jsend.success({ message: sendMailResult });
+};
 
 export const patchResetPassword = async (req, res, next) => {};
 
