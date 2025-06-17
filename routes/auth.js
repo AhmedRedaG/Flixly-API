@@ -43,7 +43,7 @@ router.get(
 router.patch(
   "/change-password",
   isAuth,
-  [validation.password, validationResult],
+  [validation.oldPassword, validation.newPassword, validationResult],
   authController.patchChangePassword
 );
 

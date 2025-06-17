@@ -63,6 +63,31 @@ export const authWithGoogle = async (req, res, next) => {
   res.jsend.success({ accessToken, user: userSafeData });
 };
 
+export const patchChangePassword = async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
+
+  const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
+  if (!matchedPasswords)
+    return res.jsend.fail({ oldPassword: "Old password is wrong" }, 401);
+
+  if (newPassword === oldPassword)
+    return res.jsend.fail({
+      newPassword: "New password must be different from old password",
+    });
+
+  const newHashedPassword = await bcrypt.hash(newPassword, 12);
+  user.password = newHashedPassword;
+  user.refreshTokens = [];
+  await user.save();
+
+  CookieHelper.clearRefreshTokenCookie(res);
+  res.jsend.success({ message: "Password has been successfully changed." });
+};
+
 export const postRequestPasswordReset = async (req, res, next) => {
   const { email } = req.body;
 
