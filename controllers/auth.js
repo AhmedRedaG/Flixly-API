@@ -52,6 +52,7 @@ export const authWithGoogle = async (req, res, next) => {
   await user.save();
 
   const accessToken = JwtHelper.createAccessToken(userSafeData);
+  // res.redirect(`http://frontend/oauth-success?token=${accessToken}`);
   res.jsend.success({ accessToken, user: userSafeData });
 };
 

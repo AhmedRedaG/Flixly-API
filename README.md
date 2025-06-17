@@ -8,6 +8,7 @@ A robust and secure authentication system built with Node.js and Express, featur
 - 🔄 Refresh token rotation with multi-device support
 - 🚀 Express.js REST API with proper error handling
 - 📦 MongoDB integration with Mongoose
+- 🔑 Google OAuth 2.0 authentication support
 - 🔒 Advanced password validation and security
 - 🛡️ Sophisticated rate limiting protection
 - 🍪 Environment-aware HTTP-only cookie configuration
@@ -20,6 +21,7 @@ A robust and secure authentication system built with Node.js and Express, featur
 - Express.js
 - MongoDB (with Mongoose)
 - JSON Web Tokens (JWT)
+- Passport.js with Google OAuth 2.0
 - bcrypt
 - Cookie Parser
 - Express Rate Limit
@@ -51,6 +53,8 @@ PORT=3000                                  # Server port (default: 3000)
 MONGODB_URI=your_mongodb_connection_string # MongoDB connection string
 ACCESS_TOKEN_SECRET=your_secret_key        # JWT access token secret
 REFRESH_TOKEN_SECRET=your_secret_key       # JWT refresh token secret
+GOOGLE_CLIENT_ID=your_google_client_id     # Google OAuth client ID
+GOOGLE_CLIENT_SECRET=your_google_secret    # Google OAuth client secret
 ```
 
 4. Start the development server:
@@ -72,6 +76,8 @@ PORT=3000
 
 ```
 ├── app.js                 # Application entry point
+├── config/
+│   └── passport.js       # Passport OAuth configuration
 ├── controllers/
 │   ├── auth.js           # Authentication controllers
 │   └── user.js           # User data controllers
@@ -97,7 +103,8 @@ PORT=3000
 {
   name: { type: String, required: true },
   email: { type: String, required: true },
-  password: { type: String, required: true },
+  password: { type: String }, // Optional for OAuth users
+  googleId: { type: String, unique: true, sparse: true }, // For Google OAuth
   role: { type: String, default: "user" },
   refreshTokens: [String],
   timestamps: true
@@ -149,6 +156,21 @@ All API endpoints are prefixed with `/api/v1/`
 - **Cookies:** Required refresh token
 - **Query Params:** `full=true` (optional, logs out from all devices)
 - Invalidates refresh token(s)
+
+#### Google OAuth Authentication
+
+- **GET** `/auth/google`
+- Initiates Google OAuth flow
+- Redirects to Google login page
+- No request body needed
+
+#### Google OAuth Callback
+
+- **GET** `/auth/google/callback`
+- Handles Google OAuth callback
+- Creates/authenticates user and returns tokens
+- Sets refresh token in HTTP-only cookie
+- Returns access token and user data
 
 ### Protected Routes (`/api/v1`)
 
