@@ -39,6 +39,18 @@ router.get(
   authController.authWithGoogle
 );
 
+router.post(
+  "/request-password-reset",
+  [validation.email, validationResult],
+  authController.postRequestPasswordReset
+);
+
+router.patch(
+  "/rest-password/:resetToken",
+  [validation.password, validationResult],
+  authController.patchResetPassword
+);
+
 router.post("/refresh", rateLimiter, authController.postRefresh);
 
 router.post("/logout", authController.postLogout);

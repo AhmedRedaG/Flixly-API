@@ -56,6 +56,10 @@ export const authWithGoogle = async (req, res, next) => {
   res.jsend.success({ accessToken, user: userSafeData });
 };
 
+export const postRequestPasswordReset = async (req, res, next) => {};
+
+export const patchResetPassword = async (req, res, next) => {};
+
 export const postRefresh = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)
