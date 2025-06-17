@@ -26,6 +26,12 @@ export const postLogin = async (req, res, next) => {
   const user = await User.findOne({ email });
   if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);
 
+  if (!user.password)
+    return res.jsend.fail(
+      { auth: "This account was registered with Google." },
+      401
+    );
+
   const matchedPasswords = await bcrypt.compare(password, user.password);
   if (!matchedPasswords)
     return res.jsend.fail({ password: "Invalid password" }, 401);
