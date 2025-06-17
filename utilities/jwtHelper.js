@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
+const RESET_TOKEN_EXPIRES_IN = "1h";
 
 class JwtHelper {
   static getSafeData(user) {
@@ -24,12 +25,18 @@ class JwtHelper {
       ACCESS_TOKEN_EXPIRES_IN
     );
   }
-
   static createRefreshToken(payload) {
     return this.createToken(
       payload,
       process.env.REFRESH_TOKEN_SECRET,
       REFRESH_TOKEN_EXPIRES_IN
+    );
+  }
+  static createResetToken(payload) {
+    return this.createToken(
+      payload,
+      process.env.RESET_TOKEN_SECRET,
+      RESET_TOKEN_EXPIRES_IN
     );
   }
 
@@ -40,9 +47,11 @@ class JwtHelper {
   static verifyAccessToken(token) {
     return this.verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
   }
-
   static verifyRefreshToken(token) {
     return this.verifyToken(token, process.env.REFRESH_TOKEN_SECRET);
+  }
+  static verifyResetToken(token) {
+    return this.verifyToken(token, process.env.RESET_TOKEN_SECRET);
   }
 }
 
