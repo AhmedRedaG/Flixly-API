@@ -1,21 +1,21 @@
-import dotenv from "dotenv";
 import express from "express";
 import { connect } from "mongoose";
 import cookieParser from "cookie-parser";
 import jsendMiddleware from "jsend-middleware";
 import helmet from "helmet";
 import cors from "cors";
+import passport from "passport";
 
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/user.js";
-
-dotenv.config();
+import "./config/passport.js";
 
 const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
+app.use(passport.initialize());
 app.use(jsendMiddleware());
 
 app.use("/api/v1/auth/", authRouter);
