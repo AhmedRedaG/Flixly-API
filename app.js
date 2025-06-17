@@ -25,6 +25,7 @@ app.use((req, res) => {
   res.jsend.fail({ url: "Source location not found" }, 404);
 });
 app.use((err, req, res, next) => {
+  console.log(err);
   res.jsend.error(err.message);
 });
 
