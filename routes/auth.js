@@ -28,7 +28,10 @@ router.post(
   authController.postLogin
 );
 
-router.get("/google", passport.authenticate("google", { scope: "profile" }));
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
 router.get(
   "/google/callback",
