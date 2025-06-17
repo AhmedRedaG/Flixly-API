@@ -29,7 +29,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         const userGoogleId = await findOrCreateUser(profile);
-        done(userGoogleId, null);
+        done(null, userGoogleId);
       } catch (err) {
         done(err, null);
       }
