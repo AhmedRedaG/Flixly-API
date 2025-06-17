@@ -96,11 +96,16 @@ export const patchResetPassword = async (req, res, next) => {
   const user = await User.findById(userId);
   if (!user) return res.jsend.fail({ user: "User not found" }, 404);
 
+  if (user.resetToken === resetToken)
+    return res.jsend.fail({ resetToken: "Reset token is already used" }, 403);
+
   const hashedPassword = await bcrypt.hash(password, 12);
   user.password = hashedPassword;
+  user.resetToken = resetToken;
   user.refreshTokens = [];
   await user.save();
 
+  CookieHelper.clearRefreshTokenCookie(res);
   res.jsend.success({ message: "Password has been successfully reset." });
 };
 
