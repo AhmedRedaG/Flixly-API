@@ -94,7 +94,7 @@ export const patchResetPassword = async (req, res, next) => {
   }
 
   const user = await User.findById(userId);
-  if (!user) return res.jsend.fail({ user: "User not found" }, 401);
+  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
 
   const hashedPassword = await bcrypt.hash(password, 12);
   user.password = hashedPassword;
@@ -126,7 +126,7 @@ export const postRefresh = async (req, res, next) => {
   }
 
   const user = await User.findById(userId);
-  if (!user) return res.jsend.fail({ user: "User not found" }, 401);
+  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
 
   const refreshTokenIndex = user.refreshTokens.findIndex(
     (rf) => rf === refreshToken
@@ -162,7 +162,7 @@ export const postLogout = async (req, res, next) => {
   }
 
   const user = await User.findById(userId);
-  if (!user) return res.jsend.fail({ user: "User not found" }, 401);
+  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
 
   const logoutFullCase = req.query.full;
   if (!logoutFullCase)
