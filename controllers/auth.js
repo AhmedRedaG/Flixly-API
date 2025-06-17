@@ -74,7 +74,35 @@ export const postRequestPasswordReset = async (req, res, next) => {
   res.jsend.success({ message: sendMailResult });
 };
 
-export const patchResetPassword = async (req, res, next) => {};
+export const patchResetPassword = async (req, res, next) => {
+  const { resetToken } = req.params;
+  const { password } = req.body;
+
+  if (!resetToken)
+    return res.jsend.fail({ resetToken: "Reset token is missing" });
+
+  let userId;
+  try {
+    const decoded = JwtHelper.verifyResetToken(resetToken);
+    if (decoded.type === "reset") userId = decoded._id;
+    else throw new Error("Invalid Token Type");
+  } catch (err) {
+    return res.jsend.fail(
+      { resetToken: "Reset token is expired or invalid" },
+      401
+    );
+  }
+
+  const user = await User.findById(userId);
+  if (!user) return res.jsend.fail({ user: "User not found" }, 401);
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  user.password = hashedPassword;
+  user.refreshTokens = [];
+  await user.save();
+
+  res.jsend.success({ message: "Password has been successfully reset." });
+};
 
 export const postRefresh = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
