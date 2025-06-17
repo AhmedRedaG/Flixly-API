@@ -18,6 +18,7 @@ const userSchema = new Schema(
     },
     role: { type: String, default: "user" },
     refreshTokens: [String],
+    resetToken: { type: String },
   },
   {
     timestamps: true,
