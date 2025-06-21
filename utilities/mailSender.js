@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { join } from "path";
 
 const sendMail = async (mail) => {
   const transporter = nodemailer.createTransport({
@@ -36,6 +37,8 @@ The YourApp Team
 Need help? Contact us at support@yourapp.com`,
     html: `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+  <img style="width:100px;" src="cid:logo@jwt-auth.com" alt="logo"/>
+
   <h2 style="text-align: center; color: #333;">🔒 Reset Your Password</h2>
   
   <p style="font-size: 16px; color: #555;">
@@ -65,6 +68,13 @@ Need help? Contact us at support@yourapp.com`,
   </p>
 </div>
 `,
+    attachments: [
+      {
+        filename: "logo.png",
+        path: join(process.cwd(), "public", "mailImages", "logo.png"),
+        cid: "logo@jwt-auth.com",
+      },
+    ],
   };
 
   try {
