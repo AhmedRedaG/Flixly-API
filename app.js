@@ -18,6 +18,19 @@ app.use(express.json());
 app.use(passport.initialize());
 app.use(jsendMiddleware());
 
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  res.on("finish", () => {
+    const end = Date.now();
+    const duration = end - start;
+
+    console.log(`${req.ip} ${req.method} ${req.originalUrl} => ${duration}ms`);
+  });
+
+  next();
+});
+
 app.use("/api/v1/auth/", authRouter);
 app.use("/api/v1/", userRouter);
 
