@@ -20,8 +20,13 @@ const userSchema = new Schema(
     refreshTokens: [String],
     resetToken: { type: String },
     phoneNumber: { type: String },
-    TFASetupDuration: { type: Number },
-    TFAStatus: { type: Boolean, default: false },
+    TFA: {
+      type: {
+        status: { type: Boolean, default: false },
+        code: { type: Number },
+        duration: { type: Number },
+      },
+    },
   },
   {
     timestamps: true,
