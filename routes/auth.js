@@ -1,7 +1,11 @@
 import { Router } from "express";
 import passport from "passport";
 
-import * as authController from "../controllers/auth.js";
+import * as authNormal from "../controllers/auth/normal.js";
+import * as authGoogle from "../controllers/auth/google.js";
+import * as authPassword from "../controllers/auth/password.js";
+import * as authRefresh from "../controllers/auth/refresh.js";
+import * as authTFA from "../controllers/auth/tfa.js";
 
 import validationResult, * as validation from "../middlewares/isValid.js";
 import isAuth from "../middlewares/isAuth.js";
@@ -19,14 +23,14 @@ router.post(
     validation.confirmPassword,
     validationResult,
   ],
-  authController.postRegister
+  authNormal.postRegister
 );
 
 router.post(
   "/login",
   rateLimiter,
   [validation.email, validation.password, validationResult],
-  authController.postLogin
+  authNormal.postLogin
 );
 
 router.get(
@@ -37,30 +41,30 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
-  authController.authWithGoogle
+  authGoogle.authWithGoogle
 );
 
 router.patch(
   "/change-password",
   isAuth,
   [validation.oldPassword, validation.newPassword, validationResult],
-  authController.patchChangePassword
+  authPassword.patchChangePassword
 );
 
 router.post(
   "/request-password-reset",
   [validation.email, validationResult],
-  authController.postRequestPasswordReset
+  authPassword.postRequestPasswordReset
 );
 
 router.patch(
   "/reset-password/:resetToken",
   [validation.password, validationResult],
-  authController.patchResetPassword
+  authPassword.patchResetPassword
 );
 
-router.post("/refresh", rateLimiter, authController.postRefresh);
+router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 
-router.post("/logout", authController.postLogout);
+router.post("/logout", authNormal.postLogout);
 
 export default router;

@@ -20,7 +20,7 @@ const userSchema = new Schema(
     refreshTokens: [String],
     resetToken: { type: String },
     phoneNumber: { type: Number },
-    OTP: { type: Boolean, default: false },
+    TFA: { type: Boolean, default: false },
   },
   {
     timestamps: true,
