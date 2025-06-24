@@ -19,6 +19,8 @@ const userSchema = new Schema(
     role: { type: String, default: "user" },
     refreshTokens: [String],
     resetToken: { type: String },
+    phoneNumber: { type: Number },
+    OTP: { type: Boolean, default: false },
   },
   {
     timestamps: true,
