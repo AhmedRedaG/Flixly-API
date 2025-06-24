@@ -35,8 +35,31 @@ export const postEnableTFA = async (req, res, next) => {
   });
 };
 
-export const postVerifySetupTFA = (req, res, next) => {
-  // check the code and duration from db
-  // activate tfa if true
-  // return done
+export const postVerifySetupTFA = async (req, res, next) => {
+  const { TFACode } = req.body;
+  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
+
+  const userId = req.user._id;
+  const user = await User.findById(userId);
+  if (!user)
+    return res.jsend.fail(
+      {
+        user: "No user found",
+      },
+      404
+    );
+
+  if (user.TFA.status === true)
+    return res.jsend.fail({ TFACode: "2FA already enabled" }, 401);
+  if (user.TFA.code != TFACode)
+    return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
+  if (user.TFA.expiredIn < Date.now())
+    return res.jsend.fail({ TFACode: "2FA token expired" }, 401);
+
+  user.TFA.status = true;
+  user.TFA.code = null;
+  user.TFA.expiredIn = null;
+  await user.save();
+
+  res.jsend.success({ message: "2FA setup verified successfully" });
 };
