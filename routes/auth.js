@@ -63,7 +63,11 @@ router.patch(
   authPassword.patchResetPassword
 );
 
-router.post("/2fa/enable", authTFA.postEnableTFA);
+router.post(
+  "/2fa/enable",
+  [validation.phoneNumber, validationResult],
+  authTFA.postEnableTFA
+);
 
 router.post("/2fa/verify-setup", authTFA.postVerifySetupTFA);
 

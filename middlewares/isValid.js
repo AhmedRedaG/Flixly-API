@@ -34,6 +34,10 @@ export const confirmPassword = body(
     return true;
   });
 
+export const phoneNumber = body("phoneNumber", "Phone number must be valid")
+  .trim()
+  .isMobilePhone("any", { strictMode: true });
+
 const result = (req, res, next) => {
   const validationErrors = validationResult(req);
   if (!validationErrors.isEmpty()) {
