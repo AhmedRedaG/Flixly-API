@@ -9,7 +9,8 @@ export const postEnableTFA = async (req, res, next) => {
   const { phoneNumber } = req.body;
 
   const TFACode = crypto.randomInt(100000, 999999);
-  const TFADuration = Date.now() + TFA_DURATION;
+  const TFAExpiredIn = Date.now() + TFA_DURATION;
+  const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
 
   const userId = req.user._id;
   const user = await User.findById(userId);
@@ -25,10 +26,13 @@ export const postEnableTFA = async (req, res, next) => {
 
   user.phoneNumber = phoneNumber;
   user.TFA.code = TFACode;
-  user.TFA.duration = TFADuration;
+  user.TFA.expiredIn = TFAExpiredIn;
   await user.save();
 
-  res.jsend.success({ phoneNumber, TFADuration });
+  res.jsend.success({
+    phoneNumber,
+    expiredIn: TFAExpiredInISO,
+  });
 };
 
 export const postVerifySetupTFA = (req, res, next) => {

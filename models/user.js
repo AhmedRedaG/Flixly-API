@@ -24,7 +24,7 @@ const userSchema = new Schema(
       type: {
         status: { type: Boolean, default: false },
         code: { type: Number },
-        duration: { type: Number },
+        expiredIn: { type: Number },
       },
       default: {},
       _id: false,
