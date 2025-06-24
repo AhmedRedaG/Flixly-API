@@ -6,9 +6,9 @@ import helmet from "helmet";
 import cors from "cors";
 import passport from "passport";
 
+import "./config/passport.js";
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/user.js";
-import "./config/passport.js";
 
 const app = express();
 app.use(cors());

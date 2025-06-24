@@ -26,6 +26,8 @@ const userSchema = new Schema(
         code: { type: Number },
         duration: { type: Number },
       },
+      default: {},
+      _id: false,
     },
   },
   {

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 import User from "../../models/user.js";
+import { sendTFASms } from "../../utilities/smsSender.js";
 
 const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
 
@@ -20,7 +21,7 @@ export const postEnableTFA = async (req, res, next) => {
       404
     );
 
-  // send code with Twillo to the phone number
+  await sendTFASms(phoneNumber, TFACode);
 
   user.phoneNumber = phoneNumber;
   user.TFA.code = TFACode;
