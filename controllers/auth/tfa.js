@@ -17,10 +17,13 @@ export const postEnableTFA = async (req, res, next) => {
   if (!user)
     return res.jsend.fail(
       {
-        user: "no user found",
+        user: "No user found",
       },
       404
     );
+
+  if (user.TFA.status === true)
+    return res.jsend.fail({ phoneNumber: "2FA already enabled" }, 401);
 
   await sendTFASms(phoneNumber, TFACode);
 
