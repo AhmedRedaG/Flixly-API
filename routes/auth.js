@@ -63,6 +63,10 @@ router.patch(
   authPassword.patchResetPassword
 );
 
+router.post("/2fa/enable", authTFA.postEnableTFA);
+
+router.post("/2fa/verify-setup", authTFA.postVerifySetupTFA);
+
 router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 
 router.post("/logout", authNormal.postLogout);

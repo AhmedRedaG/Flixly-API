@@ -19,8 +19,9 @@ const userSchema = new Schema(
     role: { type: String, default: "user" },
     refreshTokens: [String],
     resetToken: { type: String },
-    phoneNumber: { type: Number },
-    TFA: { type: Boolean, default: false },
+    phoneNumber: { type: String },
+    TFASetupDuration: { type: Number },
+    TFAStatus: { type: Boolean, default: false },
   },
   {
     timestamps: true,
