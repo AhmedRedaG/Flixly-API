@@ -65,11 +65,18 @@ router.patch(
 
 router.post(
   "/2fa/enable",
+  isAuth,
+  rateLimiter,
   [validation.phoneNumber, validationResult],
   authTFA.postEnableTFA
 );
 
-router.post("/2fa/verify-setup", authTFA.postVerifySetupTFA);
+router.post(
+  "/2fa/verify-setup",
+  isAuth,
+  rateLimiter,
+  authTFA.postVerifySetupTFA
+);
 
 router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 
