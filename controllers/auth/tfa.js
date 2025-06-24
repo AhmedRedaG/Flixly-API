@@ -2,11 +2,32 @@ import crypto from "crypto";
 
 import User from "../../models/user.js";
 
-export const postEnableTFA = (req, res, next) => {
-  // create random code
+const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
+
+export const postEnableTFA = async (req, res, next) => {
+  const { phoneNumber } = req.body;
+
+  const TFACode = crypto.randomInt(100000, 999999);
+  const TFADuration = Date.now() + TFA_DURATION;
+
+  const userId = req.user._id;
+  const user = await User.findById(userId);
+  if (!user)
+    return res.jsend.fail(
+      {
+        user: "no user found",
+      },
+      404
+    );
+
   // send code with Twillo to the phone number
-  // save number, code and duration to db
-  // return done
+
+  user.phoneNumber = phoneNumber;
+  user.TFA.code = TFACode;
+  user.TFA.duration = TFADuration;
+  await user.save();
+
+  res.jsend.success({ phoneNumber, TFADuration });
 };
 
 export const postVerifySetupTFA = (req, res, next) => {
