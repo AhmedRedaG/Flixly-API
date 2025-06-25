@@ -1,7 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 
-import * as authNormal from "../controllers/auth/normal.js";
+import * as authNormal from "../controllers/auth/locals.js";
 import * as authGoogle from "../controllers/auth/google.js";
 import * as authPassword from "../controllers/auth/password.js";
 import * as authRefresh from "../controllers/auth/refresh.js";
