@@ -78,6 +78,12 @@ router.post(
   authTFA.postVerifySetupTFA
 );
 
+router.post(
+  "/2fa/request",
+  [validation.email, validationResult],
+  authTFA.postRequestTFACode
+);
+
 router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 
 router.post("/logout", authNormal.postLogout);

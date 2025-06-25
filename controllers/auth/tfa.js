@@ -66,3 +66,37 @@ export const postVerifySetupTFA = async (req, res, next) => {
 
   res.jsend.success({ message: "2FA setup verified successfully" });
 };
+
+export const postRequestTFACode = async (req, res, next) => {
+  const { email } = req.body;
+
+  const TFACode = crypto.randomInt(100000, 999999);
+  const TFAExpiredIn = Date.now() + TFA_DURATION;
+  const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
+
+  const user = await User.findOne({ email });
+  if (!user)
+    return res.jsend.fail(
+      {
+        user: "No user found",
+      },
+      404
+    );
+
+  if (user.TFA.status === false)
+    return res.jsend.fail({ phoneNumber: "2FA not enabled" }, 401);
+
+  const phoneNumber = user.phoneNumber;
+  await sendTFASms(phoneNumber, TFACode);
+
+  user.TFA.code = TFACode;
+  user.TFA.expiredIn = TFAExpiredIn;
+  await user.save();
+
+  res.jsend.success({
+    message: `2FA send verified successfully to **** ****${phoneNumber.slice(
+      8
+    )}`,
+    expiredIn: TFAExpiredInISO,
+  });
+};
