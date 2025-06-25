@@ -18,10 +18,8 @@ export const setupTFA = async (req, res, next) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
-  if (user.TFA.status === true)
-    return res.jsend.fail({ phoneNumber: "2FA already enabled" }, 401);
-
-  await sendTFASms(phoneNumber, TFACode);
+  // await sendTFASms(phoneNumber, TFACode);
+  console.log(">>>>>>>>>>>> " + TFACode);
 
   user.phoneNumber = phoneNumber;
   user.TFA.code = TFACode;
@@ -48,8 +46,8 @@ export const enableTFA = async (req, res) => {
   const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
   if (!verifyTFACodeResult) return;
 
-  let rawBackupCodes;
-  ({ user, rawBackupCodes } = await updateUserTFAData(user, false, res));
+  // update TFA details (shown in the model schema) and return the backup codes: (user, disableTFA = false, res)
+  const rawBackupCodes = await updateUserTFAData(user, false, res);
   await user.save();
 
   res.jsend.success({
@@ -71,8 +69,7 @@ export const updateTFA = async (req, res) => {
   const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
   if (!verifyTFACodeResult) return;
 
-  let rawBackupCodes;
-  ({ user, rawBackupCodes } = await updateUserTFAData(user, false, res));
+  const rawBackupCodes = await updateUserTFAData(user, false, res);
   await user.save();
 
   res.jsend.success({
@@ -94,7 +91,8 @@ export const disableTFA = async (req, res) => {
   const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
   if (!verifyTFACodeResult) return;
 
-  ({ user } = await updateUserTFAData(user, true, res));
+  // disableTFA = true
+  await updateUserTFAData(user, true, res);
   await user.save();
 
   res.jsend.success({
@@ -115,8 +113,7 @@ export const requestNewBackupCodes = async (req, res) => {
   const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
   if (!verifyTFACodeResult) return;
 
-  let rawBackupCodes;
-  ({ user, rawBackupCodes } = await updateUserTFAData(user, false, res));
+  const rawBackupCodes = await updateUserTFAData(user, false, res);
   await user.save();
 
   res.jsend.success({
@@ -145,7 +142,8 @@ export const requestTFACode = async (req, res, next) => {
     return res.jsend.fail({ phoneNumber: "2FA not enabled" }, 401);
 
   const phoneNumber = user.phoneNumber;
-  await sendTFASms(phoneNumber, TFACode);
+  // await sendTFASms(phoneNumber, TFACode);
+  console.log(">>>>>>>>>>>> " + TFACode);
 
   user.TFA.code = TFACode;
   user.TFA.expiredIn = TFAExpiredIn;
