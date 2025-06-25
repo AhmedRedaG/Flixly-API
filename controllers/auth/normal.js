@@ -20,7 +20,7 @@ export const postRegister = async (req, res, next) => {
 };
 
 export const postLogin = async (req, res, next) => {
-  const { email, password, TFACode } = req.body;
+  const { email, password, TFACode, backupCode } = req.body;
 
   const user = await User.findOne({ email });
   if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);
@@ -36,21 +36,32 @@ export const postLogin = async (req, res, next) => {
     return res.jsend.fail({ password: "Invalid password" }, 401);
 
   if (user.TFA.status === true) {
-    if (!TFACode)
-      return res.jsend.fail({ TFACode: "2FA token is required" }, 401);
-    if (user.TFA.code != TFACode) {
-      user.TFA.attempts++;
-      await user.save();
-      return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
-    }
-    if (user.TFA.expiredIn < Date.now())
-      return res.jsend.fail({ TFACode: "2FA token expired" }, 401);
-    if (user.TFA.attempts > 5)
-      return res.jsend.fail({ TFACode: "Too many attempts" }, 429);
+    if (!TFACode) {
+      if (!backupCode)
+        return res.jsend.fail({ TFACode: "2FA token is required" }, 401);
 
-    user.TFA.code = null;
-    user.TFA.expiredIn = null;
-    user.TFA.attempts = 0;
+      const backupCodeIndex = user.TFA.backupCodes.findIndex(
+        (BC) => !BC.used && BC.code === backupCode
+      );
+      if (backupCodeIndex === -1)
+        return res.jsend.fail({ backupCode: "Backup code is Invalid" }, 401);
+
+      user.TFA.backupCodes[backupCodeIndex].used = true;
+    } else {
+      if (user.TFA.code != TFACode) {
+        user.TFA.attempts++;
+        await user.save();
+        return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
+      }
+      if (user.TFA.expiredIn < Date.now())
+        return res.jsend.fail({ TFACode: "2FA token expired" }, 401);
+      if (user.TFA.attempts > 5)
+        return res.jsend.fail({ TFACode: "Too many attempts" }, 429);
+
+      user.TFA.code = null;
+      user.TFA.expiredIn = null;
+      user.TFA.attempts = 0;
+    }
   }
 
   const userSafeData = JwtHelper.getSafeData(user);
