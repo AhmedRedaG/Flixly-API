@@ -4,13 +4,13 @@ import User from "../../models/user.js";
 import JwtHelper from "../../utilities/JwtHelper.js";
 import CookieHelper from "../../utilities/cookieHelper.js";
 import { sendResetPasswordMail } from "../../utilities/mailSender.js";
+import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 
 export const patchChangePassword = async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user._id;
 
-  const user = await User.findById(userId);
-  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
+  const user = await getUserByIdOrFail(req.user._id, res);
+  if (!user) return;
 
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords)

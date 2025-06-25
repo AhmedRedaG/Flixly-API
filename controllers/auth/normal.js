@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import User from "../../models/user.js";
 import JwtHelper from "../../utilities/JwtHelper.js";
 import CookieHelper from "../../utilities/cookieHelper.js";
+import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 
 export const postRegister = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -90,8 +91,8 @@ export const postLogout = async (req, res, next) => {
     return res.jsend.success();
   }
 
-  const user = await User.findById(userId);
-  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
+  const user = await getUserByIdOrFail(userId, res);
+  if (!user) return;
 
   const logoutFullCase = req.query.full;
   if (!logoutFullCase)

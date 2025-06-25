@@ -1,6 +1,6 @@
-import User from "../../models/user.js";
 import JwtHelper from "../../utilities/JwtHelper.js";
 import CookieHelper from "../../utilities/cookieHelper.js";
+import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 
 export const postRefresh = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
@@ -23,8 +23,8 @@ export const postRefresh = async (req, res, next) => {
     );
   }
 
-  const user = await User.findById(userId);
-  if (!user) return res.jsend.fail({ user: "User not found" }, 404);
+  const user = await getUserByIdOrFail(userId, res);
+  if (!user) return;
 
   const refreshTokenIndex = user.refreshTokens.findIndex(
     (rf) => rf === refreshToken

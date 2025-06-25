@@ -15,15 +15,8 @@ export const setupTFA = async (req, res, next) => {
   const TFAExpiredIn = Date.now() + TFA_DURATION;
   const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
 
-  const userId = req.user._id;
-  const user = await User.findById(userId);
-  if (!user)
-    return res.jsend.fail(
-      {
-        user: "No user found",
-      },
-      404
-    );
+  const user = await getUserByIdOrFail(req.user._id, res);
+  if (!user) return;
 
   if (user.TFA.status === true)
     return res.jsend.fail({ phoneNumber: "2FA already enabled" }, 401);
