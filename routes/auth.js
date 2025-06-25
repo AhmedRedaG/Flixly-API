@@ -64,11 +64,11 @@ router.patch(
 );
 
 router.post(
-  "/2fa/enable",
+  "/2fa/setup",
   isAuth,
   rateLimiter,
   [validation.phoneNumber, validationResult],
-  authTFA.postEnableTFA
+  authTFA.postSetupTFA
 );
 
 router.post(

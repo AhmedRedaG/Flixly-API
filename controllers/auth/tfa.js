@@ -7,7 +7,8 @@ import { generateBackupCodes } from "../../utilities/tfaHelper.js";
 
 const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
 
-export const postEnableTFA = async (req, res, next) => {
+// create and update 2fa
+export const postSetupTFA = async (req, res, next) => {
   const { phoneNumber } = req.body;
 
   const TFACode = crypto.randomInt(100000, 999999);
