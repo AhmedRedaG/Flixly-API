@@ -44,10 +44,9 @@ export const postSetupTFA = async (req, res, next) => {
 
 // verify any setup operations: enable 2fa, update 2fa, disable 2fa and generate new backup codes
 export const postVerifySetupTFA = async (req, res, next) => {
-  const { TFACode } = req.body;
+  const { TFACode, operation } = req.body;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
 
-  const { operation } = req.params;
   const validOperations = [
     "newBackupCodes",
     "disableTFA",

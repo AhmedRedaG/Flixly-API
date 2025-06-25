@@ -71,8 +71,14 @@ router.post(
   authTFA.postSetupTFA
 );
 
+router.post("/2fa/enable", isAuth, rateLimiter, authTFA.postVerifySetupTFA);
+
+router.put("/2fa/update", isAuth, rateLimiter, authTFA.postVerifySetupTFA);
+
+router.delete("/2fa/disable", isAuth, rateLimiter, authTFA.postVerifySetupTFA);
+
 router.post(
-  "/2fa/verify-setup/:requestNewBackupCodes",
+  "/2fa/backup-codes",
   isAuth,
   rateLimiter,
   authTFA.postVerifySetupTFA
