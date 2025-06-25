@@ -20,7 +20,7 @@ export const postRegister = async (req, res, next) => {
 };
 
 export const postLogin = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password, TFACode } = req.body;
 
   const user = await User.findOne({ email });
   if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);
@@ -34,6 +34,18 @@ export const postLogin = async (req, res, next) => {
   const matchedPasswords = await bcrypt.compare(password, user.password);
   if (!matchedPasswords)
     return res.jsend.fail({ password: "Invalid password" }, 401);
+
+  if (user.TFA.status === true) {
+    if (!TFACode)
+      return res.jsend.fail({ TFACode: "2FA token is required" }, 401);
+    if (user.TFA.code != TFACode)
+      return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
+    if (user.TFA.expiredIn < Date.now())
+      return res.jsend.fail({ TFACode: "2FA token expired" }, 401);
+
+    user.TFA.code = null;
+    user.TFA.expiredIn = null;
+  }
 
   const userSafeData = JwtHelper.getSafeData(user);
   const refreshToken = JwtHelper.createRefreshToken(userSafeData);
