@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 const ACCESS_TOKEN_EXPIRES_IN = "2h"; // for testing
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 const RESET_TOKEN_EXPIRES_IN = "1h";
+const TEMP_TOKEN_EXPIRES_IN = "10m";
 
 class JwtHelper {
   static getSafeData(user) {
@@ -39,6 +40,13 @@ class JwtHelper {
       RESET_TOKEN_EXPIRES_IN
     );
   }
+  static createTempToken(payload) {
+    return this.createToken(
+      payload,
+      process.env.TEMP_TOKEN_SECRET,
+      TEMP_TOKEN_EXPIRES_IN
+    );
+  }
 
   static verifyToken(token, key) {
     return jwt.verify(token, key);
@@ -52,6 +60,9 @@ class JwtHelper {
   }
   static verifyResetToken(token) {
     return this.verifyToken(token, process.env.RESET_TOKEN_SECRET);
+  }
+  static verifyTempToken(token) {
+    return this.verifyToken(token, process.env.TEMP_TOKEN_SECRET);
   }
 }
 
