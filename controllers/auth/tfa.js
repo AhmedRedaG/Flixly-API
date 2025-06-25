@@ -42,11 +42,21 @@ export const postSetupTFA = async (req, res, next) => {
   });
 };
 
-// verify any setup operations: create new 2fa, update 2fa and generate new backup codes
+// verify any setup operations: enable 2fa, update 2fa, disable 2fa and generate new backup codes
 export const postVerifySetupTFA = async (req, res, next) => {
   const { TFACode } = req.body;
-  const { requireNewBackupCodes } = req.params;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
+
+  const { operation } = req.params;
+  const validOperations = [
+    "newBackupCodes",
+    "disableTFA",
+    "updateTFA",
+    "enableTFA",
+  ];
+  if (!validOperations.includes(operation)) {
+    return res.jsend.fail({ operation: "Invalid operation" });
+  }
 
   const userId = req.user._id;
   const user = await User.findById(userId);
@@ -58,13 +68,14 @@ export const postVerifySetupTFA = async (req, res, next) => {
       404
     );
 
-  if (requireNewBackupCodes) {
-    if (user.TFA.status === false)
-      return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
-  } else {
-    if (user.TFA.status === true)
-      return res.jsend.fail({ TFACode: "2FA already enabled" }, 401);
-  }
+  if (
+    ["newBackupCodes", "disableTFA", "updateTFA"].includes(operation) &&
+    user.TFA.status === false
+  )
+    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
+  if (operation === "enableTFA" && user.TFA.status === true)
+    return res.jsend.fail({ TFACode: "2FA already enabled" }, 401);
+
   if (user.TFA.code != TFACode) {
     user.TFA.attempts++;
     await user.save();
@@ -75,22 +86,26 @@ export const postVerifySetupTFA = async (req, res, next) => {
   if (user.TFA.attempts > 5)
     return res.jsend.fail({ TFACode: "Too many attempts" }, 429);
 
-  const backupCodes = generateBackupCodes();
-  const encryptedBackupCodes = backupCodes.map((BC) => ({
-    code: bcrypt.hashSync(BC.code, 12),
-    used: false,
-  }));
-
-  user.TFA.status = true;
-  user.TFA.code = null;
-  user.TFA.expiredIn = null;
-  user.TFA.attempts = 0;
-  user.TFA.backupCodes = encryptedBackupCodes;
+  let rawBackupCodes = [];
+  if (operation === "disableTFA") {
+    user.TFA.status = false;
+    user.TFA.backupCodes = [];
+  } else {
+    rawBackupCodes = generateBackupCodes();
+    const hashedBackupCodes = rawBackupCodes.map((code) => ({
+      code: bcrypt.hashSync(code.code, 12),
+      used: false,
+    }));
+    user.TFA.status = true;
+    user.TFA.backupCodes = hashedBackupCodes;
+  }
   await user.save();
 
   res.jsend.success({
     message: "2FA setup verified successfully",
-    backupCodes: backupCodes.map((BC) => BC.code),
+    ...(rawBackupCodes.length > 0 && {
+      backupCodes: rawBackupCodes.map((code) => code.code),
+    }),
   });
 };
 
