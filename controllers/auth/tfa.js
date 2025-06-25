@@ -42,8 +42,10 @@ export const postSetupTFA = async (req, res, next) => {
   });
 };
 
+// verify any setup operations: create new 2fa, update 2fa and generate new backup codes
 export const postVerifySetupTFA = async (req, res, next) => {
   const { TFACode } = req.body;
+  const { requireNewBackupCodes } = req.params;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
 
   const userId = req.user._id;
@@ -56,8 +58,13 @@ export const postVerifySetupTFA = async (req, res, next) => {
       404
     );
 
-  if (user.TFA.status === true)
-    return res.jsend.fail({ TFACode: "2FA already enabled" }, 401);
+  if (requireNewBackupCodes) {
+    if (user.TFA.status === false)
+      return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
+  } else {
+    if (user.TFA.status === true)
+      return res.jsend.fail({ TFACode: "2FA already enabled" }, 401);
+  }
   if (user.TFA.code != TFACode) {
     user.TFA.attempts++;
     await user.save();

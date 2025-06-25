@@ -72,7 +72,7 @@ router.post(
 );
 
 router.post(
-  "/2fa/verify-setup",
+  "/2fa/verify-setup/:requestNewBackupCodes",
   isAuth,
   rateLimiter,
   authTFA.postVerifySetupTFA
