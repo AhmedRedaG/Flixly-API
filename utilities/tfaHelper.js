@@ -1,3 +1,5 @@
+import bcrypt from "bcrypt";
+
 export const verifyTFACode = async (user, TFACode, res) => {
   if (user.TFA.code !== TFACode) {
     user.TFA.attempts++;
@@ -43,5 +45,5 @@ export const updateUserTFAData = async (user, disableTFA = false, res) => {
   user.TFA.expiredIn = null;
   user.TFA.attempts = 0;
 
-  return [user, rawBackupCodes];
+  return { user, rawBackupCodes };
 };
