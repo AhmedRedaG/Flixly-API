@@ -103,6 +103,7 @@ export const postRequestTFACode = async (req, res, next) => {
 
   user.TFA.code = TFACode;
   user.TFA.expiredIn = TFAExpiredIn;
+  user.TFA.attempts = 0;
   await user.save();
 
   res.jsend.success({

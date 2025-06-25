@@ -80,6 +80,7 @@ router.post(
 
 router.post(
   "/2fa/request",
+  rateLimiter,
   [validation.email, validationResult],
   authTFA.postRequestTFACode
 );
