@@ -2,6 +2,7 @@ import crypto from "crypto";
 
 import User from "../../models/user.js";
 import { sendTFASms } from "../../utilities/smsSender.js";
+import { generateBackupCodes } from "../../utilities/tfaHelper.js";
 
 const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
 
@@ -30,11 +31,14 @@ export const postEnableTFA = async (req, res, next) => {
   user.phoneNumber = phoneNumber;
   user.TFA.code = TFACode;
   user.TFA.expiredIn = TFAExpiredIn;
+  user.TFA.backupCodes = generateBackupCodes();
+  user.TFA.attempts = 0;
   await user.save();
 
   res.jsend.success({
     phoneNumber,
     expiredIn: TFAExpiredInISO,
+    backupCodes: user.TFA.backupCodes.map((b) => b.code),
   });
 };
 

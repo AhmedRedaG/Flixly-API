@@ -25,6 +25,14 @@ const userSchema = new Schema(
         status: { type: Boolean, default: false },
         code: { type: Number },
         expiredIn: { type: Number },
+        backupCodes: [
+          {
+            code: { type: String },
+            used: { type: Boolean, default: false },
+            _id: false,
+          },
+        ],
+        attempts: { type: Number, default: 0 },
       },
       default: {},
       _id: false,
