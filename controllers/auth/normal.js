@@ -41,7 +41,7 @@ export const postLogin = async (req, res, next) => {
         return res.jsend.fail({ TFACode: "2FA token is required" }, 401);
 
       const backupCodeIndex = user.TFA.backupCodes.findIndex(
-        (BC) => !BC.used && BC.code === backupCode
+        (BC) => !BC.used && bcrypt.compareSync(backupCode, BC.code)
       );
       if (backupCodeIndex === -1)
         return res.jsend.fail({ backupCode: "Backup code is Invalid" }, 401);

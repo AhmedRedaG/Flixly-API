@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 import User from "../../models/user.js";
 import { sendTFASms } from "../../utilities/smsSender.js";
@@ -66,16 +67,22 @@ export const postVerifySetupTFA = async (req, res, next) => {
   if (user.TFA.attempts > 5)
     return res.jsend.fail({ TFACode: "Too many attempts" }, 429);
 
+  const backupCodes = generateBackupCodes();
+  const encryptedBackupCodes = backupCodes.map((BC) => ({
+    code: bcrypt.hashSync(BC.code, 12),
+    used: false,
+  }));
+
   user.TFA.status = true;
   user.TFA.code = null;
   user.TFA.expiredIn = null;
   user.TFA.attempts = 0;
-  user.TFA.backupCodes = generateBackupCodes();
+  user.TFA.backupCodes = encryptedBackupCodes;
   await user.save();
 
   res.jsend.success({
     message: "2FA setup verified successfully",
-    backupCodes: user.TFA.backupCodes.map((b) => b.code),
+    backupCodes: backupCodes.map((BC) => BC.code),
   });
 };
 
