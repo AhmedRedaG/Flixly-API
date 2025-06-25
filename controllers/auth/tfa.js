@@ -31,14 +31,12 @@ export const postEnableTFA = async (req, res, next) => {
   user.phoneNumber = phoneNumber;
   user.TFA.code = TFACode;
   user.TFA.expiredIn = TFAExpiredIn;
-  user.TFA.backupCodes = generateBackupCodes();
   user.TFA.attempts = 0;
   await user.save();
 
   res.jsend.success({
     phoneNumber,
     expiredIn: TFAExpiredInISO,
-    backupCodes: user.TFA.backupCodes.map((b) => b.code),
   });
 };
 
@@ -58,17 +56,27 @@ export const postVerifySetupTFA = async (req, res, next) => {
 
   if (user.TFA.status === true)
     return res.jsend.fail({ TFACode: "2FA already enabled" }, 401);
-  if (user.TFA.code != TFACode)
+  if (user.TFA.code != TFACode) {
+    user.TFA.attempts++;
+    await user.save();
     return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
+  }
   if (user.TFA.expiredIn < Date.now())
     return res.jsend.fail({ TFACode: "2FA token expired" }, 401);
+  if (user.TFA.attempts > 5)
+    return res.jsend.fail({ TFACode: "Too many attempts" }, 429);
 
   user.TFA.status = true;
   user.TFA.code = null;
   user.TFA.expiredIn = null;
+  user.TFA.attempts = 0;
+  user.TFA.backupCodes = generateBackupCodes();
   await user.save();
 
-  res.jsend.success({ message: "2FA setup verified successfully" });
+  res.jsend.success({
+    message: "2FA setup verified successfully",
+    backupCodes: user.TFA.backupCodes.map((b) => b.code),
+  });
 };
 
 export const postRequestTFACode = async (req, res, next) => {
