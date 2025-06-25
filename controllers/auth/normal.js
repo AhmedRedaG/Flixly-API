@@ -38,13 +38,19 @@ export const postLogin = async (req, res, next) => {
   if (user.TFA.status === true) {
     if (!TFACode)
       return res.jsend.fail({ TFACode: "2FA token is required" }, 401);
-    if (user.TFA.code != TFACode)
+    if (user.TFA.code != TFACode) {
+      user.TFA.attempts++;
+      await user.save();
       return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
+    }
     if (user.TFA.expiredIn < Date.now())
       return res.jsend.fail({ TFACode: "2FA token expired" }, 401);
+    if (user.TFA.attempts > 5)
+      return res.jsend.fail({ TFACode: "Too many attempts" }, 429);
 
     user.TFA.code = null;
     user.TFA.expiredIn = null;
+    user.TFA.attempts = 0;
   }
 
   const userSafeData = JwtHelper.getSafeData(user);
