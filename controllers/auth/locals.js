@@ -21,7 +21,7 @@ export const postRegister = async (req, res, next) => {
 };
 
 export const postLogin = async (req, res, next) => {
-  const { email, password, TFACode, backupCode } = req.body;
+  const { email, password } = req.body;
 
   const user = await User.findOne({ email });
   if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);

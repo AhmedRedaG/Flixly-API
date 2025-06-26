@@ -1,9 +1,12 @@
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 import User from "../../models/user.js";
+import JwtHelper from "../../utilities/JwtHelper.js";
+import CookieHelper from "../../utilities/cookieHelper.js";
 import { sendTFASms } from "../../utilities/smsSender.js";
-import { updateUserTFAData, verifyTFACode } from "../../utilities/tfaHelper.js";
 import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
+import { updateUserTFAData, verifyTFACode } from "../../utilities/tfaHelper.js";
 
 const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
 
@@ -156,4 +159,58 @@ export const requestTFACode = async (req, res, next) => {
     )}`,
     expiredIn: TFAExpiredInISO,
   });
+};
+
+export const verifyLoginWithTFA = async (req, res, next) => {
+  const { tempToken, TFACode, backupCode } = req.body;
+  if (!tempToken) return res.jsend.fail({ tempToken: "Missing temp token" });
+
+  let userId;
+  try {
+    const decoded = JwtHelper.verifyTempToken(tempToken);
+    userId = decoded._id;
+  } catch (err) {
+    return res.jsend.fail(
+      {
+        tempToken:
+          err.name === "TokenExpiredError"
+            ? "Temp token expired"
+            : "Temp token invalid",
+      },
+      403
+    );
+  }
+
+  const user = await getUserByIdOrFail(userId, res);
+  if (!user) return;
+
+  if (!TFACode) {
+    if (!backupCode)
+      return res.jsend.fail({ TFACode: "2FA token is required" }, 401);
+
+    const backupCodeIndex = user.TFA.backupCodes.findIndex(
+      (BC) => !BC.used && bcrypt.compareSync(backupCode, BC.code)
+    );
+    if (backupCodeIndex === -1)
+      return res.jsend.fail({ backupCode: "Backup code is Invalid" }, 401);
+
+    user.TFA.backupCodes[backupCodeIndex].used = true;
+  } else {
+    const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
+    if (!verifyTFACodeResult) return;
+  }
+
+  user.TFA.code = null;
+  user.TFA.expiredIn = null;
+  user.TFA.attempts = 0;
+
+  const userSafeData = JwtHelper.getSafeData(user);
+  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
+  CookieHelper.createRefreshTokenCookie(res, refreshToken);
+
+  user.refreshTokens.push(refreshToken);
+  await user.save();
+
+  const accessToken = JwtHelper.createAccessToken(userSafeData);
+  res.jsend.success({ accessToken, user: userSafeData });
 };
