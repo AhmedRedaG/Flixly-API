@@ -7,7 +7,7 @@ import { sendTFASms } from "../../utilities/smsSender.js";
 import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 import { updateUserTFAData, verifyTFACode } from "../../utilities/tfaHelper.js";
 
-const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
+const TFA_DURATION = 1000 * 60 * 5; // 5 minutes
 
 // create 2fa code
 export const setupTFA = async (req, res, next) => {
@@ -121,7 +121,7 @@ export const requestNewBackupCodes = async (req, res) => {
   await user.save();
 
   res.jsend.success({
-    message: "2FA verified successfully",
+    message: "Backup codes regenerated",
     backupCodes: rawBackupCodes.map((code) => code.code),
   });
 };
