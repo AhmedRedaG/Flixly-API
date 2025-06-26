@@ -21,10 +21,24 @@ const userSchema = new Schema(
     resetToken: { type: String },
     TFA: {
       type: {
-        number: { type: String },
-        status: { type: Boolean, default: false },
-        code: { type: Number },
-        expiredIn: { type: Number },
+        method: {
+          type: [{ type: String, enum: ["sms", "totp"] }],
+          default: [],
+        },
+        sms: {
+          status: { type: Boolean, default: false },
+          number: { type: String },
+          code: { type: String },
+          expiredAt: { type: Date },
+          attempts: { type: Number, default: 0 },
+          _id: false,
+        },
+        totp: {
+          status: { type: Boolean, default: false },
+          secret: { type: String },
+          attempts: { type: Number, default: 0 },
+          _id: false,
+        },
         backupCodes: [
           {
             code: { type: String },
@@ -32,7 +46,6 @@ const userSchema = new Schema(
             _id: false,
           },
         ],
-        attempts: { type: Number, default: 0 },
       },
       default: {},
       _id: false,

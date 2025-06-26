@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
+import { totp } from "otplib";
 
 import JwtHelper from "../../utilities/JwtHelper.js";
 import CookieHelper from "../../utilities/cookieHelper.js";
