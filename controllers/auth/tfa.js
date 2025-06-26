@@ -60,7 +60,7 @@ export const enableTFA = async (req, res) => {
 };
 
 export const updateTFA = async (req, res) => {
-  const { TFACode } = req.body;
+  const { TFACode, phoneNumber } = req.body;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
 
   const user = await getUserByIdOrFail(req.user._id, res);
@@ -73,6 +73,7 @@ export const updateTFA = async (req, res) => {
   if (!verifyTFACodeResult) return;
 
   const rawBackupCodes = await updateUserTFAData(user, false, res);
+  user.TFA.number = phoneNumber;
   await user.save();
 
   res.jsend.success({

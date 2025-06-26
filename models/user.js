@@ -19,9 +19,9 @@ const userSchema = new Schema(
     role: { type: String, default: "user" },
     refreshTokens: [String],
     resetToken: { type: String },
-    phoneNumber: { type: String },
     TFA: {
       type: {
+        number: { type: String },
         status: { type: Boolean, default: false },
         code: { type: Number },
         expiredIn: { type: Number },
