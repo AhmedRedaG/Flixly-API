@@ -9,6 +9,7 @@ import * as authTFA from "../controllers/auth/tfa.js";
 
 import validationResult, * as validation from "../middlewares/isValid.js";
 import isAuth from "../middlewares/isAuth.js";
+import tempAuth from "../middlewares/tempAuth.js";
 import rateLimiter from "../middlewares/rateLimiter.js";
 
 const router = Router();
@@ -84,9 +85,9 @@ router.post(
   authTFA.requestNewBackupCodes
 );
 
-router.post("/2fa/request", rateLimiter, authTFA.requestTFACode);
+router.post("/2fa/request", tempAuth, rateLimiter, authTFA.requestTFACode);
 
-router.post("/2fa/verify", rateLimiter, authTFA.verifyLoginWithTFA);
+router.post("/2fa/verify", tempAuth, rateLimiter, authTFA.verifyLoginWithTFA);
 
 router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 

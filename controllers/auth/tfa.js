@@ -127,26 +127,7 @@ export const requestNewBackupCodes = async (req, res) => {
 };
 
 export const requestTFACode = async (req, res, next) => {
-  const { tempToken } = req.body;
-  if (!tempToken) return res.jsend.fail({ tempToken: "Missing temp token" });
-
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyTempToken(tempToken);
-    userId = decoded._id;
-  } catch (err) {
-    return res.jsend.fail(
-      {
-        tempToken:
-          err.name === "TokenExpiredError"
-            ? "Temp token expired"
-            : "Temp token invalid",
-      },
-      403
-    );
-  }
-
-  const user = await getUserByIdOrFail(userId, res);
+  const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
   if (user.TFA.status === false)
@@ -172,26 +153,9 @@ export const requestTFACode = async (req, res, next) => {
 };
 
 export const verifyLoginWithTFA = async (req, res, next) => {
-  const { tempToken, TFACode, backupCode } = req.body;
-  if (!tempToken) return res.jsend.fail({ tempToken: "Missing temp token" });
+  const { TFACode, backupCode } = req.body;
 
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyTempToken(tempToken);
-    userId = decoded._id;
-  } catch (err) {
-    return res.jsend.fail(
-      {
-        tempToken:
-          err.name === "TokenExpiredError"
-            ? "Temp token expired"
-            : "Temp token invalid",
-      },
-      403
-    );
-  }
-
-  const user = await getUserByIdOrFail(userId, res);
+  const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
   if (!TFACode) {
