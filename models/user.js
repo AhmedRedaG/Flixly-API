@@ -16,14 +16,16 @@ const userSchema = new Schema(
       unique: true,
       sparse: true,
     },
-    role: { type: String, default: "user" },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     refreshTokens: [String],
     resetToken: { type: String },
     TFA: {
       type: {
+        status: { type: Boolean, default: false },
         method: {
-          type: [{ type: String, enum: ["sms", "totp"] }],
-          default: [],
+          type: String,
+          enum: ["sms", "totp"],
+          default: null,
         },
         sms: {
           status: { type: Boolean, default: false },
