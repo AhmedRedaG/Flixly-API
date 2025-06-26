@@ -156,7 +156,7 @@ export const requestTFACode = async (req, res, next) => {
   const TFAExpiredIn = Date.now() + TFA_DURATION;
   const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
 
-  const phoneNumber = user.phoneNumber;
+  const phoneNumber = user.TFA.number;
   // await sendTFASms(phoneNumber, TFACode);
   console.log(">>>>>>>>>>>> " + TFACode);
 

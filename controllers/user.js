@@ -1,4 +1,4 @@
-import { getUserByIdOrFail } from "../utilities/dbHelper";
+import { getUserByIdOrFail } from "../utilities/dbHelper.js";
 
 // for testing JWT
 export const getUser = (req, res, next) => {
@@ -10,7 +10,7 @@ export const getUser = (req, res, next) => {
 export const setPhoneNumber = async (req, res, next) => {
   const { phoneNumber } = req.body;
 
-  const user = getUserByIdOrFail(req.user._id);
+  const user = await getUserByIdOrFail(req.user._id);
   if (!user) return;
 
   // cant reset number with 2fa enabled, you can disable it first or update the number using the 2fa code
