@@ -1,5 +1,5 @@
-import JwtHelper from "../../utilities/JwtHelper.js";
-import CookieHelper from "../../utilities/cookieHelper.js";
+import * as JwtHelper from "../../utilities/JwtHelper.js";
+import * as CookieHelper from "../../utilities/cookieHelper.js";
 import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 
 export const postRefresh = async (req, res, next) => {

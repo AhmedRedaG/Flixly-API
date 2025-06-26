@@ -1,4 +1,4 @@
-import JwtHelper from "../utilities/JwtHelper.js";
+import * as JwtHelper from "../utilities/JwtHelper.js";
 
 const isAuth = async (req, res, next) => {
   const authorizationHeader = req.get("Authorization");

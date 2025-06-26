@@ -1,6 +1,6 @@
 import User from "../../models/user.js";
-import JwtHelper from "../../utilities/JwtHelper.js";
-import CookieHelper from "../../utilities/cookieHelper.js";
+import * as JwtHelper from "../../utilities/JwtHelper.js";
+import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const authWithGoogle = async (req, res, next) => {
   const userGoogleId = req.user; // google id only

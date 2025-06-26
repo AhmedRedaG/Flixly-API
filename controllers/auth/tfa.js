@@ -2,8 +2,8 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { totp } from "otplib";
 
-import JwtHelper from "../../utilities/JwtHelper.js";
-import CookieHelper from "../../utilities/cookieHelper.js";
+import * as JwtHelper from "../../utilities/JwtHelper.js";
+import * as CookieHelper from "../../utilities/cookieHelper.js";
 import { sendTFASms } from "../../utilities/smsSender.js";
 import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 import { updateUserTFAData, verifyTFACode } from "../../utilities/tfaHelper.js";
