@@ -52,7 +52,7 @@ router.patch(
 );
 
 router.post(
-  "/request-password-reset",
+  "/reset-password",
   [validation.email, validationResult],
   authPassword.postRequestPasswordReset
 );
@@ -90,6 +90,6 @@ router.post("/2fa/verify", rateLimiter, authTFA.verifyLoginWithTFA);
 
 router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 
-router.post("/logout", authNormal.postLogout);
+router.delete("/logout", authNormal.postLogout);
 
 export default router;
