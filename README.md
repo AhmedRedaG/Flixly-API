@@ -9,6 +9,7 @@ A robust and secure authentication system built with Node.js and Express, featur
 - 🚀 Express.js REST API with proper error handling
 - 📦 MongoDB integration with Mongoose
 - 🔑 Google OAuth 2.0 authentication support
+- 📱 Advanced Two-Factor Authentication (2FA) with SMS, backup codes, and phone management
 - 📧 Password reset with email verification
 - 🔒 Advanced password validation and security
 - 🛡️ Sophisticated rate limiting protection
@@ -56,11 +57,14 @@ MONGODB_URI=your_mongodb_connection_string # MongoDB connection string
 ACCESS_TOKEN_SECRET=your_secret_key        # JWT access token secret
 REFRESH_TOKEN_SECRET=your_secret_key       # JWT refresh token secret
 RESET_TOKEN_SECRET=your_secret_key         # Password reset token secret
+TEMP_TOKEN_SECRET=your_temp_token_secret   # Temp token secret for 2FA
 GOOGLE_CLIENT_ID=your_google_client_id     # Google OAuth client ID
 GOOGLE_CLIENT_SECRET=your_google_secret    # Google OAuth client secret
 SERVER_MAIL=your_email@gmail.com          # Email for sending password reset
 SERVER_MAIL_PASS=your_email_app_password  # Email app password for SMTP
 FRONTEND_URL=http://your-frontend-url     # Frontend URL for reset password page
+VONAGE_API_KEY=your_vonage_key            # SMS provider key
+VONAGE_API_SECRET=your_vonage_secret      # SMS provider secret
 ```
 
 4. Start the development server:
@@ -81,25 +85,40 @@ PORT=3000
 ## Project Structure
 
 ```
-├── app.js                 # Application entry point
+├── app.js
+├── package.json
+├── .env
 ├── config/
-│   └── passport.js       # Passport OAuth configuration
+│   └── passport.js
 ├── controllers/
-│   ├── auth.js           # Authentication controllers
-│   └── user.js           # User data controllers
+│   └── auth/
+│       ├── google.js
+│       ├── locals.js
+│       ├── password.js
+│       ├── refresh.js
+│       └── tfa.js
+│   └── user.js
 ├── middlewares/
-│   ├── isAuth.js         # JWT authorization middleware
-│   ├── isValid.js        # Input validation middleware
-│   └── rateLimiter.js    # Rate limiting middleware
+│   ├── isAuth.js
+│   ├── isValid.js
+│   ├── rateLimiter.js
+│   └── tempAuth.js
 ├── models/
-│   └── user.js           # User database model
+│   └── user.js
+├── public/
+│   └── mailImages/
+│       └── logo.png
 ├── routes/
-│   ├── auth.js           # Authentication routes
-│   └── user.js           # User routes
-└── utilities/
-    ├── JwtHelper.js      # JWT helper class
-    ├── CookieHelper.js   # Cookies helper class
-    └── mailSender.js     # sending mail functions
+│   ├── auth.js
+│   └── user.js
+├── utilities/
+│   ├── cookieHelper.js
+│   ├── dbHelper.js
+│   ├── jwtHelper.js
+│   ├── mailSender.js
+│   ├── smsSender.js
+│   └── tfaHelper.js
+└── README.md
 ```
 
 ## Database Schema
@@ -116,12 +135,25 @@ PORT=3000
     lowercase: true,
     trim: true,
   },
-  password: { type: String }, // Optional for OAuth users
-  googleId: { type: String, unique: true, sparse: true }, // For Google OAuth
+  password: { type: String },
+  googleId: { type: String, unique: true, sparse: true },
   role: { type: String, default: "user" },
-  refreshTokens: [String], // Store active refresh tokens
-  resetToken: { type: String }, // For password reset functionality
-  timestamps: true // Automatically adds createdAt and updatedAt
+  refreshTokens: [String],
+  resetToken: { type: String },
+  TFA: {
+    number: { type: String }, // User's phone number for 2FA
+    status: { type: Boolean, default: false }, // 2FA enabled/disabled
+    code: { type: Number }, // Current 2FA code
+    expiredIn: { type: Number }, // Expiry timestamp for code
+    backupCodes: [
+      {
+        code: { type: String }, // Hashed backup code
+        used: { type: Boolean, default: false },
+      },
+    ],
+    attempts: { type: Number, default: 0 }, // Failed attempts
+  },
+  timestamps: true,
 }
 ```
 
@@ -131,20 +163,12 @@ All API endpoints are prefixed with `/api/v1/`
 
 ## API Endpoints
 
-### Authentication Routes (`/api/v1/auth`)
+### Authentication & 2FA Routes (`/api/v1/auth`)
 
 #### Register a new user
 
-- **POST** `/api/v1/auth/register`
-- **Body:**
-  ```json
-  {
-    "name": "string",
-    "email": "string",
-    "password": "string",
-    "confirmPassword": "string"
-  }
-  ```
+- **POST** `/register`
+- **Body:** `{ name, email, password, confirmPassword }`
 - **Validation:**
   - Name: 3-256 characters, letters and spaces only
   - Email: Valid email format
@@ -152,22 +176,24 @@ All API endpoints are prefixed with `/api/v1/`
   - Confirm Password: Must match password
 - Creates a new user account
 
-#### Login
+#### Login (Step 1)
 
-- **POST** `/auth/login`
-- **Body:** `{ "email": "string", "password": "string" }`
-- Returns access token and sets refresh token cookie
+- **POST** `/login`
+- **Body:** `{ email, password }`
+- **Response:**
+  - If 2FA enabled: `{ phoneNumber, tempToken }` (use `/2fa/request` and `/2fa/verify`)
+  - If not: `{ accessToken, user }`
 
 #### Google OAuth Authentication
 
-- **GET** `/auth/google`
+- **GET** `/google`
 - Initiates Google OAuth flow
 - Redirects to Google login page
 - No request body needed
 
 #### Google OAuth Callback
 
-- **GET** `/auth/google/callback`
+- **GET** `/google/callback`
 - Handles Google OAuth callback
 - Creates/authenticates user
 - Sets refresh token in HTTP-only cookie
@@ -175,7 +201,7 @@ All API endpoints are prefixed with `/api/v1/`
 
 #### Request Password Reset
 
-- **POST** `/auth/request-password-reset`
+- **POST** `/reset-password`
 - **Body:** `{ "email": "string" }`
 - Sends password reset link to email
 - Rate limited for security
@@ -183,7 +209,7 @@ All API endpoints are prefixed with `/api/v1/`
 
 #### Reset Password with Token
 
-- **PATCH** `/auth/reset-password/:resetToken`
+- **PATCH** `/reset-password/:resetToken`
 - **Params:** `resetToken` from email link
 - **Body:** `{ "password": "string" }`
 - Validates reset token (1-hour expiration)
@@ -193,7 +219,7 @@ All API endpoints are prefixed with `/api/v1/`
 
 #### Change Password (Authenticated)
 
-- **PATCH** `/auth/change-password`
+- **PATCH** `/change-password`
 - **Headers:** `Authorization: Bearer <access_token>`
 - **Body:**
   ```json
@@ -207,9 +233,22 @@ All API endpoints are prefixed with `/api/v1/`
 - Invalidates all refresh tokens
 - Returns success message
 
+#### 2FA Setup & Management
+
+- **POST** `/2fa/setup` (send code to phone, must be authenticated)
+- **POST** `/2fa/enable` (verify code, enable 2FA, returns backup codes)
+- **PUT** `/2fa/update` (change phone, verify code, returns new backup codes)
+- **DELETE** `/2fa/disable` (verify code, disable 2FA)
+- **POST** `/2fa/backup-codes` (regenerate backup codes, verify code)
+
+#### 2FA Login Flow
+
+- **POST** `/2fa/request` (with tempToken, send code to phone)
+- **POST** `/2fa/verify` (with tempToken, verify code or backup code, returns access/refresh tokens)
+
 #### Refresh Token
 
-- **POST** `/auth/refresh`
+- **POST** `/refresh`
 - **Cookies:** Required refresh token
 - Issues new access token
 - Rotates refresh token
@@ -217,34 +256,39 @@ All API endpoints are prefixed with `/api/v1/`
 
 #### Logout
 
-- **POST** `/auth/logout`
+- **DELETE** `/logout`
 - **Cookies:** Required refresh token
 - **Query Params:** `full=true` (optional, logs out from all devices)
 - Invalidates refresh token(s)
 - Clears refresh token cookie
 
-### Protected Routes (`/api/v1`)
+### Protected Routes (`/api/v1/user`)
 
 #### Get User Data
 
-- **GET** `/api/v1/user`
+- **GET** `/user`
 - **Headers:** `Authorization: Bearer <access_token>`
 - Returns the current user's data
 - Protected by JWT authentication middleware
 
 ## Security Features
 
-1. **Complete Token Management**
+1. **Two-Factor Authentication (2FA)**
+   - SMS-based 2FA with phone verification
+   - One-time backup codes for account recovery
+   - Temp tokens for secure 2FA login flow
+   - Phone number management and update
+   - Attempts tracking and brute-force protection
 
-   - Access Token: 15 minutes expiration
+2. **Complete Token Management**
+   - Access Token: 2 hours expiration (configurable)
    - Refresh Token: 7 days expiration
-   - Token rotation on every refresh
-   - Multi-device support (stores last 5 tokens)
+   - Temp Token: 10 minutes expiration (for 2FA)
+   - Token rotation and multi-device support
    - Selective logout (single device or all devices)
    - Automatic token cleanup and management
 
-2. **HTTP-only Cookie Management**
-
+3. **HTTP-only Cookie Management**
    - Refresh tokens in HTTP-only cookies
    - Environment-based security settings:
      - Strict SameSite in production
@@ -253,34 +297,25 @@ All API endpoints are prefixed with `/api/v1/`
    - 7-day cookie expiration
    - Protected against XSS attacks
 
-3. **Rate Limiting Protection**
-
-   - 5 attempts per 15-minute window
-   - Applies to all authentication endpoints
+4. **Rate Limiting Protection**
+   - 5 attempts per 15-minute window (configurable)
+   - Applies to all authentication and 2FA endpoints
    - Standardized error messages
-   - Protection against brute force
+   - Protection against brute force and abuse
 
-4. **Input Validation & Sanitization**
-
+5. **Input Validation & Sanitization**
    - Name: 3-256 characters, letters and spaces
    - Email: Validation and normalization
-   - Password:
-     - Strong password requirements
-     - Maximum length of 64 characters
-     - Special characters required
+   - Password: Strong password requirements, max 64 chars
+   - Phone: International format validation
    - Password confirmation matching
 
-5. **Token Verification & Authorization**
-
-   - Bearer token format validation
+6. **Token Verification & Authorization**
+   - Bearer, refresh, reset, and temp token validation
    - Proper token expiration handling
-   - Clear error messages for:
-     - Missing authorization
-     - Invalid token format
-     - Expired tokens
-     - Invalid tokens
+   - Clear error messages for missing/invalid/expired tokens
 
-6. **Additional Security Measures**
+7. **Additional Security Measures**
    - CORS protection
    - Helmet security headers
    - Express security best practices
