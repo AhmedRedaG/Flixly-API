@@ -126,23 +126,34 @@ export const requestNewBackupCodes = async (req, res) => {
 };
 
 export const requestTFACode = async (req, res, next) => {
-  const { email } = req.body;
+  const { tempToken } = req.body;
+  if (!tempToken) return res.jsend.fail({ tempToken: "Missing temp token" });
+
+  let userId;
+  try {
+    const decoded = JwtHelper.verifyTempToken(tempToken);
+    userId = decoded._id;
+  } catch (err) {
+    return res.jsend.fail(
+      {
+        tempToken:
+          err.name === "TokenExpiredError"
+            ? "Temp token expired"
+            : "Temp token invalid",
+      },
+      403
+    );
+  }
+
+  const user = await getUserByIdOrFail(userId, res);
+  if (!user) return;
+
+  if (user.TFA.status === false)
+    return res.jsend.fail({ phoneNumber: "2FA not enabled" }, 401);
 
   const TFACode = crypto.randomInt(100000, 999999);
   const TFAExpiredIn = Date.now() + TFA_DURATION;
   const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
-
-  const user = await User.findOne({ email });
-  if (!user)
-    return res.jsend.fail(
-      {
-        user: "No user found",
-      },
-      404
-    );
-
-  if (user.TFA.status === false)
-    return res.jsend.fail({ phoneNumber: "2FA not enabled" }, 401);
 
   const phoneNumber = user.phoneNumber;
   // await sendTFASms(phoneNumber, TFACode);
@@ -154,9 +165,7 @@ export const requestTFACode = async (req, res, next) => {
   await user.save();
 
   res.jsend.success({
-    message: `2FA send verified successfully to **** ****${phoneNumber.slice(
-      8
-    )}`,
+    message: `2FA send verified successfully to *******${phoneNumber.slice(9)}`,
     expiredIn: TFAExpiredInISO,
   });
 };
