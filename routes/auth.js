@@ -78,7 +78,7 @@ router.put(
 router.delete("/2fa/disable", isAuth, rateLimiter, authTFA.disableTFA);
 
 router.post(
-  "/2fa/request-backup-codes",
+  "/2fa/backup-codes",
   isAuth,
   rateLimiter,
   authTFA.requestNewBackupCodes
