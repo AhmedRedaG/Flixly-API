@@ -7,10 +7,18 @@ import { sendResetPasswordMail } from "../../utilities/mailSender.js";
 import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
 
 export const patchChangePassword = async (req, res, next) => {
-  const { oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword, TFACode } = req.body;
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
+
+  if (user.TFA.status === true) {
+    if (!TFACode)
+      return res.jsend.fail({ TFACode: "2FA code is required" }, 401);
+
+    const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
+    if (!verifyTFACodeResult) return;
+  }
 
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords)
