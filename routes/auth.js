@@ -63,17 +63,17 @@ router.patch(
   authPassword.patchResetPassword
 );
 
-router.post(
-  "/2fa/setup",
-  isAuth,
-  rateLimiter,
-  [validation.phoneNumber, validationResult],
-  authTFA.setupTFA
-);
+router.post("/2fa/setup", isAuth, rateLimiter, authTFA.setupTFA);
 
 router.post("/2fa/enable", isAuth, rateLimiter, authTFA.enableTFA);
 
-router.put("/2fa/update", isAuth, rateLimiter, authTFA.updateTFA);
+router.put(
+  "/2fa/update",
+  isAuth,
+  rateLimiter,
+  [validation.phoneNumber, validationResult],
+  authTFA.updateTFA
+);
 
 router.delete("/2fa/disable", isAuth, rateLimiter, authTFA.disableTFA);
 
@@ -84,12 +84,9 @@ router.post(
   authTFA.requestNewBackupCodes
 );
 
-router.post(
-  "/2fa",
-  rateLimiter,
-  [validation.email, validationResult],
-  authTFA.requestTFACode
-);
+router.post("/2fa/request", rateLimiter, authTFA.requestTFACode);
+
+router.post("/2fa/verify", rateLimiter, authTFA.verifyLoginWithTFA);
 
 router.post("/refresh", rateLimiter, authRefresh.postRefresh);
 
