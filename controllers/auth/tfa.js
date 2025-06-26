@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 
-import User from "../../models/user.js";
 import JwtHelper from "../../utilities/JwtHelper.js";
 import CookieHelper from "../../utilities/cookieHelper.js";
 import { sendTFASms } from "../../utilities/smsSender.js";
@@ -10,28 +9,29 @@ import { updateUserTFAData, verifyTFACode } from "../../utilities/tfaHelper.js";
 
 const TFA_DURATION = 1000 * 60 + 3; // 3 minutes
 
-// create and update 2fa
+// create 2fa code
 export const setupTFA = async (req, res, next) => {
-  const { phoneNumber } = req.body;
+  const user = await getUserByIdOrFail(req.user._id, res);
+  if (!user) return;
 
   const TFACode = crypto.randomInt(100000, 999999);
   const TFAExpiredIn = Date.now() + TFA_DURATION;
   const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
 
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
+  const phoneNumber = user.TFA.number;
+  if (!phoneNumber)
+    return res.jsend.fail({ phoneNumber: "No phone number founded" });
 
   // await sendTFASms(phoneNumber, TFACode);
   console.log(">>>>>>>>>>>> " + TFACode);
 
-  user.phoneNumber = phoneNumber;
   user.TFA.code = TFACode;
   user.TFA.expiredIn = TFAExpiredIn;
   user.TFA.attempts = 0;
   await user.save();
 
   res.jsend.success({
-    phoneNumber,
+    message: `2FA send verified successfully to *******${phoneNumber.slice(9)}`,
     expiredIn: TFAExpiredInISO,
   });
 };
