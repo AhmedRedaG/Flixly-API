@@ -64,11 +64,47 @@ router.patch(
   authPassword.patchResetPassword
 );
 
-router.post("/2fa/setup", isAuth, rateLimiter, authTFA.setupTFA);
+router.put(
+  "/2fa/setup/sms",
+  isAuth,
+  rateLimiter,
+  [validation.phoneNumber, validationResult],
+  authTFA.setupTFASms
+);
 
-router.post("/2fa/enable", isAuth, rateLimiter,[validation.TFAInput, validationResult], authTFA.enableTFA);
+router.put("/2fa/setup/totp", isAuth, rateLimiter, authTFA.setupTFATotp);
 
-router.delete("/2fa/disable", isAuth, rateLimiter, [validation.TFAInput, validationResult],authTFA.disableTFA);
+router.post(
+  "/2fa/setup/verify",
+  isAuth,
+  rateLimiter,
+  [validation.TFAInput, validationResult],
+  authTFA.verifySetupTFA
+);
+
+router.delete(
+  "/2fa/setup/remove",
+  isAuth,
+  rateLimiter,
+  [validation.TFAInput, validationResult],
+  authTFA.removeSetupTFA
+);
+
+router.post(
+  "/2fa/enable",
+  isAuth,
+  rateLimiter,
+  [validation.TFAInput, validationResult],
+  authTFA.enableTFA
+);
+
+router.delete(
+  "/2fa/disable",
+  isAuth,
+  rateLimiter,
+  [validation.TFAInput, validationResult],
+  authTFA.disableTFA
+);
 
 router.post(
   "/2fa/backup-codes",
@@ -77,7 +113,14 @@ router.post(
   authTFA.requestNewBackupCodes
 );
 
-router.post("/2fa/request", tempAuth, rateLimiter, ,authTFA.requestTFACode);
+router.post("/2fa/request", isAuth, rateLimiter, authTFA.requestSmsTFACode);
+
+router.post(
+  "/2fa/temp-request",
+  tempAuth,
+  rateLimiter,
+  authTFA.requestSmsTFACode
+);
 
 router.post("/2fa/verify", tempAuth, rateLimiter, authTFA.verifyLoginWithTFA);
 

@@ -47,9 +47,6 @@ export const setupTFATotp = async (req, res, next) => {
 
 export const verifySetupTFA = async (req, res) => {
   const { TFACode, method } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-  if (!method || !["sms", "totp"].includes(method))
-    return res.jsend.fail({ method: "Method missing or invalid" });
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
@@ -67,7 +64,6 @@ export const verifySetupTFA = async (req, res) => {
   res.jsend.success();
 };
 
-// create 2fa code
 export const generateSmsTFACode = async (req, res, next) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
@@ -94,7 +90,7 @@ export const generateSmsTFACode = async (req, res, next) => {
   });
 };
 
-export const removeTFASetup = async (req, res) => {
+export const removeSetupTFA = async (req, res) => {
   const { TFACode, method } = req.body;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
   if (!method || !["sms", "totp"].includes(method))
@@ -195,24 +191,24 @@ export const requestNewBackupCodes = async (req, res) => {
   });
 };
 
-export const requestTFACode = async (req, res, next) => {
+export const requestSmsTFACode = async (req, res, next) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
-  if (user.TFA.status === false)
+  if (user.TFA.sms.status === false)
     return res.jsend.fail({ phoneNumber: "2FA not enabled" }, 401);
 
   const TFACode = crypto.randomInt(100000, 999999);
   const TFAExpiredIn = Date.now() + TFA_DURATION;
   const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
 
-  const phoneNumber = user.TFA.number;
+  const phoneNumber = user.TFA.sms.number;
   // await sendTFASms(phoneNumber, TFACode);
   console.log(">>>>>>>>>>>> " + TFACode);
 
-  user.TFA.code = TFACode;
-  user.TFA.expiredIn = TFAExpiredIn;
-  user.TFA.attempts = 0;
+  user.TFA.sms.code = TFACode;
+  user.TFA.sms.expiredIn = TFAExpiredIn;
+  user.TFA.sms.attempts = 0;
   await user.save();
 
   res.jsend.success({
