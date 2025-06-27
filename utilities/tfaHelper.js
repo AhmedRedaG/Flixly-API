@@ -36,7 +36,7 @@ export const verifyTFACode = async (user, TFACode, method, res) => {
   if (method === "totp") return verifySmsCode(user.TFA.totp, TFACode, res);
 };
 
-const generateBackupCodes = () => {
+const generateRawCodes = () => {
   // 8 backup codes, 8 digits each
   return Array.from({ length: 8 }, () => ({
     code: Math.floor(10000000 + Math.random() * 90000000).toString(),
@@ -44,25 +44,22 @@ const generateBackupCodes = () => {
   }));
 };
 
-export const updateUserTFAData = async (user, disableTFA = false, res) => {
-  let rawBackupCodes = [];
-  if (disableTFA) {
-    user.TFA.status = false;
-    user.TFA.backupCodes = [];
-  } else {
-    rawBackupCodes = generateBackupCodes();
-    const hashedBackupCodes = rawBackupCodes.map((code) => ({
-      code: bcrypt.hashSync(code.code, 10),
-      used: false,
-    }));
-    user.TFA.status = true;
-    user.TFA.backupCodes = hashedBackupCodes;
-  }
+const hashRwwCodes = (rawCodes) => {
+  return rawCodes.map((code) => ({
+    code: bcrypt.hashSync(code.code, 10),
+    used: false,
+  }));
+};
+
+export const generateHashSaveBackupCodes = async (user, res) => {
+  const rawBackupCodes = generateRawCodes();
+  const hashedBackupCodes = hashRwwCodes(rawBackupCodes);
+  user.TFA.backupCodes = hashedBackupCodes;
 
   return rawBackupCodes;
 };
 
-export const resetSmsData = (user) => {
+export const resetSmsVerificationData = (user) => {
   user.TFA.sms.code = null;
   user.TFA.sms.expiredIn = null;
   user.TFA.sms.attempts = 0;
