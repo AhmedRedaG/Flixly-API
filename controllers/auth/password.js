@@ -16,8 +16,13 @@ export const patchChangePassword = async (req, res, next) => {
     if (!TFACode)
       return res.jsend.fail({ TFACode: "2FA code is required" }, 401);
 
-    const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
-    if (!verifyTFACodeResult) return;
+    const isVerifiedCode = await verifyTFACode(
+      user,
+      TFACode,
+      user.TFA.method,
+      res
+    );
+    if (!isVerifiedCode) return;
   }
 
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
