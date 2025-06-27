@@ -50,7 +50,7 @@ const hashRwwCodes = (rawCodes) => {
   }));
 };
 
-export const generateHashSaveBackupCodes = async (user, res) => {
+export const generateHashSaveBackupCodes = async (user) => {
   const rawBackupCodes = generateRawCodes();
   const hashedBackupCodes = hashRwwCodes(rawBackupCodes);
   user.TFA.backupCodes = hashedBackupCodes;
