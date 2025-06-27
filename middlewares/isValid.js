@@ -38,6 +38,11 @@ export const phoneNumber = body("phoneNumber", "Phone number must be valid")
   .trim()
   .isMobilePhone("any", { strictMode: true });
 
+export const TFAInput = [
+  body("TFACode", "Invalid 2FA code").trim().notEmpty().isNumeric(),
+  body("method", "Invalid 2FA method").trim().notEmpty().isIn(["sms", "totp"]),
+];
+
 const result = (req, res, next) => {
   const validationErrors = validationResult(req);
   if (!validationErrors.isEmpty()) {

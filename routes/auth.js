@@ -66,17 +66,9 @@ router.patch(
 
 router.post("/2fa/setup", isAuth, rateLimiter, authTFA.setupTFA);
 
-router.post("/2fa/enable", isAuth, rateLimiter, authTFA.enableTFA);
+router.post("/2fa/enable", isAuth, rateLimiter,[validation.TFAInput, validationResult], authTFA.enableTFA);
 
-router.put(
-  "/2fa/update",
-  isAuth,
-  rateLimiter,
-  [validation.phoneNumber, validationResult],
-  authTFA.updateTFA
-);
-
-router.delete("/2fa/disable", isAuth, rateLimiter, authTFA.disableTFA);
+router.delete("/2fa/disable", isAuth, rateLimiter, [validation.TFAInput, validationResult],authTFA.disableTFA);
 
 router.post(
   "/2fa/backup-codes",
@@ -85,7 +77,7 @@ router.post(
   authTFA.requestNewBackupCodes
 );
 
-router.post("/2fa/request", tempAuth, rateLimiter, authTFA.requestTFACode);
+router.post("/2fa/request", tempAuth, rateLimiter, ,authTFA.requestTFACode);
 
 router.post("/2fa/verify", tempAuth, rateLimiter, authTFA.verifyLoginWithTFA);
 
