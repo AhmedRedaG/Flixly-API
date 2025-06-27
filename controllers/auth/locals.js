@@ -38,7 +38,7 @@ export const postLogin = async (req, res, next) => {
 
   if (user.TFA.status === true) {
     const tempToken = JwtHelper.createTempToken({ _id: user._id });
-    return res.jsend.fail({ phoneNumber: user.phoneNumber, tempToken }, 401);
+    return res.jsend.fail({ method: user.TFA.method, tempToken }, 401);
   }
 
   const userSafeData = JwtHelper.getSafeData(user);
