@@ -131,8 +131,11 @@ export const enableTFA = async (req, res) => {
   const isVerifiedCode = await verifyTFACode(user, TFACode, method, res);
   if (!isVerifiedCode) return;
 
+  if (user.TFA.status === true && user.TFA.method === method)
+    return res.jsend.fail({ method: `${method} 2FA already enabled` }, 401);
+
   if (user.TFA[method].status === false)
-    return res.jsend.fail({ TFACode: `${method} 2FA is not verified` }, 401);
+    return res.jsend.fail({ method: `${method} 2FA is not verified` }, 401);
 
   const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
   tfaHelper.resetVerificationCycleData(user, method);
@@ -142,6 +145,32 @@ export const enableTFA = async (req, res) => {
   await user.save();
 
   res.jsend.success({ backupCodes });
+};
+
+export const disableTFA = async (req, res) => {
+  const { TFACode, method } = req.body;
+  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
+  if (!method || !["sms", "totp"].includes(method))
+    return res.jsend.fail({ method: "Method missing or invalid" });
+
+  const user = await getUserByIdOrFail(req.user._id, res);
+  if (!user) return;
+
+  const isVerifiedCode = await verifyTFACode(user, TFACode, method, res);
+  if (!isVerifiedCode) return;
+
+  if (user.TFA.status === false)
+    return res.jsend.fail({ status: `2FA already disabled` }, 401);
+
+  if (user.TFA.method !== method)
+    return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
+
+  tfaHelper.disableTFA(user);
+  tfaHelper.resetVerificationCycleData(user, method);
+
+  await user.save();
+
+  res.jsend.success();
 };
 
 export const requestNewBackupCodes = async (req, res) => {
