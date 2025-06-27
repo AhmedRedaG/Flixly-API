@@ -94,100 +94,29 @@ export const generateSmsTFACode = async (req, res, next) => {
   });
 };
 
-export const updateTFASms = async (req, res) => {
-  const { TFACode, phoneNumber } = req.body;
+export const unSetupTFA = async (req, res) => {
+  const { TFACode, method } = req.body;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
+  if (!method || !["sms", "totp"].includes(method))
+    return res.jsend.fail({ method: "Method missing or invalid" });
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
-  if (user.TFA.sms.status === false)
-    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
+  if (user.TFA[method].status === false)
+    return res.jsend.fail({ TFACode: `${method} 2FA already not setup` }, 401);
 
-  const isVerifiedCode = await verifyTFACode(user, TFACode, res);
+  const isVerifiedCode = await verifyTFACode(user, TFACode, method, res);
   if (!isVerifiedCode) return;
 
-  const rawBackupCodes = await updateUserTFAData(user, false, res);
-  user.TFA.sms.number = phoneNumber;
+  if (user.TFA.status === true && user.TFA.method === method)
+    tfaHelper.disableTFA();
+
+  tfaHelper.resetVerificationCycleData(user, method);
+  user.TFA[method].status === false;
   await user.save();
 
-  res.jsend.success({
-    message: "2FA updated successfully",
-    backupCodes: rawBackupCodes.map((code) => code.code),
-  });
-};
-
-export const updateTFATotp = async (req, res) => {
-  const { TFACode } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  if (user.TFA.totp.status === false)
-    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
-
-  const secret = user.TFA.totp.secret;
-  const isVerifiedCode = totp.check(TFACode, secret);
-  if (!isVerifiedCode)
-    return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
-
-  secret = authenticator.generateSecret(32);
-  user.TFA.totp.secret = secret;
-  await user.save();
-
-  res.jsend.success({
-    message: "2FA enabled successfully",
-    secret,
-    // backupCodes: rawBackupCodes.map((code) => code.code),
-  });
-};
-
-export const disableTFASms = async (req, res) => {
-  const { TFACode } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  if (user.TFA.sms.status === false)
-    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
-
-  const isVerifiedCode = await verifyTFACode(user, TFACode, res);
-  if (!isVerifiedCode) return;
-
-  // disableTFA = true
-  await updateUserTFAData(user, true, res);
-  await user.save();
-
-  res.jsend.success({
-    message: "2FA disabled successfully",
-  });
-};
-
-export const disableTFATotp = async (req, res) => {
-  const { TFACode } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  if (user.TFA.totp.status === false)
-    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
-
-  const secret = user.TFA.totp.secret;
-  const isVerifiedCode = totp.check(TFACode, secret);
-  if (!isVerifiedCode)
-    return res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
-
-  // disableTFA = true
-  user.TFA.totp.status = false;
-  user.TFA.totp.secret = null;
-  await user.save();
-
-  res.jsend.success({
-    message: "2FA disabled successfully",
-  });
+  res.jsend.success();
 };
 
 export const requestNewBackupCodes = async (req, res) => {

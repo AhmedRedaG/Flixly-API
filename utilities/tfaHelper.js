@@ -58,7 +58,7 @@ export const generateHashSaveBackupCodes = async (user, res) => {
   return rawBackupCodes.map((codeObj) => codeObj.code);
 };
 
-const resetVerificationCycleData = (user, method) => {
+export const resetVerificationCycleData = (user, method) => {
   if (method === "sms") {
     user.TFA.sms.code = null;
     user.TFA.sms.expiredIn = null;
@@ -67,4 +67,10 @@ const resetVerificationCycleData = (user, method) => {
   if (method === "totp") {
     user.TFA.totp.attempts = 0;
   }
+};
+
+export const disableTFA = (user) => {
+  user.TFA.status = false;
+  user.TFA.method = null;
+  user.TFA.backupCodes = [];
 };
