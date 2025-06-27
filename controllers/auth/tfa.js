@@ -64,32 +64,6 @@ export const verifySetupTFA = async (req, res) => {
   res.jsend.success();
 };
 
-export const generateSmsTFACode = async (req, res, next) => {
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  const TFACode = crypto.randomInt(100000, 999999);
-  const TFAExpiredIn = Date.now() + TFA_DURATION;
-  const TFAExpiredInISO = new Date(TFAExpiredIn).toISOString();
-
-  const phoneNumber = user.TFA.sms.number;
-  if (!phoneNumber)
-    return res.jsend.fail({ phoneNumber: "No phone number founded" });
-
-  // await sendTFASms(phoneNumber, TFACode);
-  console.log(">>>>>>>>>>>> " + TFACode);
-
-  user.TFA.sms.code = TFACode;
-  user.TFA.sms.expiredIn = TFAExpiredIn;
-  user.TFA.sms.attempts = 0;
-  await user.save();
-
-  res.jsend.success({
-    message: `2FA send verified successfully to *******${phoneNumber.slice(9)}`,
-    expiredIn: TFAExpiredInISO,
-  });
-};
-
 export const removeSetupTFA = async (req, res) => {
   const { TFACode, method } = req.body;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
@@ -167,6 +141,18 @@ export const disableTFA = async (req, res) => {
   await user.save();
 
   res.jsend.success();
+};
+
+export const requestTFAMethod = async (req, res) => {
+  const user = await getUserByIdOrFail(req.user._id, res);
+  if (!user) return;
+
+  if (user.TFA.status === false)
+    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
+
+  method = user.TFA.method;
+
+  res.jsend.success({ method });
 };
 
 export const requestBackupCodes = async (req, res) => {

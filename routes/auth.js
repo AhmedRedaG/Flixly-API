@@ -114,6 +114,8 @@ router.post(
   authTFA.requestBackupCodes
 );
 
+router.post("/2fa/method", isAuth, rateLimiter, authTFA.requestTFAMethod);
+
 router.post("/2fa/request", isAuth, rateLimiter, authTFA.requestSmsTFACode);
 
 router.post(
