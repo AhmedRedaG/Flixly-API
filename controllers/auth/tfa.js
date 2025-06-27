@@ -61,7 +61,7 @@ export const verifySetupTFA = async (req, res) => {
   if (!isVerifiedCode) return;
 
   tfaHelper.resetVerificationCycleData(user, method);
-  user.TFA[method].status === true;
+  user.TFA[method].status = true;
   await user.save();
 
   res.jsend.success();
@@ -94,7 +94,7 @@ export const generateSmsTFACode = async (req, res, next) => {
   });
 };
 
-export const unSetupTFA = async (req, res) => {
+export const removeTFASetup = async (req, res) => {
   const { TFACode, method } = req.body;
   if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
   if (!method || !["sms", "totp"].includes(method))
