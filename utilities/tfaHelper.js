@@ -38,15 +38,14 @@ export const verifyTFACode = async (user, TFACode, method, res) => {
 
 const generateRawCodes = () => {
   // 8 backup codes, 8 digits each
-  return Array.from({ length: 8 }, () => ({
-    code: Math.floor(10000000 + Math.random() * 90000000).toString(),
-    used: false,
-  }));
+  return Array.from({ length: 8 }, () =>
+    Math.floor(10000000 + Math.random() * 90000000).toString()
+  );
 };
 
 const hashRwwCodes = (rawCodes) => {
   return rawCodes.map((code) => ({
-    code: bcrypt.hashSync(code.code, 10),
+    code: bcrypt.hashSync(code, 10),
     used: false,
   }));
 };
@@ -56,11 +55,16 @@ export const generateHashSaveBackupCodes = async (user, res) => {
   const hashedBackupCodes = hashRwwCodes(rawBackupCodes);
   user.TFA.backupCodes = hashedBackupCodes;
 
-  return rawBackupCodes;
+  return rawBackupCodes.map((codeObj) => codeObj.code);
 };
 
-export const resetSmsVerificationData = (user) => {
-  user.TFA.sms.code = null;
-  user.TFA.sms.expiredIn = null;
-  user.TFA.sms.attempts = 0;
+const resetVerificationCycleData = (user, method) => {
+  if (method === "sms") {
+    user.TFA.sms.code = null;
+    user.TFA.sms.expiredIn = null;
+    user.TFA.sms.attempts = 0;
+  }
+  if (method === "totp") {
+    user.TFA.totp.attempts = 0;
+  }
 };
