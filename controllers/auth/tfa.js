@@ -169,9 +169,8 @@ export const disableTFA = async (req, res) => {
   res.jsend.success();
 };
 
-export const requestNewBackupCodes = async (req, res) => {
-  const { TFACode } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
+export const requestBackupCodes = async (req, res) => {
+  const { TFACode, method } = req.body;
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
@@ -179,15 +178,20 @@ export const requestNewBackupCodes = async (req, res) => {
   if (user.TFA.status === false)
     return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
 
-  const verifyTFACodeResult = await verifyTFACode(user, TFACode, res);
+  if (user.TFA.method !== method)
+    return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
+
+  const verifyTFACodeResult = await verifyTFACode(user, TFACode, method, res);
   if (!verifyTFACodeResult) return;
 
-  const rawBackupCodes = await updateUserTFAData(user, false, res);
+  const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
+  tfaHelper.resetVerificationCycleData(user, method);
+
   await user.save();
 
   res.jsend.success({
     message: "Backup codes regenerated",
-    backupCodes: rawBackupCodes.map((code) => code.code),
+    backupCodes,
   });
 };
 

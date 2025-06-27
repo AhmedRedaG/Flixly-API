@@ -110,7 +110,8 @@ router.post(
   "/2fa/backup-codes",
   isAuth,
   rateLimiter,
-  authTFA.requestNewBackupCodes
+  [validation.TFAInput, validationResult],
+  authTFA.requestBackupCodes
 );
 
 router.post("/2fa/request", isAuth, rateLimiter, authTFA.requestSmsTFACode);
