@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
-import { totp, authenticator } from "otplib";
+import { authenticator } from "otplib";
 
 import * as JwtHelper from "../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
@@ -83,7 +83,7 @@ export const removeSetupTFA = async (req, res) => {
     tfaHelper.disableTFA();
 
   tfaHelper.resetVerificationCycleData(user, method);
-  user.TFA[method].status === false;
+  user.TFA[method].status = false;
   await user.save();
 
   res.jsend.success();
