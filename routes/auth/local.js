@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import * as authNormal from "../../controllers/auth/local.js";
+import * as authLocal from "../../controllers/auth/local.js";
 import validationResult, * as validation from "../../middlewares/isValid.js";
 import rateLimiter from "../../middlewares/rateLimiter.js";
 
@@ -17,7 +17,7 @@ router.post(
     validation.confirmPassword,
     validationResult,
   ],
-  authNormal.postRegister
+  authLocal.postRegister
 );
 
 // auth/local/login
@@ -25,13 +25,13 @@ router.post(
   "/login",
   rateLimiter,
   [validation.email, validation.password, validationResult],
-  authNormal.postLogin
+  authLocal.postLogin
 );
 
 // auth/local/refresh
-router.post("/refresh", rateLimiter, authLocals.postRegister);
+router.post("/refresh", rateLimiter, authLocal.postRefresh);
 
 // auth/local/logout
-router.delete("/logout", authNormal.postLogout);
+router.delete("/logout", authLocal.postLogout);
 
 export default router;
