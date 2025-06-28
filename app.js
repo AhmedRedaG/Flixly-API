@@ -10,6 +10,7 @@ import "./config/passport.js";
 import authRouter from "./routes/auth/index.js";
 import userRouter from "./routes/user.js";
 import rateLimiter from "./middlewares/rateLimiter.js";
+import requestDurationLogger from "./middlewares/requestDurationLogger.js";
 
 const app = express();
 app.use(cors());
@@ -20,19 +21,7 @@ app.use(passport.initialize());
 app.use(jsendMiddleware());
 
 app.use(rateLimiter);
-
-app.use((req, res, next) => {
-  const start = Date.now();
-
-  res.on("finish", () => {
-    const end = Date.now();
-    const duration = end - start;
-
-    console.log(`${req.ip} ${req.method} ${req.originalUrl} => ${duration}ms`);
-  });
-
-  next();
-});
+app.use(requestDurationLogger);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
