@@ -21,22 +21,22 @@ router.put(
 // auth/tfa/setup/totp
 router.put("/setup/totp", isAuth, rateLimiter, authTFA.setupTFATotp);
 
-// auth/tfa/setup/verify
+// auth/tfa/setup
 router.post(
-  "/setup/verify",
+  "/setup",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.verifySetupTFA
 );
 
-// auth/tfa/setup/remove
+// auth/tfa/setup
 router.delete(
-  "/setup/remove",
+  "/setup",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
-  authTFA.removeSetupTFA
+  authTFA.revokeSetupTFA
 );
 
 // auth/tfa/enable
@@ -63,19 +63,29 @@ router.post(
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
-  authTFA.requestBackupCodes
+  authTFA.regenerateBackupCodes
 );
 
-// auth/tfa/method
-router.post("/method", isAuth, rateLimiter, authTFA.requestTFAMethod);
+// auth/tfa/status
+router.get("/status", isAuth, rateLimiter, authTFA.getCurrentTFAStatus);
 
-// auth/tfa/request
-router.post("request", isAuth, rateLimiter, authTFA.requestSmsTFACode);
+// auth/tfa/sms/verify
+router.post(
+  "/sms/verify",
+  isAuth,
+  rateLimiter,
+  authTFA.sendSmsVerificationCode
+);
 
-// auth/tfa/temp-request
-router.post("/temp-request", tempAuth, rateLimiter, authTFA.requestSmsTFACode);
+// auth/tfa/sms/temp
+router.post(
+  "/sms/temp",
+  tempAuth,
+  rateLimiter,
+  authTFA.sendSmsVerificationCode
+);
 
 // auth/tfa/verify
-router.post("/verify", tempAuth, rateLimiter, authTFA.verifyLoginWithTFA);
+router.post("/verify", tempAuth, rateLimiter, authTFA.loginVerifyTFA);
 
 export default router;

@@ -64,11 +64,8 @@ export const verifySetupTFA = async (req, res) => {
   res.jsend.success();
 };
 
-export const removeSetupTFA = async (req, res) => {
+export const revokeSetupTFA = async (req, res) => {
   const { TFACode, method } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-  if (!method || !["sms", "totp"].includes(method))
-    return res.jsend.fail({ method: "Method missing or invalid" });
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
@@ -91,9 +88,6 @@ export const removeSetupTFA = async (req, res) => {
 
 export const enableTFA = async (req, res) => {
   const { TFACode, method } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-  if (!method || !["sms", "totp"].includes(method))
-    return res.jsend.fail({ method: "Method missing or invalid" });
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
@@ -119,9 +113,6 @@ export const enableTFA = async (req, res) => {
 
 export const disableTFA = async (req, res) => {
   const { TFACode, method } = req.body;
-  if (!TFACode) return res.jsend.fail({ TFACode: "Missing 2FA token" });
-  if (!method || !["sms", "totp"].includes(method))
-    return res.jsend.fail({ method: "Method missing or invalid" });
 
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
@@ -143,7 +134,7 @@ export const disableTFA = async (req, res) => {
   res.jsend.success();
 };
 
-export const requestTFAMethod = async (req, res) => {
+export const getCurrentTFAStatus = async (req, res) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
@@ -155,7 +146,7 @@ export const requestTFAMethod = async (req, res) => {
   res.jsend.success({ method });
 };
 
-export const requestBackupCodes = async (req, res) => {
+export const regenerateBackupCodes = async (req, res) => {
   const { TFACode, method } = req.body;
 
   const user = await getUserByIdOrFail(req.user._id, res);
@@ -181,7 +172,7 @@ export const requestBackupCodes = async (req, res) => {
   });
 };
 
-export const requestSmsTFACode = async (req, res, next) => {
+export const sendSmsVerificationCode = async (req, res, next) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
@@ -207,7 +198,7 @@ export const requestSmsTFACode = async (req, res, next) => {
   });
 };
 
-export const verifyLoginWithTFA = async (req, res, next) => {
+export const loginVerifyTFA = async (req, res, next) => {
   const { TFACode, method, backupCode } = req.body;
   if (!method || !["sms", "totp", "backup"].includes(method))
     return res.jsend.fail({ method: "Method missing or invalid" });
