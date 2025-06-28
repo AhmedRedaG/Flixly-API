@@ -38,7 +38,12 @@ export const verifySetupTFA = async (req, res) => {
   if (user.TFA[method].status === true)
     return res.jsend.fail({ TFACode: `${method} 2FA already enabled` }, 401);
 
-  const isVerifiedCode = await verifyTFACode(user, TFACode, method, res);
+  const isVerifiedCode = await tfaHelper.verifyTFACode(
+    user,
+    TFACode,
+    method,
+    res
+  );
   if (!isVerifiedCode) return;
 
   tfaHelper.resetVerificationCycleData(user, method);
@@ -55,7 +60,12 @@ export const revokeSetupTFA = async (req, res) => {
   if (user.TFA[method].status === false)
     return res.jsend.fail({ TFACode: `${method} 2FA already not setup` }, 401);
 
-  const isVerifiedCode = await verifyTFACode(user, TFACode, method, res);
+  const isVerifiedCode = await tfaHelper.verifyTFACode(
+    user,
+    TFACode,
+    method,
+    res
+  );
   if (!isVerifiedCode) return;
 
   if (user.TFA.status === true && user.TFA.method === method)

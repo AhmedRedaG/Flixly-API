@@ -34,7 +34,12 @@ export const loginVerifyTFA = async (req, res) => {
     if (user.TFA.method !== method)
       return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
 
-    const isVerifiedCode = await verifyTFACode(user, TFACode, method, res);
+    const isVerifiedCode = await tfaHelper.verifyTFACode(
+      user,
+      TFACode,
+      method,
+      res
+    );
     if (!isVerifiedCode) return;
 
     tfaHelper.resetVerificationCycleData(user, method);
