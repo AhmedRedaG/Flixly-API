@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import * as authTFA from "../../controllers/auth/tfa.js";
+import * as authTFA from "../../controllers/auth/tfa/index.js";
 
 import validationResult, * as validation from "../../middlewares/isValid.js";
 import isAuth from "../../middlewares/isAuth.js";
