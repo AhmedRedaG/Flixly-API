@@ -1,17 +1,17 @@
 import bcrypt from "bcrypt";
 import { totp } from "otplib";
 
-const verifySmsCode = async (userSms, TFACode, res) => {
-  if (userSms.attempts > 5) {
+const verifySmsCode = async (user, TFACode, res) => {
+  if (user.TFA.sms.attempts > 5) {
     res.jsend.fail({ TFACode: "Too many attempts" }, 429);
     return false;
   }
-  if (userSms.expiredIn < Date.now()) {
+  if (user.TFA.sms.expiredIn < Date.now()) {
     res.jsend.fail({ TFACode: "2FA token expired" }, 401);
     return false;
   }
-  if (userSms.code != TFACode) {
-    userSms.attempts++;
+  if (user.TFA.sms.code != TFACode) {
+    user.TFA.sms.attempts++;
     await user.save();
     res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
     return false;
@@ -19,8 +19,8 @@ const verifySmsCode = async (userSms, TFACode, res) => {
   return true;
 };
 
-const verifyTotpCode = async (userTotp, TFACode, res) => {
-  if (userTotp.attempts > 5) {
+const verifyTotpCode = async (user, TFACode, res) => {
+  if (user.TFA.totp.attempts > 5) {
     res.jsend.fail({ TFACode: "Too many attempts" }, 429);
     return false;
   }
@@ -32,8 +32,8 @@ const verifyTotpCode = async (userTotp, TFACode, res) => {
 };
 
 export const verifyTFACode = async (user, TFACode, method, res) => {
-  if (method === "sms") return verifySmsCode(user.TFA.sms, TFACode, res);
-  if (method === "totp") return verifySmsCode(user.TFA.totp, TFACode, res);
+  if (method === "sms") return verifySmsCode(user, TFACode, res);
+  if (method === "totp") return verifySmsCode(user, TFACode, res);
 };
 
 const generateRawCodes = () => {
