@@ -7,7 +7,7 @@ import isAuth from "../../middlewares/isAuth.js";
 
 const router = Router();
 
-// auth/password/change/
+// auth/password/change
 router.patch(
   "/change",
   isAuth,
@@ -15,7 +15,7 @@ router.patch(
   authPassword.patchChangePassword
 );
 
-// auth/password/reset/
+// auth/password/reset
 router.post(
   "/reset",
   [validation.email, validationResult],

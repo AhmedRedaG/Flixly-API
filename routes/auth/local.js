@@ -6,7 +6,7 @@ import rateLimiter from "../../middlewares/rateLimiter.js";
 
 const router = Router();
 
-// auth/local/register/
+// auth/local/register
 router.post(
   "/register",
   rateLimiter,
@@ -20,7 +20,7 @@ router.post(
   authNormal.postRegister
 );
 
-// auth/local/login/
+// auth/local/login
 router.post(
   "/login",
   rateLimiter,
@@ -28,10 +28,10 @@ router.post(
   authNormal.postLogin
 );
 
-// auth/local/refresh/
+// auth/local/refresh
 router.post("/refresh", rateLimiter, authLocals.postRegister);
 
-// auth/local/logout/
+// auth/local/logout
 router.delete("/logout", authNormal.postLogout);
 
 export default router;
