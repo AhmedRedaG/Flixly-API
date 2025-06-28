@@ -5,13 +5,15 @@ import * as authGoogle from "../../controllers/auth/google.js";
 
 const router = Router();
 
+// auth/google/
 router.get(
-  "/google",
+  "/",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
+// auth/google/callback
 router.get(
-  "/google/callback",
+  "/callback",
   passport.authenticate("google", { session: false }),
   authGoogle.authWithGoogle
 );

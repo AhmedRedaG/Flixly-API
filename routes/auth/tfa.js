@@ -9,67 +9,73 @@ import rateLimiter from "../../middlewares/rateLimiter.js";
 
 const router = Router();
 
+// auth/tfa/setup/sms
 router.put(
-  "/2fa/setup/sms",
+  "/setup/sms",
   isAuth,
   rateLimiter,
   [validation.phoneNumber, validationResult],
   authTFA.setupTFASms
 );
 
-router.put("/2fa/setup/totp", isAuth, rateLimiter, authTFA.setupTFATotp);
+// auth/tfa/setup/totp
+router.put("/setup/totp", isAuth, rateLimiter, authTFA.setupTFATotp);
 
+// auth/tfa/setup/verify
 router.post(
-  "/2fa/setup/verify",
+  "/setup/verify",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.verifySetupTFA
 );
 
+// auth/tfa/setup/remove
 router.delete(
-  "/2fa/setup/remove",
+  "/setup/remove",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.removeSetupTFA
 );
 
+// auth/tfa/enable
 router.post(
-  "/2fa/enable",
+  "/enable",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.enableTFA
 );
 
+// auth/tfa/disable
 router.delete(
-  "/2fa/disable",
+  "/disable",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.disableTFA
 );
 
+// auth/tfa/backup-codes
 router.post(
-  "/2fa/backup-codes",
+  "/backup-codes",
   isAuth,
   rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.requestBackupCodes
 );
 
-router.post("/2fa/method", isAuth, rateLimiter, authTFA.requestTFAMethod);
+// auth/tfa/method
+router.post("/method", isAuth, rateLimiter, authTFA.requestTFAMethod);
 
-router.post("/2fa/request", isAuth, rateLimiter, authTFA.requestSmsTFACode);
+// auth/tfa/request
+router.post("request", isAuth, rateLimiter, authTFA.requestSmsTFACode);
 
-router.post(
-  "/2fa/temp-request",
-  tempAuth,
-  rateLimiter,
-  authTFA.requestSmsTFACode
-);
+// auth/tfa/temp-request
+router.post("/temp-request", tempAuth, rateLimiter, authTFA.requestSmsTFACode);
 
-router.post("/2fa/verify", tempAuth, rateLimiter, authTFA.verifyLoginWithTFA);
+// auth/tfa/verify
+router.post("/verify", tempAuth, rateLimiter, authTFA.verifyLoginWithTFA);
 
 export default router;
