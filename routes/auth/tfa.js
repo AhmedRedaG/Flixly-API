@@ -34,7 +34,10 @@ router.delete(
   authTFA.revokeSetupTFA
 );
 
-// auth/tfa/enable
+// auth/tfa
+router.get("/", isAuth, authTFA.getCurrentTFAStatus);
+
+// auth/tfa
 router.post(
   "/enable",
   isAuth,
@@ -42,9 +45,9 @@ router.post(
   authTFA.enableTFA
 );
 
-// auth/tfa/disable
+// auth/tfa
 router.delete(
-  "/disable",
+  "/",
   isAuth,
   [validation.TFAInput, validationResult],
   authTFA.disableTFA
@@ -57,9 +60,6 @@ router.post(
   [validation.TFAInput, validationResult],
   authTFA.regenerateBackupCodes
 );
-
-// auth/tfa/status
-router.get("/status", isAuth, authTFA.getCurrentTFAStatus);
 
 // auth/tfa/sms/verify
 router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
