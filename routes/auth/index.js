@@ -10,6 +10,6 @@ const router = express.Router();
 router.use("/local", localRouter);
 router.use("/google", googleRouter);
 router.use("/password", passwordRouter);
-router.use("/tfa", tfaRouter);
+router.use("/2fa", tfaRouter);
 
 export default router;

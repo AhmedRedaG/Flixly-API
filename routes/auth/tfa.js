@@ -7,7 +7,7 @@ import tempAuth from "../../middlewares/tempAuth.js";
 
 const router = Router();
 
-// auth/tfa/setup/sms
+// auth/2fa/setup/sms
 router.put(
   "/setup/sms",
   isAuth,
@@ -26,7 +26,7 @@ router.post(
   authTFA.verifySetupTFA
 );
 
-// auth/tfa/setup
+// auth/2fa/setup
 router.delete(
   "/setup",
   isAuth,
@@ -34,18 +34,18 @@ router.delete(
   authTFA.revokeSetupTFA
 );
 
-// auth/tfa
+// auth/2fa
 router.get("/", isAuth, authTFA.getCurrentTFAStatus);
 
-// auth/tfa
+// auth/2fa
 router.post(
-  "/enable",
+  "/",
   isAuth,
   [validation.TFAInput, validationResult],
   authTFA.enableTFA
 );
 
-// auth/tfa
+// auth/2fa
 router.delete(
   "/",
   isAuth,
@@ -53,7 +53,7 @@ router.delete(
   authTFA.disableTFA
 );
 
-// auth/tfa/backup-codes
+// auth/2fa/backup-codes
 router.post(
   "/backup-codes",
   isAuth,
@@ -61,13 +61,13 @@ router.post(
   authTFA.regenerateBackupCodes
 );
 
-// auth/tfa/sms/verify
+// auth/2fa/sms/verify
 router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
 
-// auth/tfa/sms/temp
+// auth/2fa/sms/temp
 router.post("/sms/temp", tempAuth, authTFA.sendSmsVerificationCode);
 
-// auth/tfa/verify
+// auth/2fa/verify
 router.post("/verify", tempAuth, authTFA.loginVerifyTFA);
 
 export default router;

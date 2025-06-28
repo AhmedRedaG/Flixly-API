@@ -19,28 +19,28 @@ function createToken(payload, key, expiresIn) {
 }
 
 export function createAccessToken(payload) {
-  return this.createToken(
+  return createToken(
     payload,
     process.env.ACCESS_TOKEN_SECRET,
     ACCESS_TOKEN_EXPIRES_IN
   );
 }
 export function createRefreshToken(payload) {
-  return this.createToken(
+  return createToken(
     payload,
     process.env.REFRESH_TOKEN_SECRET,
     REFRESH_TOKEN_EXPIRES_IN
   );
 }
 export function createResetToken(payload) {
-  return this.createToken(
+  return createToken(
     payload,
     process.env.RESET_TOKEN_SECRET,
     RESET_TOKEN_EXPIRES_IN
   );
 }
 export function createTempToken(payload) {
-  return this.createToken(
+  return createToken(
     payload,
     process.env.TEMP_TOKEN_SECRET,
     TEMP_TOKEN_EXPIRES_IN
@@ -52,14 +52,14 @@ function verifyToken(token, key) {
 }
 
 export function verifyAccessToken(token) {
-  return this.verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
+  return verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
 }
 export function verifyRefreshToken(token) {
-  return this.verifyToken(token, process.env.REFRESH_TOKEN_SECRET);
+  return verifyToken(token, process.env.REFRESH_TOKEN_SECRET);
 }
 export function verifyResetToken(token) {
-  return this.verifyToken(token, process.env.RESET_TOKEN_SECRET);
+  return verifyToken(token, process.env.RESET_TOKEN_SECRET);
 }
 export function verifyTempToken(token) {
-  return this.verifyToken(token, process.env.TEMP_TOKEN_SECRET);
+  return verifyToken(token, process.env.TEMP_TOKEN_SECRET);
 }
