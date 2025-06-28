@@ -7,10 +7,7 @@ import cors from "cors";
 import passport from "passport";
 
 import "./config/passport.js";
-import authNormalRouter from "./routes/auth/normal.js";
-import authGoogleRouter from "./routes/auth/google.js";
-import authPasswordRouter from "./routes/auth/password.js";
-import authTfaRouter from "./routes/auth/tfa.js";
+import authRouter from "./routes/auth/index.js";
 import userRouter from "./routes/user.js";
 
 const app = express();
@@ -34,10 +31,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api/v1/auth/tfa", authTfaRouter);
-app.use("/api/v1/auth/password", authPasswordRouter);
-app.use("/api/v1/auth/google", authGoogleRouter);
-app.use("/api/v1/auth/local", authNormalRouter);
+app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 
 app.use((req, res) => {
