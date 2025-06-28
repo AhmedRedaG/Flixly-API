@@ -138,12 +138,9 @@ export const getCurrentTFAStatus = async (req, res) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
-  if (user.TFA.status === false)
-    return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
+  const { status, method } = user.TFA;
 
-  method = user.TFA.method;
-
-  res.jsend.success({ method });
+  res.jsend.success({ status, method });
 };
 
 export const regenerateBackupCodes = async (req, res) => {
