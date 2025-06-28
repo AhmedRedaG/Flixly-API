@@ -9,6 +9,7 @@ import passport from "passport";
 import "./config/passport.js";
 import authRouter from "./routes/auth/index.js";
 import userRouter from "./routes/user.js";
+import rateLimiter from "./middlewares/rateLimiter.js";
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(passport.initialize());
 app.use(jsendMiddleware());
+
+app.use(rateLimiter);
 
 app.use((req, res, next) => {
   const start = Date.now();

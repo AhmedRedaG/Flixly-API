@@ -1,11 +1,9 @@
 import { Router } from "express";
 
 import * as authTFA from "../../controllers/auth/tfa/index.js";
-
 import validationResult, * as validation from "../../middlewares/isValid.js";
 import isAuth from "../../middlewares/isAuth.js";
 import tempAuth from "../../middlewares/tempAuth.js";
-import rateLimiter from "../../middlewares/rateLimiter.js";
 
 const router = Router();
 
@@ -13,19 +11,17 @@ const router = Router();
 router.put(
   "/setup/sms",
   isAuth,
-  rateLimiter,
   [validation.phoneNumber, validationResult],
   authTFA.setupTFASms
 );
 
 // auth/tfa/setup/totp
-router.put("/setup/totp", isAuth, rateLimiter, authTFA.setupTFATotp);
+router.put("/setup/totp", isAuth, authTFA.setupTFATotp);
 
 // auth/tfa/setup
 router.post(
   "/setup",
   isAuth,
-  rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.verifySetupTFA
 );
@@ -34,7 +30,6 @@ router.post(
 router.delete(
   "/setup",
   isAuth,
-  rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.revokeSetupTFA
 );
@@ -43,7 +38,6 @@ router.delete(
 router.post(
   "/enable",
   isAuth,
-  rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.enableTFA
 );
@@ -52,7 +46,6 @@ router.post(
 router.delete(
   "/disable",
   isAuth,
-  rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.disableTFA
 );
@@ -61,31 +54,20 @@ router.delete(
 router.post(
   "/backup-codes",
   isAuth,
-  rateLimiter,
   [validation.TFAInput, validationResult],
   authTFA.regenerateBackupCodes
 );
 
 // auth/tfa/status
-router.get("/status", isAuth, rateLimiter, authTFA.getCurrentTFAStatus);
+router.get("/status", isAuth, authTFA.getCurrentTFAStatus);
 
 // auth/tfa/sms/verify
-router.post(
-  "/sms/verify",
-  isAuth,
-  rateLimiter,
-  authTFA.sendSmsVerificationCode
-);
+router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
 
 // auth/tfa/sms/temp
-router.post(
-  "/sms/temp",
-  tempAuth,
-  rateLimiter,
-  authTFA.sendSmsVerificationCode
-);
+router.post("/sms/temp", tempAuth, authTFA.sendSmsVerificationCode);
 
 // auth/tfa/verify
-router.post("/verify", tempAuth, rateLimiter, authTFA.loginVerifyTFA);
+router.post("/verify", tempAuth, authTFA.loginVerifyTFA);
 
 export default router;

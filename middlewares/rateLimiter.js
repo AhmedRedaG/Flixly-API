@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit";
 
-const authRateLimiter = rateLimit({
+const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5555, // for testing
   message: {
@@ -12,4 +12,4 @@ const authRateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-export default authRateLimiter;
+export default rateLimiter;

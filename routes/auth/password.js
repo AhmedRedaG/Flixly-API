@@ -1,7 +1,6 @@
 import { Router } from "express";
 
 import * as authPassword from "../../controllers/auth/password.js";
-
 import validationResult, * as validation from "../../middlewares/isValid.js";
 import isAuth from "../../middlewares/isAuth.js";
 

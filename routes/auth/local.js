@@ -2,14 +2,12 @@ import { Router } from "express";
 
 import * as authLocal from "../../controllers/auth/local.js";
 import validationResult, * as validation from "../../middlewares/isValid.js";
-import rateLimiter from "../../middlewares/rateLimiter.js";
 
 const router = Router();
 
 // auth/local/register
 router.post(
   "/register",
-  rateLimiter,
   [
     validation.name,
     validation.email,
@@ -23,13 +21,12 @@ router.post(
 // auth/local/login
 router.post(
   "/login",
-  rateLimiter,
   [validation.email, validation.password, validationResult],
   authLocal.postLogin
 );
 
 // auth/local/refresh
-router.post("/refresh", rateLimiter, authLocal.postRefresh);
+router.post("/refresh", authLocal.postRefresh);
 
 // auth/local/logout
 router.delete("/logout", authLocal.postLogout);
