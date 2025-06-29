@@ -6,6 +6,12 @@ export const enableTFA = async (req, res) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
+  if (user.TFA[method].status === false)
+    return res.jsend.fail({ method: `${method} 2FA is not verified` }, 401);
+
+  if (user.TFA.status === true && user.TFA.method === method)
+    return res.jsend.fail({ method: `${method} 2FA already enabled` }, 401);
+
   const isVerifiedCode = await tfaHelper.verifyTFACode(
     user,
     TFACode,
@@ -13,12 +19,6 @@ export const enableTFA = async (req, res) => {
     res
   );
   if (!isVerifiedCode) return;
-
-  if (user.TFA.status === true && user.TFA.method === method)
-    return res.jsend.fail({ method: `${method} 2FA already enabled` }, 401);
-
-  if (user.TFA[method].status === false)
-    return res.jsend.fail({ method: `${method} 2FA is not verified` }, 401);
 
   const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
   tfaHelper.resetVerificationCycleData(user, method);
@@ -35,6 +35,12 @@ export const disableTFA = async (req, res) => {
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
+  if (user.TFA.status === false)
+    return res.jsend.fail({ status: `2FA already disabled` }, 401);
+
+  if (user.TFA.method !== method)
+    return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
+
   const isVerifiedCode = await tfaHelper.verifyTFACode(
     user,
     TFACode,
@@ -43,17 +49,11 @@ export const disableTFA = async (req, res) => {
   );
   if (!isVerifiedCode) return;
 
-  if (user.TFA.status === false)
-    return res.jsend.fail({ status: `2FA already disabled` }, 401);
-
-  if (user.TFA.method !== method)
-    return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
-
   tfaHelper.disableTFA(user);
   tfaHelper.resetVerificationCycleData(user, method);
   await user.save();
 
-  res.jsend.success();
+  res.jsend.success({ method });
 };
 
 export const getCurrentTFAStatus = async (req, res) => {

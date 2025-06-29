@@ -14,7 +14,7 @@ export const setupTFASms = async (req, res) => {
 
   user.TFA.sms.number = phoneNumber;
   await user.save();
-  res.jsend.success();
+  res.jsend.success({ phoneNumber });
 };
 
 export const setupTFATotp = async (req, res) => {
@@ -36,7 +36,17 @@ export const verifySetupTFA = async (req, res) => {
   if (!user) return;
 
   if (user.TFA[method].status === true)
-    return res.jsend.fail({ TFACode: `${method} 2FA already enabled` }, 401);
+    return res.jsend.fail({ TFACode: `${method} 2FA already verified` }, 401);
+
+  if (method === "sms" && !user.TFA.sms.number)
+    return res.jsend.fail({
+      number: "No number founded",
+    });
+
+  if (method === "totp" && !user.TFA.totp.secret)
+    return res.jsend.fail({
+      secret: "No secret founded",
+    });
 
   const isVerifiedCode = await tfaHelper.verifyTFACode(
     user,
@@ -49,7 +59,7 @@ export const verifySetupTFA = async (req, res) => {
   tfaHelper.resetVerificationCycleData(user, method);
   user.TFA[method].status = true;
   await user.save();
-  res.jsend.success();
+  res.jsend.success({ method });
 };
 
 export const revokeSetupTFA = async (req, res) => {
@@ -69,10 +79,10 @@ export const revokeSetupTFA = async (req, res) => {
   if (!isVerifiedCode) return;
 
   if (user.TFA.status === true && user.TFA.method === method)
-    tfaHelper.disableTFA();
+    tfaHelper.disableTFA(user);
 
   tfaHelper.resetVerificationCycleData(user, method);
   user.TFA[method].status = false;
   await user.save();
-  res.jsend.success();
+  res.jsend.success({ method });
 };

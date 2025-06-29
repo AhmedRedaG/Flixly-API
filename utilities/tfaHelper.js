@@ -24,7 +24,7 @@ const verifyTotpCode = async (user, TFACode, res) => {
     res.jsend.fail({ TFACode: "Too many attempts" }, 429);
     return false;
   }
-  if (!totp.check(TFACode, userTotp.secret)) {
+  if (!totp.check(TFACode, user.TFA.totp.secret)) {
     res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
     return false;
   }
@@ -33,7 +33,7 @@ const verifyTotpCode = async (user, TFACode, res) => {
 
 export const verifyTFACode = async (user, TFACode, method, res) => {
   if (method === "sms") return verifySmsCode(user, TFACode, res);
-  if (method === "totp") return verifySmsCode(user, TFACode, res);
+  if (method === "totp") return verifyTotpCode(user, TFACode, res);
 };
 
 const generateRawCodes = () => {
@@ -55,7 +55,7 @@ export const generateHashSaveBackupCodes = async (user) => {
   const hashedBackupCodes = hashRwwCodes(rawBackupCodes);
   user.TFA.backupCodes = hashedBackupCodes;
 
-  return rawBackupCodes.map((codeObj) => codeObj.code);
+  return rawBackupCodes;
 };
 
 export const resetVerificationCycleData = (user, method) => {
