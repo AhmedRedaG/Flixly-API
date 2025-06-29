@@ -33,6 +33,7 @@ const verifyTotpCode = async (user, TFACode, res) => {
   });
   if (!isValid) {
     user.TFA.totp.attempts++;
+    await user.save();
     res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
     return false;
   }

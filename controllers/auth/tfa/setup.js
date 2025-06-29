@@ -31,9 +31,9 @@ export const setupTFATotp = async (req, res) => {
     name: "myAuth:ahmedrf.dev@gmail.com",
     issuer: "myAuth",
   });
-  user.TFA.totp.secret = secretOdj.base32;
   const qrCodeDataURL = await qrcode.toDataURL(secretOdj.otpauth_url);
 
+  user.TFA.totp.secret = secretOdj.base32;
   await user.save();
   res.jsend.success({ secret: secretOdj.base32, qrCodeDataURL });
 };
