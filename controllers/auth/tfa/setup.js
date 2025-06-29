@@ -31,7 +31,7 @@ export const setupTFATotp = async (req, res) => {
 };
 
 export const verifySetupTFA = async (req, res) => {
-  const { TFACode, method } = req.body;
+  const { TFACode, method, enable } = req.body;
   const user = await getUserByIdOrFail(req.user._id, res);
   if (!user) return;
 
@@ -55,6 +55,11 @@ export const verifySetupTFA = async (req, res) => {
     res
   );
   if (!isVerifiedCode) return;
+
+  if (enable) {
+    user.TFA.status = true;
+    user.TFA.method = method;
+  }
 
   tfaHelper.resetVerificationCycleData(user, method);
   user.TFA[method].status = true;
