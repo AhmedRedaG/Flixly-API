@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { totp } from "otplib";
+import { totp } from "speakeasy";
 
 const verifySmsCode = async (user, TFACode, res) => {
   if (user.TFA.sms.attempts > 5) {
@@ -24,7 +24,15 @@ const verifyTotpCode = async (user, TFACode, res) => {
     res.jsend.fail({ TFACode: "Too many attempts" }, 429);
     return false;
   }
-  if (!totp.check(TFACode, user.TFA.totp.secret)) {
+
+  const isValid = totp.verify({
+    secret: user.TFA.totp.secret,
+    encoding: "base32",
+    token: TFACode,
+    window: 1,
+  });
+  if (!isValid) {
+    user.TFA.totp.attempts++;
     res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
     return false;
   }

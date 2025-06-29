@@ -1,4 +1,6 @@
-import { authenticator } from "otplib";
+import speakeasy from "speakeasy";
+import qrcode from "qrcode";
+
 import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 
@@ -24,10 +26,16 @@ export const setupTFATotp = async (req, res) => {
   if (user.TFA.totp.status === true)
     return res.jsend.fail({ totp: "totp already set and 2fa is activated" });
 
-  const secret = authenticator.generateSecret(32);
-  user.TFA.totp.secret = secret;
+  const secretOdj = speakeasy.generateSecret({
+    length: 32,
+    name: "myAuth:ahmedrf.dev@gmail.com",
+    issuer: "myAuth",
+  });
+  user.TFA.totp.secret = secretOdj.base32;
+  const qrCodeDataURL = await qrcode.toDataURL(secretOdj.otpauth_url);
+
   await user.save();
-  res.jsend.success({ secret });
+  res.jsend.success({ secret: secretOdj.base32, qrCodeDataURL });
 };
 
 export const verifySetupTFA = async (req, res) => {
