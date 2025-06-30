@@ -33,12 +33,16 @@ const userSchema = new Schema(
           code: { type: String },
           expiredAt: { type: Date },
           attempts: { type: Number, default: 0 },
+          locked: { type: Boolean, default: false },
+          lockedUntil: { type: Date },
           _id: false,
         },
         totp: {
           status: { type: Boolean, default: false },
           secret: { type: String },
           attempts: { type: Number, default: 0 },
+          locked: { type: Boolean, default: false },
+          lockedUntil: { type: Date },
           _id: false,
         },
         backupCodes: [

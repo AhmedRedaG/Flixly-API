@@ -1,27 +1,54 @@
 import bcrypt from "bcrypt";
 import { totp } from "speakeasy";
 
-const verifySmsCode = async (user, TFACode, res) => {
-  if (user.TFA.sms.attempts > 5) {
-    res.jsend.fail({ TFACode: "Too many attempts" }, 429);
+const LOCK_DURATION = 1000 * 60 * 15; // 15 minutes
+
+const verifyAttempts = async (user, method) => {
+  const data = user.TFA[method];
+
+  if (data.locked) {
+    if (data.lockedUntil <= new Date(Date.now())) {
+      data.locked = false;
+      data.attempts = 0;
+    } else {
+      return false;
+    }
+  }
+
+  if (data.attempts >= 5) {
+    data.locked = true;
+    data.lockedUntil = new Date(Date.now() + LOCK_DURATION);
+    await user.save();
     return false;
   }
+
+  return true;
+};
+
+const verifySmsCode = async (user, TFACode, res) => {
+  if (!(await verifyAttempts(user, "sms"))) {
+    res.jsend.fail({ TFACode: "Too many attempts, try again later" }, 429);
+    return false;
+  }
+
   if (user.TFA.sms.expiredAt < new Date(Date.now())) {
     res.jsend.fail({ TFACode: "2FA token expired" }, 401);
     return false;
   }
+
   if (user.TFA.sms.code != TFACode) {
     user.TFA.sms.attempts++;
     await user.save();
     res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
     return false;
   }
+
   return true;
 };
 
 const verifyTotpCode = async (user, TFACode, res) => {
-  if (user.TFA.totp.attempts > 5) {
-    res.jsend.fail({ TFACode: "Too many attempts" }, 429);
+  if (!(await verifyAttempts(user, "sms"))) {
+    res.jsend.fail({ TFACode: "Too many attempts, try again later" }, 429);
     return false;
   }
 
@@ -37,6 +64,7 @@ const verifyTotpCode = async (user, TFACode, res) => {
     res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
     return false;
   }
+
   return true;
 };
 
@@ -52,7 +80,7 @@ const generateRawCodes = () => {
   );
 };
 
-const hashRwwCodes = (rawCodes) => {
+const hashRawCodes = (rawCodes) => {
   return rawCodes.map((code) => ({
     code: bcrypt.hashSync(code, 10),
     used: false,
@@ -61,7 +89,7 @@ const hashRwwCodes = (rawCodes) => {
 
 export const generateHashSaveBackupCodes = async (user) => {
   const rawBackupCodes = generateRawCodes();
-  const hashedBackupCodes = hashRwwCodes(rawBackupCodes);
+  const hashedBackupCodes = hashRawCodes(rawBackupCodes);
   user.TFA.backupCodes = hashedBackupCodes;
 
   return rawBackupCodes;
