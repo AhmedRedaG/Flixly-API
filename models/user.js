@@ -32,6 +32,7 @@ const userSchema = new Schema(
           number: { type: String },
           code: { type: String },
           expiredAt: { type: Date },
+          lastSentAt: { type: Date },
           attempts: { type: Number, default: 0 },
           locked: { type: Boolean, default: false },
           lockedUntil: { type: Date },
