@@ -9,19 +9,19 @@ export const sendSmsVerificationCode = async (req, res) => {
   if (!user) return;
 
   const TFACode = crypto.randomInt(100000, 999999);
-  const TFAExpiredIn = Date.now() + TFA_DURATION;
+  const TFAExpiredAt = new Date(Date.now() + TFA_DURATION);
   const phoneNumber = user.TFA.sms.number;
 
   // await sendTFASms(phoneNumber, TFACode);
   console.log(">>>>>>>>>>>> " + TFACode);
 
   user.TFA.sms.code = TFACode;
-  user.TFA.sms.expiredIn = TFAExpiredIn;
+  user.TFA.sms.expiredAt = TFAExpiredAt;
   user.TFA.sms.attempts = 0;
   await user.save();
 
   res.jsend.success({
     message: `2FA sent successfully to *******${phoneNumber.slice(9)}`,
-    expiredIn: new Date(TFAExpiredIn).toISOString(),
+    TFAExpiredAt,
   });
 };

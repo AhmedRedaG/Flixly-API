@@ -6,7 +6,7 @@ const verifySmsCode = async (user, TFACode, res) => {
     res.jsend.fail({ TFACode: "Too many attempts" }, 429);
     return false;
   }
-  if (user.TFA.sms.expiredIn < Date.now()) {
+  if (user.TFA.sms.expiredAt < new Date(Date.now())) {
     res.jsend.fail({ TFACode: "2FA token expired" }, 401);
     return false;
   }
