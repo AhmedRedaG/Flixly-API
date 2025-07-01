@@ -1,101 +1,33 @@
-import speakeasy from "speakeasy";
-import qrcode from "qrcode";
-
-import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
-import * as tfaHelper from "../../../utilities/tfaHelper.js";
+import * as setupServer from "../../../services/auth/tfa/setup.service.js";
 
 export const setupTFASms = async (req, res) => {
   const { phoneNumber } = req.body;
-  const user = await getUserByIdOrFail(req.user._id);
-  if (!user) return;
-
-  if (user.TFA.sms.status === true)
-    return res.jsend.fail({
-      phoneNumber: "Phone number already set and 2fa is activated",
-    });
-
-  user.TFA.sms.number = phoneNumber;
-  await user.save();
-  res.jsend.success({ phoneNumber });
+  const userId = req.user._id;
+  const data = setupServer.setupTFASmsService(userId, phoneNumber);
+  res.jsend.success(data);
 };
 
 export const setupTFATotp = async (req, res) => {
-  const user = await getUserByIdOrFail(req.user._id);
-  if (!user) return;
-
-  if (user.TFA.totp.status === true)
-    return res.jsend.fail({ totp: "totp already set and 2fa is activated" });
-
-  const secretOdj = speakeasy.generateSecret({
-    length: 32,
-    name: "myAuth:ahmedrf.dev@gmail.com",
-    issuer: "myAuth",
-  });
-  const qrCodeDataURL = await qrcode.toDataURL(secretOdj.otpauth_url);
-
-  user.TFA.totp.secret = secretOdj.base32;
-  await user.save();
-  res.jsend.success({ secret: secretOdj.base32, qrCodeDataURL });
+  const userId = req.user._id;
+  const data = setupServer.setupTFATotpService(userId);
+  res.jsend.success(data);
 };
 
 export const verifySetupTFA = async (req, res) => {
   const { TFACode, method, enable } = req.body;
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  if (user.TFA[method].status === true)
-    return res.jsend.fail({ TFACode: `${method} 2FA already verified` }, 401);
-
-  if (method === "sms" && !user.TFA.sms.number)
-    return res.jsend.fail({
-      number: "No number founded",
-    });
-
-  if (method === "totp" && !user.TFA.totp.secret)
-    return res.jsend.fail({
-      secret: "No secret founded",
-    });
-
-  const isVerifiedCode = await tfaHelper.verifyTFACode(
-    user,
+  const userId = req.user._id;
+  const data = setupServer.verifySetupTFAService(
+    userId,
     TFACode,
     method,
-    res
+    enable
   );
-  if (!isVerifiedCode) return;
-
-  if (enable) {
-    user.TFA.status = true;
-    user.TFA.method = method;
-  }
-
-  tfaHelper.resetVerificationCycleData(user, method);
-  user.TFA[method].status = true;
-  await user.save();
-  res.jsend.success({ method });
+  res.jsend.success(data);
 };
 
 export const revokeSetupTFA = async (req, res) => {
   const { TFACode, method } = req.body;
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  if (user.TFA[method].status === false)
-    return res.jsend.fail({ TFACode: `${method} 2FA already not setup` }, 401);
-
-  const isVerifiedCode = await tfaHelper.verifyTFACode(
-    user,
-    TFACode,
-    method,
-    res
-  );
-  if (!isVerifiedCode) return;
-
-  if (user.TFA.status === true && user.TFA.method === method)
-    tfaHelper.disableTFA(user);
-
-  tfaHelper.resetVerificationCycleData(user, method);
-  user.TFA[method].status = false;
-  await user.save();
-  res.jsend.success({ method });
+  const userId = req.user._id;
+  const data = setupServer.revokeSetupTFAService(userId, TFACode, method);
+  res.jsend.success(data);
 };
