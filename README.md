@@ -89,49 +89,65 @@ PORT=3000
 ## Project Structure
 
 ```
-├── app.js
+├── src/
+│   ├── app.js
+│   ├── config/
+│   │   └── passport.js
+│   ├── controllers/
+│   │   ├── user.js
+│   │   └── auth/
+│   │       ├── google.js
+│   │       ├── local.js
+│   │       ├── password.js
+│   │       └── tfa/
+│   │           ├── index.js
+│   │           ├── lifecycle.js
+│   │           ├── login.js
+│   │           ├── setup.js
+│   │           └── sms.js
+│   ├── middlewares/
+│   │   ├── errorHandler.js
+│   │   ├── isAuth.js
+│   │   ├── isValid.js
+│   │   ├── rateLimiter.js
+│   │   ├── requestDurationLogger.js
+│   │   └── tempAuth.js
+│   ├── models/
+│   │   └── user.js
+│   ├── public/
+│   │   └── mailImages/
+│   │       └── logo.png
+│   ├── routes/
+│   │   ├── user.js
+│   │   └── auth/
+│   │       ├── google.js
+│   │       ├── index.js
+│   │       ├── local.js
+│   │       ├── password.js
+│   │       └── tfa.js
+│   ├── services/
+│   │   └── auth/
+│   │       ├── google.service.js
+│   │       ├── local.service.js
+│   │       ├── password.service.js
+│   │       └── tfa/
+│   │           ├── lifecycle.service.js
+│   │           ├── login.service.js
+│   │           ├── setup.service.js
+│   │           └── sms.service.js
+│   ├── utilities/
+│   │   ├── AppError.js
+│   │   ├── CookieHelper.js
+│   │   ├── authHelper.js
+│   │   ├── cookieHelper.js
+│   │   ├── dataHelper.js
+│   │   ├── dbHelper.js
+│   │   ├── jwtHelper.js
+│   │   ├── mailSender.js
+│   │   ├── smsSender.js
+│   │   └── tfaHelper.js
 ├── package.json
 ├── .env
-├── config/
-│   └── passport.js
-├── controllers/
-│   ├── user.js
-│   └── auth/
-│       ├── google.js
-│       ├── local.js
-│       ├── password.js
-│       └── tfa/
-│           ├── index.js
-│           ├── lifecycle.js
-│           ├── login.js
-│           ├── setup.js
-│           └── sms.js
-├── middlewares/
-│   ├── isAuth.js
-│   ├── isValid.js
-│   ├── rateLimiter.js
-│   ├── requestDurationLogger.js
-│   └── tempAuth.js
-├── models/
-│   └── user.js
-├── public/
-│   └── mailImages/
-│       └── logo.png
-├── routes/
-│   ├── user.js
-│   └── auth/
-│       ├── google.js
-│       ├── index.js
-│       ├── local.js
-│       ├── password.js
-│       └── tfa.js
-├── utilities/
-│   ├── cookieHelper.js
-│   ├── dbHelper.js
-│   ├── jwtHelper.js
-│   ├── mailSender.js
-│   ├── smsSender.js
-│   └── tfaHelper.js
 └── README.md
 ```
 
