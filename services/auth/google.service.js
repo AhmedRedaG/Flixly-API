@@ -1,6 +1,7 @@
 import User from "../../models/user.js";
 import * as JwtHelper from "../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
+import AppError from "../../utilities/AppError.js";
 
 export const authWithGoogleService = async (googleId) => {
   const user = await User.findOne({ googleId });

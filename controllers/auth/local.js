@@ -1,123 +1,26 @@
-import bcrypt from "bcrypt";
+import * as localServer from "../../services/auth/local.service.js";
 
-import User from "../../models/user.js";
-import * as JwtHelper from "../../utilities/JwtHelper.js";
-import * as CookieHelper from "../../utilities/cookieHelper.js";
-import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
-
-export const postRegister = async (req, res, next) => {
+export const postRegister = async (req, res) => {
   const { name, email, password } = req.body;
-
-  const userExisted = await User.findOne({ email });
-  if (userExisted)
-    return res.jsend.fail({ email: "Email already in use" }, 409);
-
-  const hashedPassword = await bcrypt.hash(password, 12);
-  const newUser = new User({ name, email, password: hashedPassword });
-  const user = await newUser.save();
-  const userSafeData = JwtHelper.getSafeData(user);
-
-  res.jsend.success({ user: userSafeData });
+  const data = localServer.postRegisterService(name, email, password);
+  res.jsend.success(data);
 };
 
-export const postLogin = async (req, res, next) => {
+export const postLogin = async (req, res) => {
   const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) return res.jsend.fail({ email: "Invalid email" }, 401);
-
-  if (!user.password)
-    return res.jsend.fail(
-      { auth: "This account was registered with Google." },
-      401
-    );
-
-  const matchedPasswords = await bcrypt.compare(password, user.password);
-  if (!matchedPasswords)
-    return res.jsend.fail({ password: "Invalid password" }, 401);
-
-  if (user.TFA.status === true) {
-    const tempToken = JwtHelper.createTempToken({ _id: user._id });
-    return res.jsend.fail({ method: user.TFA.method, tempToken }, 401);
-  }
-
-  const userSafeData = JwtHelper.getSafeData(user);
-  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
-  CookieHelper.createRefreshTokenCookie(res, refreshToken);
-
-  user.refreshTokens.push(refreshToken);
-  await user.save();
-
-  const accessToken = JwtHelper.createAccessToken(userSafeData);
-  res.jsend.success({ accessToken, user: userSafeData });
+  const data = localServer.postLoginService(email, password);
+  res.jsend.success(data);
 };
 
-export const postRefresh = async (req, res, next) => {
+export const postRefresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken)
-    return res.jsend.fail({ refreshToken: "No refreshToken exist" }, 401);
-
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyRefreshToken(refreshToken);
-    userId = decoded._id;
-  } catch (err) {
-    return res.jsend.fail(
-      {
-        refreshToken:
-          err.name === "TokenExpiredError"
-            ? "Refresh token expired"
-            : "Refresh token invalid",
-      },
-      403
-    );
-  }
-
-  const user = await getUserByIdOrFail(userId, res);
-  if (!user) return;
-
-  const refreshTokenIndex = user.refreshTokens.findIndex(
-    (rf) => rf === refreshToken
-  );
-  if (refreshTokenIndex === -1)
-    return res.jsend.fail({ refreshTokens: "Invalid refresh token" }, 403);
-
-  const userSafeData = JwtHelper.getSafeData(user);
-  const newRefreshToken = JwtHelper.createRefreshToken(userSafeData);
-  CookieHelper.createRefreshTokenCookie(res, newRefreshToken);
-
-  user.refreshTokens[refreshTokenIndex] = newRefreshToken;
-  user.refreshTokens = user.refreshTokens.slice(-5);
-  await user.save();
-
-  const newAccessToken = JwtHelper.createAccessToken(userSafeData);
-  res.jsend.success({ accessToken: newAccessToken });
+  const data = localServer.postRefreshService(refreshToken);
+  res.jsend.success(data);
 };
 
-export const postLogout = async (req, res, next) => {
+export const postLogout = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
-  if (!refreshToken) {
-    return res.jsend.success();
-  }
-
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyRefreshToken(refreshToken);
-    userId = decoded._id;
-  } catch (err) {
-    CookieHelper.clearRefreshTokenCookie(res);
-    return res.jsend.success();
-  }
-
-  const user = await getUserByIdOrFail(userId, res);
-  if (!user) return;
-
   const logoutFullCase = req.query.full;
-  if (!logoutFullCase)
-    user.refreshTokens = user.refreshTokens.filter((rt) => rt !== refreshToken);
-  else user.refreshTokens = [];
-  await user.save();
-
-  CookieHelper.clearRefreshTokenCookie(res);
-  res.jsend.success();
+  const data = localServer.postLogoutService(refreshToken, logoutFullCase);
+  res.jsend.success(data);
 };

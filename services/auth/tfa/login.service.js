@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+
 import * as JwtHelper from "../../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../../utilities/cookieHelper.js";
 import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
