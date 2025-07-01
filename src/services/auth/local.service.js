@@ -65,14 +65,13 @@ export const postRefreshService = async (oldRefreshToken) => {
   if (refreshTokenIndex === -1)
     throw new AppError("Invalid refresh token", 403);
 
-  const { accessToken, refreshToken, userSafeData } =
-    await generateTokensForUser(user);
+  const { accessToken, refreshToken } = await generateTokensForUser(user);
 
   user.refreshTokens[refreshTokenIndex] = refreshToken;
   user.refreshTokens = user.refreshTokens.slice(-5);
   await user.save();
 
-  return { accessToken, refreshToken, user: userSafeData };
+  return { accessToken, refreshToken };
 };
 
 // need refactor

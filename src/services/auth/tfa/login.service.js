@@ -5,6 +5,7 @@ import * as CookieHelper from "../../../utilities/cookieHelper.js";
 import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import AppError from "../../../utilities/AppError.js";
+import { generateTokensForUser } from "../../../utilities/authHelper.js";
 
 export const loginVerifyTFAService = async (
   userId,
@@ -40,13 +41,9 @@ export const loginVerifyTFAService = async (
     tfaHelper.resetVerificationCycleData(user, method);
   }
 
-  const userSafeData = JwtHelper.getSafeData(user);
-  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
-  CookieHelper.createRefreshTokenCookie(res, refreshToken);
-
-  user.refreshTokens.push(refreshToken);
+  const { accessToken, refreshToken, userSafeData } =
+    await generateTokensForUser(user);
   await user.save();
 
-  const accessToken = JwtHelper.createAccessToken(userSafeData);
-  return { accessToken, user: userSafeData };
+  return { accessToken, refreshToken, userSafeData };
 };

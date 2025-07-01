@@ -1,4 +1,5 @@
 import * as localServer from "../../services/auth/local.service.js";
+import * as CookieHelper from "../../utilities/CookieHelper.js";
 
 export const postRegister = async (req, res) => {
   const { name, email, password } = req.body;
@@ -8,14 +9,18 @@ export const postRegister = async (req, res) => {
 
 export const postLogin = async (req, res) => {
   const { email, password } = req.body;
-  const data = localServer.postLoginService(email, password);
-  res.jsend.success(data);
+  const { accessToken, refreshToken, userSafeData } =
+    localServer.postLoginService(email, password);
+  CookieHelper.createRefreshTokenCookie(refreshToken, res);
+  res.jsend.success({ accessToken, user: userSafeData });
 };
 
 export const postRefresh = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  const data = localServer.postRefreshService(refreshToken);
-  res.jsend.success(data);
+  const oldRefreshToken = req.cookies.refreshToken;
+  const { accessToken, refreshToken } =
+    localServer.postRefreshService(oldRefreshToken);
+  CookieHelper.createRefreshTokenCookie(refreshToken, res);
+  res.jsend.success({ accessToken });
 };
 
 export const postLogout = async (req, res) => {
