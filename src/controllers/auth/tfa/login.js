@@ -5,7 +5,12 @@ export const loginVerifyTFA = async (req, res) => {
   const { TFACode, method, backupCode } = req.body;
   const userId = req.user._id;
   const { accessToken, refreshToken, userSafeData } =
-    loginServer.loginVerifyTFAService(userId, TFACode, method, backupCode);
+    await loginServer.loginVerifyTFAService(
+      userId,
+      TFACode,
+      method,
+      backupCode
+    );
   CookieHelper.createRefreshTokenCookie(refreshToken, res);
   res.jsend.success({ accessToken, user: userSafeData });
 };

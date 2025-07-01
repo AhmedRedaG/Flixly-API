@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import User from "../../models/user.js";
 import * as JwtHelper from "../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
-import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
+import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
 import AppError from "../../utilities/AppError.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
 
@@ -14,7 +14,7 @@ export const postRegisterService = async (name, email, password) => {
   const hashedPassword = await bcrypt.hash(password, 12);
   const newUser = new User({ name, email, password: hashedPassword });
   const user = await newUser.save();
-  const userSafeData = JwtHelper.getSafeData(user);
+  const userSafeData = getSafeData(user);
 
   return { user: userSafeData };
 };
@@ -38,7 +38,7 @@ export const postLoginService = async (email, password) => {
     await generateTokensForUser(user);
   await user.save();
 
-  return { accessToken, refreshToken, user: userSafeData };
+  return { accessToken, refreshToken, userSafeData };
 };
 
 export const postRefreshService = async (oldRefreshToken) => {
