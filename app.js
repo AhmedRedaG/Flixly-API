@@ -11,6 +11,7 @@ import authRouter from "./routes/auth/index.js";
 import userRouter from "./routes/user.js";
 import rateLimiter from "./middlewares/rateLimiter.js";
 import requestDurationLogger from "./middlewares/requestDurationLogger.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 const app = express();
 app.use(cors());
@@ -29,10 +30,7 @@ app.use("/api/v1/users", userRouter);
 app.use((req, res) => {
   res.jsend.fail({ url: "Source location not found" }, 404);
 });
-app.use((err, req, res, next) => {
-  console.log(err);
-  res.jsend.error(err.message);
-});
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
