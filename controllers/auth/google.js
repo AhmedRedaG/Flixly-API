@@ -1,25 +1,8 @@
-import User from "../../models/user.js";
-import * as JwtHelper from "../../utilities/JwtHelper.js";
-import * as CookieHelper from "../../utilities/cookieHelper.js";
+import * as googleServer from "../../services/auth/google.service.js";
 
 export const authWithGoogle = async (req, res, next) => {
   const userGoogleId = req.user; // google id only
-  const user = await User.findOne({ googleId: userGoogleId });
-  if (!user) return res.jsend.fail({ googleId: "Invalid googleId" }, 401);
-
-  if (user.TFA.status === true) {
-    const tempToken = JwtHelper.createTempToken({ _id: user._id });
-    return res.jsend.fail({ phoneNumber: user.phoneNumber, tempToken }, 401);
-  }
-
-  const userSafeData = JwtHelper.getSafeData(user);
-  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
-  CookieHelper.createRefreshTokenCookie(res, refreshToken);
-
-  user.refreshTokens.push(refreshToken);
-  await user.save();
-
-  const accessToken = JwtHelper.createAccessToken(userSafeData);
+  const data = googleServer.authWithGoogleService(userGoogleId);
   // res.redirect(`http://frontend/oauth-success?token=${accessToken}`);
-  res.jsend.success({ accessToken, user: userSafeData });
+  res.jsend.success(data);
 };
