@@ -1,10 +1,10 @@
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import AppError from "../../../utilities/AppError.js";
 import User from "../../../models/user.js";
+import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
 
 export const enableTFAService = async (userId, TFACode, method) => {
-  const user = await User.findById(userId);
-  if (!user) throw new AppError("No user found", 404);
+  const user = await getUserByIdOrFail(userId);
 
   if (user.TFA[method].status === false)
     throw new AppError(`${method} 2FA is not verified`, 401);
@@ -21,68 +21,47 @@ export const enableTFAService = async (userId, TFACode, method) => {
   user.TFA.method = method;
   await user.save();
 
-  return backupCodes;
+  return { backupCodes };
 };
 
-// export const disableTFA = async (req, res) => {
-//   const { TFACode, method } = req.body;
-//   const user = await getUserByIdOrFail(req.user._id, res);
-//   if (!user) return;
+export const disableTFAService = async (userId, TFACode, method) => {
+  const user = await getUserByIdOrFail(userId);
 
-//   if (user.TFA.status === false)
-//     return res.jsend.fail({ status: `2FA already disabled` }, 401);
+  if (user.TFA.status === false)
+    throw new AppError(`2FA already disabled`, 401);
 
-//   if (user.TFA.method !== method)
-//     return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
+  if (user.TFA.method !== method)
+    throw new AppError(`${method} 2FA is not in use`, 401);
 
-//   const isVerifiedCode = await tfaHelper.verifyTFACode(
-//     user,
-//     TFACode,
-//     method,
-//     res
-//   );
-//   if (!isVerifiedCode) return;
+  await tfaHelper.verifyTFACode(user, TFACode, method);
 
-//   tfaHelper.disableTFA(user);
-//   tfaHelper.resetVerificationCycleData(user, method);
-//   await user.save();
+  tfaHelper.disableTFA(user);
+  tfaHelper.resetVerificationCycleData(user, method);
+  await user.save();
 
-//   res.jsend.success({ method });
-// };
+  return { method };
+};
 
-// export const getCurrentTFAStatus = async (req, res) => {
-//   const user = await getUserByIdOrFail(req.user._id, res);
-//   if (!user) return;
+export const getCurrentTFAStatusService = async (userId) => {
+  const user = await getUserByIdOrFail(userId);
+  const { status, method } = user.TFA;
 
-//   const { status, method } = user.TFA;
-//   res.jsend.success({ status, method });
-// };
+  return { status, method };
+};
 
-// export const regenerateBackupCodes = async (req, res) => {
-//   const { TFACode, method } = req.body;
-//   const user = await getUserByIdOrFail(req.user._id, res);
-//   if (!user) return;
+export const regenerateBackupCodesService = async (userId, TFACode, method) => {
+  const user = await getUserByIdOrFail(userId);
 
-//   if (user.TFA.status === false)
-//     return res.jsend.fail({ TFACode: "2FA is not enabled" }, 401);
+  if (user.TFA.status === false) throw new AppError("2FA is not enabled", 401);
 
-//   if (user.TFA.method !== method)
-//     return res.jsend.fail({ method: `${method} 2FA is not in use` }, 401);
+  if (user.TFA.method !== method)
+    throw new AppError(`${method} 2FA is not in use`, 401);
 
-//   const isVerifiedCode = await tfaHelper.verifyTFACode(
-//     user,
-//     TFACode,
-//     method,
-//     res
-//   );
-//   if (!isVerifiedCode) return;
+  await tfaHelper.verifyTFACode(user, TFACode, method);
 
-//   const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
-//   tfaHelper.resetVerificationCycleData(user, method);
-//   await user.save();
+  const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
+  tfaHelper.resetVerificationCycleData(user, method);
+  await user.save();
 
-//   res.jsend.success({
-//     message: "Backup codes regenerated",
-//     backupCodes,
-//   });
-// };
+  return { backupCodes };
+};
