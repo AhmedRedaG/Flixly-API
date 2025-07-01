@@ -4,6 +4,7 @@ import User from "../../models/user.js";
 import * as JwtHelper from "../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
 import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
+import AppError from "../../utilities/AppError.js";
 
 export const postRegisterService = async (name, email, password) => {
   const userExisted = await User.findOne({ email });
