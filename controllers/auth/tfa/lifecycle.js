@@ -1,33 +1,27 @@
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
 
+import * as lifecycleServer from "../../../services/auth/tfa/lifecycle.service.js";
+import AppError from "../../../utilities/AppError.js";
+
 export const enableTFA = async (req, res) => {
-  const { TFACode, method } = req.body;
-  const user = await getUserByIdOrFail(req.user._id, res);
-  if (!user) return;
-
-  if (user.TFA[method].status === false)
-    return res.jsend.fail({ method: `${method} 2FA is not verified` }, 401);
-
-  if (user.TFA.status === true && user.TFA.method === method)
-    return res.jsend.fail({ method: `${method} 2FA already enabled` }, 401);
-
-  const isVerifiedCode = await tfaHelper.verifyTFACode(
-    user,
-    TFACode,
-    method,
-    res
-  );
-  if (!isVerifiedCode) return;
-
-  const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
-  tfaHelper.resetVerificationCycleData(user, method);
-
-  user.TFA.status = true;
-  user.TFA.method = method;
-  await user.save();
-
-  res.jsend.success({ backupCodes });
+  try {
+    const { TFACode, method } = req.body;
+    const userId = req.user._id;
+    const backupCodes = lifecycleServer.enableTFAService(
+      userId,
+      TFACode,
+      method
+    );
+    res.jsend.success({ backupCodes });
+  } catch (err) {
+    if (err instanceof AppError) {
+      res.jsend.fail({ message: err.message }, err.statusCode || 400);
+    } else {
+      console.error(err);
+      res.jsend.error({ message: "internal server error" }, 500);
+    }
+  }
 };
 
 export const disableTFA = async (req, res) => {
