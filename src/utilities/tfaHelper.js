@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import { totp } from "speakeasy";
 
+import AppError from "./AppError.js";
+
 const LOCK_DURATION = 1000 * 60 * 15; // 15 minutes
 
 const verifyAttempts = async (user, method) => {
@@ -25,31 +27,27 @@ const verifyAttempts = async (user, method) => {
   return true;
 };
 
-const verifySmsCode = async (user, TFACode, res) => {
+const verifySmsCode = async (user, TFACode) => {
   if (!(await verifyAttempts(user, "sms"))) {
-    res.jsend.fail({ TFACode: "Too many attempts, try again later" }, 429);
-    return false;
+    throw new AppError("Too many attempts, try again later", 429);
   }
 
   if (user.TFA.sms.expiredAt < new Date(Date.now())) {
-    res.jsend.fail({ TFACode: "2FA token expired" }, 401);
-    return false;
+    throw new AppError("2FA token expired", 401);
   }
 
   if (user.TFA.sms.code != TFACode) {
     user.TFA.sms.attempts++;
     await user.save();
-    res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
-    return false;
+    throw new AppError("Invalid 2FA token", 401);
   }
 
   return true;
 };
 
-const verifyTotpCode = async (user, TFACode, res) => {
+const verifyTotpCode = async (user, TFACode) => {
   if (!(await verifyAttempts(user, "sms"))) {
-    res.jsend.fail({ TFACode: "Too many attempts, try again later" }, 429);
-    return false;
+    throw new AppError("Too many attempts, try again later", 429);
   }
 
   const isValid = totp.verify({
@@ -61,16 +59,15 @@ const verifyTotpCode = async (user, TFACode, res) => {
   if (!isValid) {
     user.TFA.totp.attempts++;
     await user.save();
-    res.jsend.fail({ TFACode: "Invalid 2FA token" }, 401);
-    return false;
+    throw new AppError("Invalid 2FA token", 401);
   }
 
   return true;
 };
 
-export const verifyTFACode = async (user, TFACode, method, res) => {
-  if (method === "sms") return verifySmsCode(user, TFACode, res);
-  if (method === "totp") return verifyTotpCode(user, TFACode, res);
+export const verifyTFACode = async (user, TFACode, method) => {
+  if (method === "sms") return verifySmsCode(user, TFACode);
+  if (method === "totp") return verifyTotpCode(user, TFACode);
 };
 
 const generateRawCodes = () => {
