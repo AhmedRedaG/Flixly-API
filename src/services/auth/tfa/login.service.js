@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 
 import * as JwtHelper from "../../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../../utilities/cookieHelper.js";
-import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
+import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import AppError from "../../../utilities/AppError.js";
 

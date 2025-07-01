@@ -3,8 +3,9 @@ import bcrypt from "bcrypt";
 import User from "../../models/user.js";
 import * as JwtHelper from "../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
-import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
+import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
 import AppError from "../../utilities/AppError.js";
+import { generateTokensForUser } from "../../utilities/authHelper.js";
 
 export const postRegisterService = async (name, email, password) => {
   const userExisted = await User.findOne({ email });
@@ -33,24 +34,19 @@ export const postLoginService = async (email, password) => {
     return { method: user.TFA.method, tempToken };
   }
 
-  const userSafeData = JwtHelper.getSafeData(user);
-  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
-  CookieHelper.createRefreshTokenCookie(res, refreshToken);
-
-  user.refreshTokens.push(refreshToken);
+  const { accessToken, refreshToken, userSafeData } =
+    await generateTokensForUser(user);
   await user.save();
 
-  const accessToken = JwtHelper.createAccessToken(userSafeData);
-
-  return { accessToken, user: userSafeData };
+  return { accessToken, refreshToken, user: userSafeData };
 };
 
-export const postRefreshService = async (refreshToken) => {
-  if (!refreshToken) throw new AppError("No refreshToken exist", 401);
+export const postRefreshService = async (oldRefreshToken) => {
+  if (!oldRefreshToken) throw new AppError("No oldRefreshToken exist", 401);
 
   let userId;
   try {
-    const decoded = JwtHelper.verifyRefreshToken(refreshToken);
+    const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
     userId = decoded._id;
   } catch (err) {
     throw new AppError(
@@ -64,22 +60,19 @@ export const postRefreshService = async (refreshToken) => {
   const user = await getUserByIdOrFail(userId);
 
   const refreshTokenIndex = user.refreshTokens.findIndex(
-    (rf) => rf === refreshToken
+    (rf) => rf === oldRefreshToken
   );
   if (refreshTokenIndex === -1)
-    return res.jsend.fail({ refreshTokens: "Invalid refresh token" }, 403);
+    throw new AppError("Invalid refresh token", 403);
 
-  const userSafeData = JwtHelper.getSafeData(user);
-  const newRefreshToken = JwtHelper.createRefreshToken(userSafeData);
-  CookieHelper.createRefreshTokenCookie(res, newRefreshToken);
+  const { accessToken, refreshToken, userSafeData } =
+    await generateTokensForUser(user);
 
-  user.refreshTokens[refreshTokenIndex] = newRefreshToken;
+  user.refreshTokens[refreshTokenIndex] = refreshToken;
   user.refreshTokens = user.refreshTokens.slice(-5);
   await user.save();
 
-  const newAccessToken = JwtHelper.createAccessToken(userSafeData);
-
-  return { accessToken: newAccessToken };
+  return { accessToken, refreshToken, user: userSafeData };
 };
 
 // need refactor
@@ -102,7 +95,7 @@ export const postLogoutService = async (refreshToken, logoutFullCase) => {
   else user.refreshTokens = [];
   await user.save();
 
-  CookieHelper.clearRefreshTokenCookie(res);
+  // CookieHelper.clearRefreshTokenCookie(res);
 
   return;
 };

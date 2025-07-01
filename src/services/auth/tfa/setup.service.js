@@ -1,7 +1,7 @@
 import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 
-import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
+import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import AppError from "../../../utilities/AppError.js";
 

@@ -5,15 +5,6 @@ const REFRESH_TOKEN_EXPIRES_IN = "7d";
 const RESET_TOKEN_EXPIRES_IN = "1h";
 const TEMP_TOKEN_EXPIRES_IN = "10m";
 
-export function getSafeData(user) {
-  return {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  };
-}
-
 function createToken(payload, key, expiresIn) {
   return jwt.sign(payload, key, { expiresIn });
 }

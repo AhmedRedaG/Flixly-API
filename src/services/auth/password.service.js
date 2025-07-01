@@ -4,7 +4,7 @@ import User from "../../models/user.js";
 import * as JwtHelper from "../../utilities/JwtHelper.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
 import { sendResetPasswordMail } from "../../utilities/mailSender.js";
-import { getUserByIdOrFail } from "../../utilities/dbHelper.js";
+import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
 import AppError from "../../utilities/AppError.js";
 
 export const changePasswordService = async (

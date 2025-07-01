@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
 import { sendTFASms } from "../../../utilities/smsSender.js";
-import { getUserByIdOrFail } from "../../../utilities/dbHelper.js";
+import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 import AppError from "../../../utilities/AppError.js";
 
 const TFA_DURATION = 1000 * 60 * 5; // 5 minutes
