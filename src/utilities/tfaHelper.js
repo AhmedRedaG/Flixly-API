@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { totp } from "speakeasy";
 
-import AppError from "./AppError.js";
+import AppError from "./appError.js";
 
 const LOCK_DURATION = 1000 * 60 * 15; // 15 minutes
 

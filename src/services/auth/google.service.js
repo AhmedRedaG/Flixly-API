@@ -1,6 +1,6 @@
 import User from "../../models/user.js";
-import * as JwtHelper from "../../utilities/JwtHelper.js";
-import AppError from "../../utilities/AppError.js";
+import AppError from "../../utilities/appError.js";
+import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
 
 export const authWithGoogleService = async (googleId) => {

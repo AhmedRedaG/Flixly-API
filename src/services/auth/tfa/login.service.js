@@ -1,10 +1,8 @@
 import bcrypt from "bcrypt";
 
-import * as JwtHelper from "../../../utilities/JwtHelper.js";
-import * as CookieHelper from "../../../utilities/cookieHelper.js";
-import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
+import AppError from "../../../utilities/appError.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
-import AppError from "../../../utilities/AppError.js";
+import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 import { generateTokensForUser } from "../../../utilities/authHelper.js";
 
 export const loginVerifyTFAService = async (

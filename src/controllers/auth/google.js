@@ -1,5 +1,5 @@
 import * as googleServer from "../../services/auth/google.service.js";
-import * as CookieHelper from "../../utilities/CookieHelper.js";
+import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const authWithGoogle = async (req, res) => {
   const userGoogleId = req.user; // google id only

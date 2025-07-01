@@ -1,9 +1,9 @@
 import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 
-import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
+import AppError from "../../../utilities/appError.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
-import AppError from "../../../utilities/AppError.js";
+import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 
 export const setupTFASmsService = async (userId, phoneNumber) => {
   const user = await getUserByIdOrFail(userId);

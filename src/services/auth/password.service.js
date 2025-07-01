@@ -1,11 +1,10 @@
 import bcrypt from "bcrypt";
 
 import User from "../../models/user.js";
-import * as JwtHelper from "../../utilities/JwtHelper.js";
-import * as CookieHelper from "../../utilities/cookieHelper.js";
+import AppError from "../../utilities/appError.js";
+import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { sendResetPasswordMail } from "../../utilities/mailSender.js";
 import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
-import AppError from "../../utilities/AppError.js";
 
 export const changePasswordService = async (
   userId,

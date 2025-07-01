@@ -1,5 +1,5 @@
 import * as passwordServer from "../../services/auth/password.service.js";
-import * as CookieHelper from "../../utilities/CookieHelper.js";
+import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const patchChangePassword = async (req, res) => {
   const { oldPassword, newPassword, TFACode } = req.body;

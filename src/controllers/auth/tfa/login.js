@@ -1,5 +1,5 @@
 import * as loginServer from "../../../services/auth/tfa/login.service.js";
-import * as CookieHelper from "../../../utilities/CookieHelper.js";
+import * as CookieHelper from "../../../utilities/cookieHelper.js";
 
 export const loginVerifyTFA = async (req, res) => {
   const { TFACode, method, backupCode } = req.body;

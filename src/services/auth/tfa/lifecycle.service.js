@@ -1,6 +1,6 @@
+import AppError from "../../../utilities/appError.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
-import AppError from "../../../utilities/AppError.js";
 
 export const enableTFAService = async (userId, TFACode, method) => {
   const user = await getUserByIdOrFail(userId);

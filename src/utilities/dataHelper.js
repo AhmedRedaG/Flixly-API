@@ -1,5 +1,5 @@
 import User from "../models/user.js";
-import AppError from "./AppError.js";
+import AppError from "./appError.js";
 
 export async function getUserByIdOrFail(userId) {
   const user = await User.findById(userId);

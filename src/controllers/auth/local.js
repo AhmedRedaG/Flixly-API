@@ -1,5 +1,5 @@
 import * as localServer from "../../services/auth/local.service.js";
-import * as CookieHelper from "../../utilities/CookieHelper.js";
+import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const postRegister = async (req, res) => {
   const { name, email, password } = req.body;
