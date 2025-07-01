@@ -4,7 +4,7 @@ export const enableTFA = async (req, res) => {
   const { TFACode, method } = req.body;
   const userId = req.user._id;
   const data = lifecycleServer.enableTFAService(userId, TFACode, method);
-  res.jsend.success({ data });
+  res.jsend.success(data);
 };
 
 export const disableTFA = async (req, res) => {
