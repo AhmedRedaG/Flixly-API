@@ -31,5 +31,6 @@ export const postLogout = async (req, res) => {
     refreshToken,
     logoutFullCase
   );
+  CookieHelper.clearRefreshTokenCookie(res);
   res.jsend.success(data);
 };

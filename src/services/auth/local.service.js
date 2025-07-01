@@ -74,7 +74,6 @@ export const postRefreshService = async (oldRefreshToken) => {
   return { accessToken, refreshToken };
 };
 
-// need refactor
 export const postLogoutService = async (refreshToken, logoutFullCase) => {
   if (!refreshToken) return;
 
@@ -83,8 +82,7 @@ export const postLogoutService = async (refreshToken, logoutFullCase) => {
     const decoded = JwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
-    CookieHelper.clearRefreshTokenCookie(res);
-    return;
+    throw new AppError("Invalid or expired token");
   }
 
   const user = await getUserByIdOrFail(userId);
@@ -93,8 +91,6 @@ export const postLogoutService = async (refreshToken, logoutFullCase) => {
     user.refreshTokens = user.refreshTokens.filter((rt) => rt !== refreshToken);
   else user.refreshTokens = [];
   await user.save();
-
-  // CookieHelper.clearRefreshTokenCookie(res);
 
   return;
 };

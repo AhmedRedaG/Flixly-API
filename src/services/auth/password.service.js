@@ -32,8 +32,6 @@ export const changePasswordService = async (
   user.refreshTokens = [];
   await user.save();
 
-  CookieHelper.clearRefreshTokenCookie(res);
-
   return { message: "Password has been successfully changed." };
 };
 
@@ -75,8 +73,6 @@ export const resetPasswordService = async (resetToken, password) => {
   user.resetToken = resetToken;
   user.refreshTokens = [];
   await user.save();
-
-  CookieHelper.clearRefreshTokenCookie(res);
 
   return { message: "Password has been successfully reset." };
 };

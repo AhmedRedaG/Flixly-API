@@ -71,7 +71,7 @@ Need help? Contact us at support@yourapp.com`,
     attachments: [
       {
         filename: "logo.png",
-        path: join(process.cwd(), "public", "mailImages", "logo.png"),
+        path: join(process.cwd(), "src", "public", "mailImages", "logo.png"),
         cid: "logo@jwt-auth.com",
       },
     ],
