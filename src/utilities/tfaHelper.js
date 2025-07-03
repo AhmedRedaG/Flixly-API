@@ -1,45 +1,60 @@
 import bcrypt from "bcrypt";
 import { totp } from "speakeasy";
+import { randomInt } from "crypto";
 
 import AppError from "./appError.js";
 import * as configs from "./../config/index.js";
 
-const { LOCK_DURATION } = configs.constants.tfa;
+const { HASH_BACKUP_CODES_ROUNDS } = configs.constants.bcrypt,
+  { LOCK_DURATION, MAX_ATTEMPTS, BACKUP_CODE_COUNT } = configs.constants.tfa;
 
 const verifyAttempts = async (user, method) => {
   const data = user.TFA[method];
 
   if (data.locked) {
-    if (data.lockedUntil <= new Date(Date.now())) {
+    if (data.lockedUntil <= new Date()) {
       data.locked = false;
       data.attempts = 0;
+      await user.save();
     } else {
-      return false;
+      throw new AppError(
+        "Account temporarily locked due to too many failed attempts",
+        429
+      );
     }
   }
 
-  if (data.attempts >= 5) {
+  if (data.attempts >= MAX_ATTEMPTS) {
     data.locked = true;
     data.lockedUntil = new Date(Date.now() + LOCK_DURATION);
     await user.save();
-    return false;
+    throw new AppError(
+      "Too many failed attempts. Account locked temporarily",
+      429
+    );
   }
 
   return true;
 };
 
+const incrementAttempts = async (user, method) => {
+  user.TFA[method].attempts++;
+  await user.save();
+};
+
 const verifySmsCode = async (user, TFACode) => {
-  if (!(await verifyAttempts(user, "sms"))) {
-    throw new AppError("Too many attempts, try again later", 429);
+  await verifyAttempts(user, "sms");
+
+  if (!user.TFA.sms.code) {
+    throw new AppError("No active SMS code found");
   }
 
-  if (user.TFA.sms.expiredAt < new Date(Date.now())) {
+  if (user.TFA.sms.expiredAt < new Date()) {
     throw new AppError("2FA token expired", 401);
   }
 
-  if (user.TFA.sms.code != TFACode) {
-    user.TFA.sms.attempts++;
-    await user.save();
+  if (user.TFA.sms.code !== Number(TFACode)) {
+    await incrementAttempts(user, "sms");
     throw new AppError("Invalid 2FA token", 401);
   }
 
@@ -47,9 +62,7 @@ const verifySmsCode = async (user, TFACode) => {
 };
 
 const verifyTotpCode = async (user, TFACode) => {
-  if (!(await verifyAttempts(user, "sms"))) {
-    throw new AppError("Too many attempts, try again later", 429);
-  }
+  await verifyAttempts(user, "totp");
 
   const isValid = totp.verify({
     secret: user.TFA.totp.secret,
@@ -58,8 +71,7 @@ const verifyTotpCode = async (user, TFACode) => {
     window: 1,
   });
   if (!isValid) {
-    user.TFA.totp.attempts++;
-    await user.save();
+    await incrementAttempts(user, "totp");
     throw new AppError("Invalid 2FA token", 401);
   }
 
@@ -67,40 +79,54 @@ const verifyTotpCode = async (user, TFACode) => {
 };
 
 export const verifyTFACode = async (user, TFACode, method) => {
-  if (method === "sms") return verifySmsCode(user, TFACode);
-  if (method === "totp") return verifyTotpCode(user, TFACode);
+  switch (method) {
+    case "sms":
+      return await verifySmsCode(user, TFACode);
+    case "totp":
+      return await verifyTotpCode(user, TFACode);
+    default:
+      throw new AppError("Invalid 2FA method");
+  }
 };
 
 const generateRawCodes = () => {
-  // 8 backup codes, 8 digits each
-  return Array.from({ length: 8 }, () =>
-    Math.floor(10000000 + Math.random() * 90000000).toString()
+  return Array.from({ length: BACKUP_CODE_COUNT }, () =>
+    randomInt(10000000, 99999999)
   );
 };
 
-const hashRawCodes = (rawCodes) => {
-  return rawCodes.map((code) => ({
-    code: bcrypt.hashSync(code, 10),
-    used: false,
-  }));
+const hashRawCodes = async (rawCodes) => {
+  const hashedCodes = await Promise.all(
+    rawCodes.map(async (code) => ({
+      code: await bcrypt.hash(code, HASH_BACKUP_CODES_ROUNDS),
+      used: false,
+    }))
+  );
+  return hashedCodes;
 };
 
 export const generateHashSaveBackupCodes = async (user) => {
   const rawBackupCodes = generateRawCodes();
-  const hashedBackupCodes = hashRawCodes(rawBackupCodes);
+  const hashedBackupCodes = await hashRawCodes(rawBackupCodes);
   user.TFA.backupCodes = hashedBackupCodes;
 
   return rawBackupCodes;
 };
 
 export const resetVerificationCycleData = (user, method) => {
-  if (method === "sms") {
-    user.TFA.sms.code = null;
-    user.TFA.sms.expiredIn = null;
-    user.TFA.sms.attempts = 0;
-  }
-  if (method === "totp") {
-    user.TFA.totp.attempts = 0;
+  switch (method) {
+    case "sms":
+      user.TFA.sms.code = null;
+      user.TFA.sms.expiredAt = null;
+      user.TFA.sms.attempts = 0;
+      user.TFA.sms.locked = false;
+      break;
+    case "totp":
+      user.TFA.totp.attempts = 0;
+      user.TFA.totp.locked = false;
+      break;
+    default:
+      throw new AppError("Invalid 2FA method");
   }
 };
 
@@ -108,4 +134,13 @@ export const disableTFA = (user) => {
   user.TFA.status = false;
   user.TFA.method = null;
   user.TFA.backupCodes = [];
+
+  if (user.TFA.sms) {
+    user.TFA.sms.attempts = 0;
+    user.TFA.sms.locked = false;
+  }
+  if (user.TFA.totp) {
+    user.TFA.totp.attempts = 0;
+    user.TFA.totp.locked = false;
+  }
 };
