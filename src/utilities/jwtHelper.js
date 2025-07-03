@@ -2,46 +2,56 @@ import jwt from "jsonwebtoken";
 
 import * as configs from "./../config/index.js";
 
-const { ACCESS_TOKEN_AGE, REFRESH_TOKEN_AGE, RESET_TOKEN_AGE, TEMP_TOKEN_AGE } =
-  configs.constants.jwt;
-
-const {
-  accessTokenSecret,
-  refreshTokenSecret,
-  resetTokenSecret,
-  tempTokenSecret,
-} = configs.env.jwt;
-
-const createToken = (payload, key, expiresIn) => {
-  return jwt.sign(payload, key, { expiresIn });
+const TOKEN_TYPES = {
+  ACCESS: {
+    secret: configs.env.jwt.accessTokenSecret,
+    expiresIn: configs.constants.jwt.ACCESS_TOKEN_AGE,
+  },
+  REFRESH: {
+    secret: configs.env.jwt.refreshTokenSecret,
+    expiresIn: configs.constants.jwt.REFRESH_TOKEN_AGE,
+  },
+  RESET: {
+    secret: configs.env.jwt.resetTokenSecret,
+    expiresIn: configs.constants.jwt.RESET_TOKEN_AGE,
+  },
+  TEMP: {
+    secret: configs.env.jwt.tempTokenSecret,
+    expiresIn: configs.constants.jwt.TEMP_TOKEN_AGE,
+  },
 };
 
-export const createAccessToken = (payload) => {
-  return createToken(payload, accessTokenSecret, ACCESS_TOKEN_EXPIRES_IN);
-};
-export const createRefreshToken = (payload) => {
-  return createToken(payload, refreshTokenSecret, REFRESH_TOKEN_EXPIRES_IN);
-};
-export const createResetToken = (payload) => {
-  return createToken(payload, resetTokenSecret, RESET_TOKEN_EXPIRES_IN);
-};
-export const createTempToken = (payload) => {
-  return createToken(payload, tempTokenSecret, TEMP_TOKEN_EXPIRES_IN);
+const createToken = (payload, tokenType) => {
+  const { secret, expiresIn } = TOKEN_TYPES[tokenType];
+  if (!secret) throw new Error(`Missing secret for ${tokenType} token`);
+
+  return jwt.sign(payload, secret, {
+    expiresIn,
+    algorithm: "HS256",
+  });
 };
 
-const verifyToken = (token, key) => {
-  return jwt.verify(token, key);
+const verifyToken = (token, tokenType) => {
+  if (!token) throw new Error("Token is required");
+
+  const { secret } = TOKEN_TYPES[tokenType];
+  if (!secret) throw new Error(`Missing secret for ${tokenType} token`);
+
+  try {
+    return jwt.verify(token, secret, { algorithms: ["HS256"] });
+  } catch (error) {
+    throw new Error(
+      `Invalid ${tokenType.toLowerCase()} token: ${error.message}`
+    );
+  }
 };
 
-export const verifyAccessToken = (token) => {
-  return verifyToken(token, accessTokenSecret);
-};
-export const verifyRefreshToken = (token) => {
-  return verifyToken(token, refreshTokenSecret);
-};
-export const verifyResetToken = (token) => {
-  return verifyToken(token, resetTokenSecret);
-};
-export const verifyTempToken = (token) => {
-  return verifyToken(token, tempTokenSecret);
-};
+export const createAccessToken = (payload) => createToken(payload, "ACCESS");
+export const createRefreshToken = (payload) => createToken(payload, "REFRESH");
+export const createResetToken = (payload) => createToken(payload, "RESET");
+export const createTempToken = (payload) => createToken(payload, "TEMP");
+
+export const verifyAccessToken = (token) => verifyToken(token, "ACCESS");
+export const verifyRefreshToken = (token) => verifyToken(token, "REFRESH");
+export const verifyResetToken = (token) => verifyToken(token, "RESET");
+export const verifyTempToken = (token) => verifyToken(token, "TEMP");
