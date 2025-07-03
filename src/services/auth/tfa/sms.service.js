@@ -3,9 +3,9 @@ import crypto from "crypto";
 import AppError from "../../../utilities/appError.js";
 import { sendTFASms } from "../../../utilities/smsSender.js";
 import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
+import * as configs from "../../../config/index.js";
 
-const TFA_DURATION = 1000 * 60 * 5; // 5 minutes
-const SMS_DURATION = 1000 * 60 * 15; // 15 minutes
+const { TFA_DURATION, SMS_DURATION } = configs.constants.tfa;
 
 export const sendSmsVerificationCodeService = async (userId) => {
   const user = await getUserByIdOrFail(userId);

@@ -1,4 +1,6 @@
-const REFRESH_TOKEN_AGE = 1000 * 60 * 60 * 24 * 7; // 7 days
+import * as configs from "./../config/index.js";
+
+const { REFRESH_TOKEN_AGE } = configs.constants.jwt;
 
 export function createRefreshTokenCookie(refreshToken, res) {
   res.cookie("refreshToken", refreshToken, {

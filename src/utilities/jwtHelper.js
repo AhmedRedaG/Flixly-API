@@ -2,10 +2,8 @@ import jwt from "jsonwebtoken";
 
 import * as configs from "./../config/index.js";
 
-const ACCESS_TOKEN_EXPIRES_IN = "2h"; // for testing
-const REFRESH_TOKEN_EXPIRES_IN = "7d";
-const RESET_TOKEN_EXPIRES_IN = "1h";
-const TEMP_TOKEN_EXPIRES_IN = "10m";
+const { ACCESS_TOKEN_AGE, REFRESH_TOKEN_AGE, RESET_TOKEN_AGE, TEMP_TOKEN_AGE } =
+  configs.constants.jwt;
 
 const {
   accessTokenSecret,

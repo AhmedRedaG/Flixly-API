@@ -2,8 +2,9 @@ import bcrypt from "bcrypt";
 import { totp } from "speakeasy";
 
 import AppError from "./appError.js";
+import * as configs from "./../config/index.js";
 
-const LOCK_DURATION = 1000 * 60 * 15; // 15 minutes
+const { LOCK_DURATION } = configs.constants.tfa;
 
 const verifyAttempts = async (user, method) => {
   const data = user.TFA[method];
