@@ -1,10 +1,10 @@
 {
   "name": "jwt-authentication-api",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon src/app.js"
+    "start": "nodemon src/server.js"
   },
   "keywords": [],
   "author": "Ahmed Reda",

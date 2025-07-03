@@ -1,5 +1,4 @@
 import express from "express";
-import { connect } from "mongoose";
 import cookieParser from "cookie-parser";
 import jsendMiddleware from "jsend-middleware";
 import helmet from "helmet";
@@ -32,9 +31,4 @@ app.use((req, res) => {
 });
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI;
-connect(MONGODB_URI)
-  .then(() => app.listen(PORT))
-  .then(() => console.log(`server is running on port ${PORT}`))
-  .catch((err) => console.error(err));
+export default app;
