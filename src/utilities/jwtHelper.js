@@ -12,36 +12,36 @@ const {
   tempTokenSecret,
 } = configs.env.jwt;
 
-function createToken(payload, key, expiresIn) {
+const createToken = (payload, key, expiresIn) => {
   return jwt.sign(payload, key, { expiresIn });
-}
+};
 
-export function createAccessToken(payload) {
+export const createAccessToken = (payload) => {
   return createToken(payload, accessTokenSecret, ACCESS_TOKEN_EXPIRES_IN);
-}
-export function createRefreshToken(payload) {
+};
+export const createRefreshToken = (payload) => {
   return createToken(payload, refreshTokenSecret, REFRESH_TOKEN_EXPIRES_IN);
-}
-export function createResetToken(payload) {
+};
+export const createResetToken = (payload) => {
   return createToken(payload, resetTokenSecret, RESET_TOKEN_EXPIRES_IN);
-}
-export function createTempToken(payload) {
+};
+export const createTempToken = (payload) => {
   return createToken(payload, tempTokenSecret, TEMP_TOKEN_EXPIRES_IN);
-}
+};
 
-function verifyToken(token, key) {
+const verifyToken = (token, key) => {
   return jwt.verify(token, key);
-}
+};
 
-export function verifyAccessToken(token) {
+export const verifyAccessToken = (token) => {
   return verifyToken(token, accessTokenSecret);
-}
-export function verifyRefreshToken(token) {
+};
+export const verifyRefreshToken = (token) => {
   return verifyToken(token, refreshTokenSecret);
-}
-export function verifyResetToken(token) {
+};
+export const verifyResetToken = (token) => {
   return verifyToken(token, resetTokenSecret);
-}
-export function verifyTempToken(token) {
+};
+export const verifyTempToken = (token) => {
   return verifyToken(token, tempTokenSecret);
-}
+};
