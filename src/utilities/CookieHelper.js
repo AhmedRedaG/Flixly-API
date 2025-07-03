@@ -1,6 +1,6 @@
 import * as configs from "./../config/index.js";
 
-const { REFRESH_TOKEN_AGE } = configs.constants.jwt;
+const { REFRESH_TOKEN_AGE_COOKIE } = configs.constants.jwt;
 
 export function createRefreshTokenCookie(refreshToken, res) {
   res.cookie("refreshToken", refreshToken, {
@@ -8,7 +8,7 @@ export function createRefreshTokenCookie(refreshToken, res) {
     sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
     secure: process.env.NODE_ENV === "production",
     path: "/api/v1/auth",
-    maxAge: REFRESH_TOKEN_AGE,
+    maxAge: REFRESH_TOKEN_AGE_COOKIE,
   });
 }
 
