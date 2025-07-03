@@ -1,14 +1,16 @@
 import nodemailer from "nodemailer";
 import { join } from "path";
 
+import * as configs from "./../config/index.js";
+
 const sendMail = async (mail) => {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: process.env.SERVER_MAIL,
-      pass: process.env.SERVER_MAIL_PASS,
+      user: configs.env.email.serverEmail,
+      pass: configs.env.email.serverEmailPass,
     },
   });
 
@@ -16,7 +18,7 @@ const sendMail = async (mail) => {
 };
 
 export const sendResetPasswordMail = async (user, resetToken) => {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  const resetUrl = `${configs.env.frontendUrl}/reset-password/${resetToken}`;
   const mail = {
     from: '"JWT-AUTH" <process.env.SERVER_MAIL>',
     to: user.email,

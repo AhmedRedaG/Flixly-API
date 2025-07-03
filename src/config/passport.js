@@ -1,8 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import dotenv from "dotenv";
-dotenv.config();
 
+import * as configs from "./index.js";
 import User from "../models/user.js";
 
 const findOrCreateUser = async (profile) => {
@@ -22,8 +21,8 @@ const findOrCreateUser = async (profile) => {
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientID: configs.env.google.clientId,
+      clientSecret: configs.env.google.clientSecret,
       callbackURL: "/api/v1/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {

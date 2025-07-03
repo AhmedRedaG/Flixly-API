@@ -1,8 +1,10 @@
 import { Vonage } from "@vonage/server-sdk";
 
+import * as configs from "./../config/index.js";
+
 const vonage = new Vonage({
-  apiKey: process.env.VONAGE_API_KEY,
-  apiSecret: process.env.VONAGE_API_SECRET,
+  apiKey: configs.env.sms.vonageApiKey,
+  apiSecret: configs.env.sms.vonageApiSecret,
 });
 
 export const sendTFASms = async (to, code) => {
