@@ -1,32 +1,97 @@
 import nodemailer from "nodemailer";
 import { join } from "path";
+import { existsSync } from "fs";
 
 import * as configs from "./../config/index.js";
 
-const sendMail = async (mail) => {
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: configs.env.email.serverEmail,
-      pass: configs.env.email.serverEmailPass,
-    },
-  });
+class EmailService {
+  constructor() {
+    this.transporter = null;
+    this.initializeTransporter();
+  }
 
-  await transporter.sendMail(mail);
-};
+  async initializeTransporter() {
+    try {
+      this.transporter = nodemailer.createTransport({
+        host: configs.env.email.smtpHost,
+        port: configs.env.email.smtpPort,
+        secure: false,
+        auth: {
+          user: configs.env.email.serverEmail,
+          pass: configs.env.email.serverEmailPass,
+        },
+      });
 
-export const sendResetPasswordMail = async (user, resetToken) => {
-  const resetUrl = `${configs.env.frontendUrl}/reset-password/${resetToken}`;
-  const mail = {
-    from: '"JWT-AUTH" <process.env.SERVER_MAIL>',
-    to: user.email,
-    subject: "Reset Your Password",
-    text: `
+      await this.transporter.verify();
+    } catch (error) {
+      throw new Error(
+        `Failed to initialize email transporter: ${error.message}`
+      );
+    }
+  }
+
+  async sendMail(mailOptions) {
+    if (!this.transporter) {
+      throw new Error("Email transporter not initialized");
+    }
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      return info;
+    } catch (error) {
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+  }
+
+  validateUser(user) {
+    if (!user || !user.email || !user.name) {
+      throw new Error("Invalid user object: email and name are required");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email)) {
+      throw new Error("Invalid email format");
+    }
+  }
+
+  getLogoAttachment() {
+    const logoPath = join(process.cwd(), "public", "mailImages", "logo.png");
+
+    if (!existsSync(logoPath)) {
+      return null;
+    }
+
+    return {
+      filename: "logo.png",
+      path: logoPath,
+      cid: "logo@jwt-auth.com",
+    };
+  }
+
+  createResetPasswordEmail(user, resetToken) {
+    const resetUrl = `${configs.env.frontendUrl}/reset-password/${resetToken}`;
+    const logoAttachment = this.getLogoAttachment();
+
+    const mailOptions = {
+      from: `"JWT-AUTH" <${configs.env.email.serverEmail}>`,
+      to: user.email,
+      subject: "Reset Your Password",
+      text: this.generatePlainTextContent(user, resetUrl),
+      html: this.generateHtmlContent(user, resetUrl, !!logoAttachment),
+    };
+
+    if (logoAttachment) {
+      mailOptions.attachments = [logoAttachment];
+    }
+
+    return mailOptions;
+  }
+
+  generatePlainTextContent(user, resetUrl) {
+    return `
 Hi ${user.name},
 
-We received a request to reset your password for your account on YourApp.
+We received a request to reset your password for your account.
 
 To reset your password, please click the link below:
 ${resetUrl}
@@ -34,12 +99,19 @@ ${resetUrl}
 If you did not request this, please ignore this email. This reset link will expire shortly for your security.
 
 Thanks,
-The YourApp Team
+The JWT-AUTH Team
 
-Need help? Contact us at support@yourapp.com`,
-    html: `
+Need help? Contact us at ${configs.env.email.supportEmail}`;
+  }
+
+  generateHtmlContent(user, resetUrl, hasLogo) {
+    const logoImg = hasLogo
+      ? `<img style="width:100px;" src="cid:logo@jwt-auth.com" alt="logo"/>`
+      : "";
+
+    return `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
-  <img style="width:100px;" src="cid:logo@jwt-auth.com" alt="logo"/>
+  ${logoImg}
 
   <h2 style="text-align: center; color: #333;">🔒 Reset Your Password</h2>
   
@@ -59,30 +131,32 @@ Need help? Contact us at support@yourapp.com`,
   </div>
   
   <p style="font-size: 14px; color: #888; text-align: center;">
-    If you didn’t request a password reset, you can safely ignore this email.
+    If you didn't request a password reset, you can safely ignore this email.
   </p>
 
   <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
   
   <p style="font-size: 12px; color: #aaa; text-align: center;">
-    © ${new Date().getFullYear()} YourApp. All rights reserved.<br>
-    Need help? Contact us at <a href="mailto:support@yourapp.com" style="color: #888;">support@yourapp.com</a>
+    © ${new Date().getFullYear()} JWT-AUTH. All rights reserved.<br>
+    Need help? Contact us at <a href="mailto:${
+      configs.env.email.supportEmail
+    }" style="color: #888;">${configs.env.email.supportEmail}</a>
   </p>
-</div>
-`,
-    attachments: [
-      {
-        filename: "logo.png",
-        path: join(process.cwd(), "public", "mailImages", "logo.png"),
-        cid: "logo@jwt-auth.com",
-      },
-    ],
-  };
+</div>`;
+  }
+}
 
+const emailService = new EmailService();
+
+export const sendResetPasswordMail = async (user, resetToken) => {
   try {
-    await sendMail(mail);
+    emailService.validateUser(user);
+
+    const mailOptions = emailService.createResetPasswordEmail(user, resetToken);
+    await emailService.sendMail(mailOptions);
+
     return "Email sent successfully";
-  } catch (err) {
-    throw new Error(`Failed to send email: ${err.message}`);
+  } catch (error) {
+    throw new Error(`Failed to send reset password email: ${error.message}`);
   }
 };

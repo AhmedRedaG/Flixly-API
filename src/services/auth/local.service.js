@@ -7,13 +7,13 @@ import { generateTokensForUser } from "../../utilities/authHelper.js";
 import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
 import * as configs from "../../config/index.js";
 
-const { BCRYPT_ROUNDS } = configs.constants;
+const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 
 export const postRegisterService = async (name, email, password) => {
   const userExisted = await User.findOne({ email });
   if (userExisted) throw new AppError("Email already in use", 409);
 
-  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
   const newUser = new User({ name, email, password: hashedPassword });
   const user = await newUser.save();
   const userSafeData = getSafeData(user);

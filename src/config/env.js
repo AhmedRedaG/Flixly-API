@@ -19,8 +19,11 @@ export const env = {
   },
 
   email: {
+    smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
+    smtpPort: process.env.SMTP_PORT || 587,
     serverEmail: process.env.SERVER_MAIL,
     serverEmailPass: process.env.SERVER_MAIL_PASS,
+    supportEmail: process.env.SUPPORT_MAIL || process.env.SERVER_MAIL,
   },
 
   frontendUrl: process.env.FRONTEND_URL,

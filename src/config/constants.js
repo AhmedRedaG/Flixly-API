@@ -3,6 +3,8 @@ export const constants = {
     TFA_DURATION: 1000 * 60 * 5,
     SMS_DURATION: 1000 * 60 * 15,
     LOCK_DURATION: 1000 * 60 * 15,
+    MAX_ATTEMPTS: 5,
+    BACKUP_CODE_COUNT: 10,
   },
 
   jwt: {
@@ -13,5 +15,8 @@ export const constants = {
     TEMP_TOKEN_AGE: "10m",
   },
 
-  BCRYPT_ROUNDS: 12,
+  bcrypt: {
+    HASH_PASSWORD_ROUNDS: 12,
+    HASH_BACKUP_CODES_ROUNDS: 10,
+  },
 };
