@@ -1,30 +1,35 @@
 import { Router } from "express";
 
 import * as authPassword from "../../controllers/auth/password.js";
-import validationResult, * as validation from "../../middlewares/isValid.js";
 import isAuth from "../../middlewares/isAuth.js";
+import isValid from "../../middlewares/isValid.js";
+import * as authValidator from "../../validators/shared/auth.js";
+import * as fieldValidator from "../../validators/fields/index.js";
 
 const router = Router();
 
 // auth/password/change
 router.patch(
   "/change",
+  authValidator.changePassword,
+  isValid,
   isAuth,
-  [validation.oldPassword, validation.newPassword, validationResult],
   authPassword.patchChangePassword
 );
 
 // auth/password/reset
 router.post(
   "/reset",
-  [validation.email, validationResult],
+  fieldValidator.email,
+  isValid,
   authPassword.postRequestPasswordReset
 );
 
 // auth/password/reset/{resetToken}
 router.patch(
   "/reset/:resetToken",
-  [validation.password, validationResult],
+  fieldValidator.password,
+  isValid,
   authPassword.patchResetPassword
 );
 

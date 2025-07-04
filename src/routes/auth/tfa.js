@@ -1,17 +1,20 @@
 import { Router } from "express";
 
 import * as authTFA from "../../controllers/auth/tfa/index.js";
-import validationResult, * as validation from "../../middlewares/isValid.js";
 import isAuth from "../../middlewares/isAuth.js";
 import tempAuth from "../../middlewares/tempAuth.js";
+import isValid from "../../middlewares/isValid.js";
+import * as authValidator from "../../validators/shared/auth.js";
+import * as fieldValidator from "../../validators/fields/index.js";
 
 const router = Router();
 
 // auth/2fa/setup/sms
 router.put(
   "/setup/sms",
+  fieldValidator.phoneNumber,
+  isValid,
   isAuth,
-  [validation.phoneNumber, validationResult],
   authTFA.setupTFASms
 );
 
@@ -21,16 +24,18 @@ router.put("/setup/totp", isAuth, authTFA.setupTFATotp);
 // auth/tfa/setup
 router.post(
   "/setup",
+  authValidator.TFAInput,
+  isValid,
   isAuth,
-  [validation.TFAInput, validationResult],
   authTFA.verifySetupTFA
 );
 
 // auth/2fa/setup
 router.delete(
   "/setup",
+  authValidator.TFAInput,
+  isValid,
   isAuth,
-  [validation.TFAInput, validationResult],
   authTFA.revokeSetupTFA
 );
 
@@ -38,26 +43,17 @@ router.delete(
 router.get("/", isAuth, authTFA.getCurrentTFAStatus);
 
 // auth/2fa
-router.post(
-  "/",
-  isAuth,
-  [validation.TFAInput, validationResult],
-  authTFA.enableTFA
-);
+router.post("/", authValidator.TFAInput, isValid, isAuth, authTFA.enableTFA);
 
 // auth/2fa
-router.delete(
-  "/",
-  isAuth,
-  [validation.TFAInput, validationResult],
-  authTFA.disableTFA
-);
+router.delete("/", authValidator.TFAInput, isValid, isAuth, authTFA.disableTFA);
 
 // auth/2fa/backup-codes
 router.post(
   "/backup-codes",
+  authValidator.TFAInput,
+  isValid,
   isAuth,
-  [validation.TFAInput, validationResult],
   authTFA.regenerateBackupCodes
 );
 

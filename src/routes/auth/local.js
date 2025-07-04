@@ -1,29 +1,21 @@
 import { Router } from "express";
 
 import * as authLocal from "../../controllers/auth/local.js";
-import validationResult, * as validation from "../../middlewares/isValid.js";
+import isValid from "../../middlewares/isValid.js";
+import * as authValidator from "../../validators/shared/auth.js";
 
 const router = Router();
 
 // auth/local/register
 router.post(
   "/register",
-  [
-    validation.name,
-    validation.email,
-    validation.password,
-    validation.confirmPassword,
-    validationResult,
-  ],
+  authValidator.register,
+  isValid,
   authLocal.postRegister
 );
 
 // auth/local/login
-router.post(
-  "/login",
-  [validation.email, validation.password, validationResult],
-  authLocal.postLogin
-);
+router.post("/login", authValidator.login, isValid, authLocal.postLogin);
 
 // auth/local/refresh
 router.post("/refresh", authLocal.postRefresh);
