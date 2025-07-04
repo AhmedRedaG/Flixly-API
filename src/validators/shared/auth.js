@@ -11,4 +11,4 @@ export const login = [fields.email, fields.password];
 
 export const changePassword = [fields.oldPassword, fields.newPassword];
 
-export const TFAInput = [fields.TFAMethod, fields.TFACode, fields.backupCode];
+export const TFAInput = [fields.TFAMethod, fields.TFACode];
