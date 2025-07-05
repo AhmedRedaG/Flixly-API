@@ -1,43 +1,19 @@
-import bcrypt from "bcrypt";
-
 import AppError from "../../../utilities/appError.js";
 import * as tfaHelper from "../../../utilities/tfaHelper.js";
 import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 import { generateTokensForUser } from "../../../utilities/authHelper.js";
 
-export const loginVerifyTFAService = async (
-  userId,
-  TFACode,
-  method,
-  backupCode
-) => {
-  if (!method || !["sms", "totp", "backup"].includes(method))
-    throw new AppError("Method missing or invalid");
-
+export const loginVerifyTFAService = async (userId, TFACode, method) => {
   const user = await getUserByIdOrFail(userId);
 
   if (user.TFA.status === false) throw new AppError("2FA is not enabled", 401);
 
-  if (method === "backup") {
-    if (!backupCode) throw new AppError("Backup code is required", 401);
+  if (method !== "backup" && user.TFA.method !== method)
+    throw new AppError(`${method} 2FA is not in use`, 401);
 
-    const backupCodeIndex = user.TFA.backupCodes.findIndex(
-      (codeObj) => !codeObj.used && bcrypt.compareSync(backupCode, codeObj.code)
-    );
-    if (backupCodeIndex === -1)
-      throw new AppError("Backup code is Invalid", 401);
+  await tfaHelper.verifyTFACode(user, TFACode, method);
 
-    user.TFA.backupCodes[backupCodeIndex].used = true;
-  } else {
-    if (!TFACode) throw new AppError("2FA token is required", 401);
-
-    if (user.TFA.method !== method)
-      throw new AppError(`${method} 2FA is not in use`, 401);
-
-    await tfaHelper.verifyTFACode(user, TFACode, method);
-
-    tfaHelper.resetVerificationCycleData(user, method);
-  }
+  tfaHelper.resetVerificationCycleData(user, method);
 
   const { accessToken, refreshToken, userSafeData } =
     await generateTokensForUser(user);

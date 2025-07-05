@@ -64,6 +64,12 @@ router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
 router.post("/sms/temp", tempAuth, authTFA.sendSmsVerificationCode);
 
 // auth/2fa/verify
-router.post("/verify", tempAuth, authTFA.loginVerifyTFA);
+router.post(
+  "/verify",
+  authValidator.TFAInput,
+  isValid,
+  tempAuth,
+  authTFA.loginVerifyTFA
+);
 
 export default router;

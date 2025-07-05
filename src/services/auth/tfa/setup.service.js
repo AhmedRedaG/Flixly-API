@@ -44,6 +44,9 @@ export const verifySetupTFAService = async (
 ) => {
   const user = await getUserByIdOrFail(userId);
 
+  if (method === "backup")
+    throw new AppError(`This action cant be done using backup code`, 401);
+
   if (user.TFA[method].status === true)
     throw new AppError(`${method} 2FA already verified`, 401);
 
@@ -69,6 +72,9 @@ export const verifySetupTFAService = async (
 
 export const revokeSetupTFAService = async (userId, TFACode, method) => {
   const user = await getUserByIdOrFail(userId);
+
+  if (method === "backup")
+    throw new AppError(`This action cant be done using backup code`, 401);
 
   if (user.TFA[method].status === false)
     throw new AppError(`${method} 2FA already not setup`, 401);

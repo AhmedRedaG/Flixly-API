@@ -78,12 +78,38 @@ const verifyTotpCode = async (user, TFACode) => {
   return true;
 };
 
+const verifyBackupCode = async (user, backupCode) => {
+  const unusedCodes = user.TFA.backupCodes.filter((code) => !code.used);
+  if (unusedCodes.length === 0) {
+    throw new AppError("All backup codes have been used", 400);
+  }
+
+  const comparisons = user.TFA.backupCodes.map(async (codeObj, index) => {
+    if (codeObj.used) {
+      return { index, isValid: false };
+    }
+    const isValid = await bcrypt.compare(backupCode, codeObj.code);
+    return { index, isValid };
+  });
+  const results = await Promise.all(comparisons);
+
+  const validResult = results.find((result) => result.isValid);
+  if (validResult) {
+    user.TFA.backupCodes[validResult.index].used = true;
+    return true;
+  }
+
+  throw new AppError("Backup code is Invalid", 401);
+};
+
 export const verifyTFACode = async (user, TFACode, method) => {
   switch (method) {
     case "sms":
       return await verifySmsCode(user, TFACode);
     case "totp":
       return await verifyTotpCode(user, TFACode);
+    case "backup":
+      return await verifyBackupCode(user, TFACode);
     default:
       throw new AppError("Invalid 2FA method");
   }

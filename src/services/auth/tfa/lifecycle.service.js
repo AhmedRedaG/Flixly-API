@@ -5,6 +5,9 @@ import { getUserByIdOrFail } from "../../../utilities/dataHelper.js";
 export const enableTFAService = async (userId, TFACode, method) => {
   const user = await getUserByIdOrFail(userId);
 
+  if (method === "backup")
+    throw new AppError(`This action cant be done using backup code`, 401);
+
   if (user.TFA[method].status === false)
     throw new AppError(`${method} 2FA is not verified`, 401);
 
@@ -29,7 +32,7 @@ export const disableTFAService = async (userId, TFACode, method) => {
   if (user.TFA.status === false)
     throw new AppError(`2FA already disabled`, 401);
 
-  if (user.TFA.method !== method)
+  if (method !== "backup" && user.TFA.method !== method)
     throw new AppError(`${method} 2FA is not in use`, 401);
 
   await tfaHelper.verifyTFACode(user, TFACode, method);
@@ -53,7 +56,7 @@ export const regenerateBackupCodesService = async (userId, TFACode, method) => {
 
   if (user.TFA.status === false) throw new AppError("2FA is not enabled", 401);
 
-  if (user.TFA.method !== method)
+  if (method !== "backup" && user.TFA.method !== method)
     throw new AppError(`${method} 2FA is not in use`, 401);
 
   await tfaHelper.verifyTFACode(user, TFACode, method);
