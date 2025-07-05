@@ -17,7 +17,6 @@ export const enableTFAService = async (userId, TFACode, method) => {
   await tfaHelper.verifyTFACode(user, TFACode, method);
 
   const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
-  tfaHelper.resetVerificationCycleData(user, method);
 
   user.TFA.status = true;
   user.TFA.method = method;
@@ -38,7 +37,6 @@ export const disableTFAService = async (userId, TFACode, method) => {
   await tfaHelper.verifyTFACode(user, TFACode, method);
 
   tfaHelper.disableTFA(user);
-  tfaHelper.resetVerificationCycleData(user, method);
   await user.save();
 
   return { method };
@@ -62,7 +60,6 @@ export const regenerateBackupCodesService = async (userId, TFACode, method) => {
   await tfaHelper.verifyTFACode(user, TFACode, method);
 
   const backupCodes = await tfaHelper.generateHashSaveBackupCodes(user);
-  tfaHelper.resetVerificationCycleData(user, method);
   await user.save();
 
   return { backupCodes };

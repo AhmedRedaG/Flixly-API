@@ -63,7 +63,6 @@ export const verifySetupTFAService = async (
     user.TFA.method = method;
   }
 
-  tfaHelper.resetVerificationCycleData(user, method);
   user.TFA[method].status = true;
   await user.save();
 
@@ -84,7 +83,6 @@ export const revokeSetupTFAService = async (userId, TFACode, method) => {
   if (user.TFA.status === true && user.TFA.method === method)
     tfaHelper.disableTFA(user);
 
-  tfaHelper.resetVerificationCycleData(user, method);
   user.TFA[method].status = false;
   await user.save();
 

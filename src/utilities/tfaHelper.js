@@ -42,6 +42,23 @@ const incrementAttempts = async (user, method) => {
   await user.save();
 };
 
+const resetVerificationCycleData = (user, method) => {
+  switch (method) {
+    case "sms":
+      user.TFA.sms.code = null;
+      user.TFA.sms.expiredAt = null;
+      user.TFA.sms.attempts = 0;
+      user.TFA.sms.locked = false;
+      break;
+    case "totp":
+      user.TFA.totp.attempts = 0;
+      user.TFA.totp.locked = false;
+      break;
+    default:
+      throw new AppError("Invalid 2FA method");
+  }
+};
+
 const verifySmsCode = async (user, TFACode) => {
   await verifyAttempts(user, "sms");
 
@@ -58,6 +75,7 @@ const verifySmsCode = async (user, TFACode) => {
     throw new AppError("Invalid 2FA token", 401);
   }
 
+  resetVerificationCycleData(user, "sms");
   return true;
 };
 
@@ -75,6 +93,7 @@ const verifyTotpCode = async (user, TFACode) => {
     throw new AppError("Invalid 2FA token", 401);
   }
 
+  resetVerificationCycleData(user, "totp");
   return true;
 };
 
@@ -137,23 +156,6 @@ export const generateHashSaveBackupCodes = async (user) => {
   user.TFA.backupCodes = hashedBackupCodes;
 
   return rawBackupCodes;
-};
-
-export const resetVerificationCycleData = (user, method) => {
-  switch (method) {
-    case "sms":
-      user.TFA.sms.code = null;
-      user.TFA.sms.expiredAt = null;
-      user.TFA.sms.attempts = 0;
-      user.TFA.sms.locked = false;
-      break;
-    case "totp":
-      user.TFA.totp.attempts = 0;
-      user.TFA.totp.locked = false;
-      break;
-    default:
-      throw new AppError("Invalid 2FA method");
-  }
 };
 
 export const disableTFA = (user) => {

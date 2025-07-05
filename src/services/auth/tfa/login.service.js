@@ -13,8 +13,6 @@ export const loginVerifyTFAService = async (userId, TFACode, method) => {
 
   await tfaHelper.verifyTFACode(user, TFACode, method);
 
-  tfaHelper.resetVerificationCycleData(user, method);
-
   const { accessToken, refreshToken, userSafeData } =
     await generateTokensForUser(user);
   await user.save();
