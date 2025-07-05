@@ -2,10 +2,11 @@ import AppError from "../utilities/appError.js";
 
 const errorHandler = (err, req, res, next) => {
   if (err instanceof AppError) {
-    res.jsend.fail({ message: err.message }, err.statusCode || 400);
+    const { message, statusCode } = err;
+    res.jsend.fail({ message }, statusCode);
   } else {
-    console.error(err);
-    res.jsend.error("internal server error");
+    console.log(err);
+    res.jsend.error("Internal server error");
   }
 };
 
