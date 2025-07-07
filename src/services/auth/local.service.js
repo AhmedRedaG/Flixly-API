@@ -13,12 +13,13 @@ export const postRegisterService = async (name, email, password) => {
   const userExisted = await User.findOne({ email });
   if (userExisted) throw new AppError("Email already in use", 409);
 
-  // send verification mail
-
   const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
   const newUser = new User({ name, email, password: hashedPassword });
   const user = await newUser.save();
   const userSafeData = getSafeData(user);
+
+  const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
+  // send verification mail
 
   return { user: userSafeData };
 };
@@ -57,6 +58,7 @@ export const postLoginService = async (email, password) => {
   if (!matchedPasswords) throw new AppError("Invalid password", 401);
 
   if (!user.verified) {
+    const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
     // send verification mail
     throw new AppError("User is not verified check your mail", 401);
   }

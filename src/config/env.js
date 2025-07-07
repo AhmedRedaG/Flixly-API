@@ -11,6 +11,7 @@ export const env = {
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
     resetTokenSecret: process.env.RESET_TOKEN_SECRET,
     tempTokenSecret: process.env.TEMP_TOKEN_SECRET,
+    verifyTokenSecret: process.env.VERIFY_TOKEN_SECRET,
   },
 
   google: {
