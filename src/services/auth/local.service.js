@@ -44,9 +44,12 @@ export const verifyMailService = async (verifyToken) => {
 
   user.verified = true;
   user.verifyToken = verifyToken;
+
+  const { accessToken, refreshToken, userSafeData } =
+    await generateTokensForUser(user);
   await user.save();
 
-  return { message: "User has been successfully verified." };
+  return { accessToken, refreshToken, userSafeData };
 };
 
 export const postLoginService = async (email, password) => {
