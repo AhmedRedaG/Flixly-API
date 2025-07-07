@@ -23,6 +23,7 @@ export const postRequestPasswordReset = async (req, res) => {
 export const patchResetPassword = async (req, res) => {
   const { resetToken } = req.params;
   const { password } = req.body;
+  if (!resetToken) throw new AppError("Reset token is missing");
   const data = await passwordServer.resetPasswordService(resetToken, password);
   CookieHelper.clearRefreshTokenCookie(res);
   res.jsend.success(data);

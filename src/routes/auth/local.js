@@ -14,6 +14,9 @@ router.post(
   authLocal.postRegister
 );
 
+// auth/local/verify/{verifyToken}
+router.patch("/verify/:verifyToken", authLocal.verifyMail);
+
 // auth/local/login
 router.post("/login", authValidator.login, isValid, authLocal.postLogin);
 

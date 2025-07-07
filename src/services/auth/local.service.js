@@ -13,12 +13,37 @@ export const postRegisterService = async (name, email, password) => {
   const userExisted = await User.findOne({ email });
   if (userExisted) throw new AppError("Email already in use", 409);
 
+  // send verification mail
+
   const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
   const newUser = new User({ name, email, password: hashedPassword });
   const user = await newUser.save();
   const userSafeData = getSafeData(user);
 
   return { user: userSafeData };
+};
+
+export const verifyMailService = async (verifyToken) => {
+  let userId;
+  try {
+    const decoded = JwtHelper.verifyVerifyToken(verifyToken);
+    userId = decoded._id;
+  } catch (err) {
+    throw new AppError("Verify token is expired or invalid", 401);
+  }
+
+  const user = await getUserByIdOrFail(userId);
+
+  if (user.verifyToken === verifyToken)
+    throw new AppError("Verify token is already used", 403);
+
+  if (user.verified) throw new AppError("User is already verified", 403);
+
+  user.verified = true;
+  user.verifyToken = verifyToken;
+  await user.save();
+
+  return { message: "User has been successfully verified." };
 };
 
 export const postLoginService = async (email, password) => {
@@ -30,6 +55,11 @@ export const postLoginService = async (email, password) => {
 
   const matchedPasswords = await bcrypt.compare(password, user.password);
   if (!matchedPasswords) throw new AppError("Invalid password", 401);
+
+  if (!user.verified) {
+    // send verification mail
+    throw new AppError("User is not verified check your mail", 401);
+  }
 
   if (user.TFA.status === true) {
     const tempToken = JwtHelper.createTempToken({ _id: user._id });

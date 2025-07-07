@@ -51,8 +51,6 @@ export const requestPasswordResetService = async (email) => {
 };
 
 export const resetPasswordService = async (resetToken, password) => {
-  if (!resetToken) throw new AppError("Reset token is missing");
-
   let userId;
   try {
     const decoded = JwtHelper.verifyResetToken(resetToken);

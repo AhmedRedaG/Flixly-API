@@ -7,6 +7,13 @@ export const postRegister = async (req, res) => {
   res.jsend.success(data);
 };
 
+export const verifyMail = async (req, res) => {
+  const { verifyToken } = req.params;
+  if (!verifyToken) throw new AppError("Verify token is missing");
+  const data = await localServer.verifyMailService(verifyToken);
+  res.jsend.success(data);
+};
+
 export const postLogin = async (req, res) => {
   const { email, password } = req.body;
   const { accessToken, refreshToken, userSafeData, method, tempToken } =
