@@ -1,4 +1,4 @@
-import * as configs from "./../config/index.js";
+import * as configs from "../config/index.js";
 
 const { REFRESH_TOKEN_AGE_COOKIE } = configs.constants.jwt;
 
