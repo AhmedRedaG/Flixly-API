@@ -5,6 +5,8 @@ import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
 import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
+import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
+
 import * as configs from "../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
@@ -19,9 +21,9 @@ export const postRegisterService = async (name, email, password) => {
   const userSafeData = getSafeData(user);
 
   const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
-  // send verification mail
+  const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
 
-  return { user: userSafeData };
+  return { user: userSafeData, message: sendMailResult };
 };
 
 export const verifyMailService = async (verifyToken) => {
@@ -59,8 +61,8 @@ export const postLoginService = async (email, password) => {
 
   if (!user.verified) {
     const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
-    // send verification mail
-    throw new AppError("User is not verified check your mail", 401);
+    const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
+    return { message: sendMailResult };
   }
 
   if (user.TFA.status === true) {
