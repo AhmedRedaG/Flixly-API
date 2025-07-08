@@ -18,7 +18,6 @@ const userSchema = new Schema(
     },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     verified: { type: Boolean, default: false },
-    verifyToken: { type: String },
     refreshTokens: [String],
     resetToken: { type: String },
     TFA: {

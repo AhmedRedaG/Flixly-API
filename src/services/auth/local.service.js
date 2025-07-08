@@ -37,14 +37,9 @@ export const verifyMailService = async (verifyToken) => {
 
   const user = await getUserByIdOrFail(userId);
 
-  if (user.verifyToken === verifyToken)
-    throw new AppError("Verify token is already used", 403);
-
   if (user.verified) throw new AppError("User is already verified", 403);
 
   user.verified = true;
-  user.verifyToken = verifyToken;
-
   const { accessToken, refreshToken, userSafeData } =
     await generateTokensForUser(user);
   await user.save();
