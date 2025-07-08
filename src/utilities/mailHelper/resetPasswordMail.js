@@ -1,4 +1,5 @@
 import EmailService from "./mailService.js";
+import * as configs from "../../config/index.js";
 
 export default class ResetPasswordMail extends EmailService {
   createMail(user, resetToken) {

@@ -10,18 +10,21 @@ export const postRegister = async (req, res) => {
 export const verifyMail = async (req, res) => {
   const { verifyToken } = req.params;
   if (!verifyToken) throw new AppError("Verify token is missing");
-  const { accessToken, refreshToken, userSafeData } =
-    await await localServer.verifyMailService(verifyToken);
+  const { refreshToken, ...data } = await await localServer.verifyMailService(
+    verifyToken
+  );
   CookieHelper.createRefreshTokenCookie(refreshToken, res);
-  res.jsend.success({ accessToken, user: userSafeData });
+  res.jsend.success(data);
 };
 
 export const postLogin = async (req, res) => {
   const { email, password } = req.body;
-  const { accessToken, refreshToken, userSafeData, method, tempToken } =
-    await localServer.postLoginService(email, password);
+  const { refreshToken, ...data } = await localServer.postLoginService(
+    email,
+    password
+  );
   CookieHelper.createRefreshTokenCookie(refreshToken, res);
-  res.jsend.success({ accessToken, user: userSafeData, method, tempToken });
+  res.jsend.success(data);
 };
 
 export const postRefresh = async (req, res) => {
