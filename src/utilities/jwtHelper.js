@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 
 import * as configs from "./../config/index.js";
 
@@ -29,7 +29,7 @@ const createToken = (payload, tokenType) => {
   const { secret, expiresIn } = TOKEN_TYPES[tokenType];
   if (!secret) throw new Error(`Missing secret for ${tokenType} token`);
 
-  return jwt.sign(payload, secret, {
+  return sign(payload, secret, {
     expiresIn,
     algorithm: "HS256",
   });
@@ -42,7 +42,7 @@ const verifyToken = (token, tokenType) => {
   if (!secret) throw new Error(`Missing secret for ${tokenType} token`);
 
   try {
-    return jwt.verify(token, secret, { algorithms: ["HS256"] });
+    return verify(token, secret, { algorithms: ["HS256"] });
   } catch (error) {
     throw new Error(
       `Invalid ${tokenType.toLowerCase()} token: ${error.message}`
