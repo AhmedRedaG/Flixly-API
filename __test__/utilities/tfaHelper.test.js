@@ -5,7 +5,7 @@ const { verifyAttempts, verifySmsCode, verifyTotpCode, verifyBackupCode } =
 
 import * as configs from "../../src/config/index.js";
 
-const { LOCK_DURATION, MAX_ATTEMPTS, BACKUP_CODE_COUNT } =
+const { LOCK_DURATION, MAX_ATTEMPTS, BACKUP_CODE_COUNT, SMS_DURATION } =
   configs.constants.tfa;
 
 let user;
@@ -20,8 +20,8 @@ beforeEach(() => {
     TFA: {
       status: false,
       method: null,
-      sms: { status: false, attempts: { $numberInt: "0" }, locked: false },
-      totp: { status: false, attempts: { $numberInt: "0" }, locked: false },
+      sms: { status: false, attempts: 0, locked: false },
+      totp: { status: false, attempts: 0, locked: false },
       backupCodes: [],
     },
     save: jest.fn().mockResolvedValue(true),
@@ -66,5 +66,58 @@ describe("verifyAttempts", () => {
     expect(user.TFA.sms.locked).toBeFalsy();
     expect(user.TFA.sms.attempts).toBe(0);
     expect(user.save).toHaveBeenCalled();
+  });
+});
+
+// export const verifySmsCode = async (user, TFACode) => {
+//   await verifyAttempts(user, "sms");
+
+//   if (!user.TFA.sms.code) {
+//     throw new AppError("No active SMS code found");
+//   }
+
+//   if (user.TFA.sms.expiredAt < new Date()) {
+//     throw new AppError("2FA token expired", 401);
+//   }
+
+//   if (user.TFA.sms.code !== Number(TFACode)) {
+//     await incrementAttempts(user, "sms");
+//     throw new AppError("Invalid 2FA token", 401);
+//   }
+
+//   resetVerificationCycleData(user, "sms");
+//   return true;
+// };
+
+describe("verifySmsCode", () => {
+  const TFACode = 123456;
+
+  it("should throw error if no sms code was set", async () => {
+    expect(verifyAttempts(user, "sms")).resolves.toBeTruthy();
+    await expect(verifySmsCode(user, TFACode)).rejects.toThrow(
+      "No active SMS code found"
+    );
+  });
+
+  it("should throw error if code expired", async () => {
+    user.TFA.sms.code = TFACode;
+    user.TFA.sms.expiredAt = new Date() - 1000;
+    await expect(verifySmsCode(user, TFACode)).rejects.toThrow(
+      "2FA token expired"
+    );
+  });
+
+  it("should throw error if code not matched saved one", async () => {
+    user.TFA.sms.code = 123789;
+    user.TFA.sms.expiredAt = new Date() + SMS_DURATION;
+    await expect(verifySmsCode(user, TFACode)).rejects.toThrow(
+      "Invalid 2FA token"
+    );
+  });
+
+  it("should return true in case of all conditions verified", async () => {
+    user.TFA.sms.code = TFACode;
+    user.TFA.sms.expiredAt = new Date() + SMS_DURATION;
+    await expect(verifySmsCode(user, TFACode)).resolves.toBeTruthy();
   });
 });
