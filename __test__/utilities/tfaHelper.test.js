@@ -6,14 +6,23 @@ jest.unstable_mockModule("speakeasy", () => ({
   },
 }));
 
+jest.unstable_mockModule("bcrypt", () => ({
+  __esModule: true,
+  default: {
+    compare: jest
+      .fn()
+      .mockImplementation((backupCode, savedCode) => backupCode === savedCode),
+  },
+}));
+
+const bcrypt = await import("bcrypt");
 const { totp } = await import("speakeasy");
 const { verifyAttempts, verifySmsCode, verifyTotpCode, verifyBackupCode } =
   await import("../../src/utilities/tfaHelper.js");
 
 import * as configs from "../../src/config/index.js";
 
-const { LOCK_DURATION, MAX_ATTEMPTS, BACKUP_CODE_COUNT, SMS_DURATION } =
-  configs.constants.tfa;
+const { LOCK_DURATION, MAX_ATTEMPTS, SMS_DURATION } = configs.constants.tfa;
 
 let user;
 beforeEach(() => {
@@ -120,5 +129,32 @@ describe("verifyTotpCode", () => {
   it("should return true in case of all conditions verified", async () => {
     totp.verify.mockReturnValueOnce(true);
     await expect(verifyTotpCode(user, TFACode)).resolves.toBeTruthy();
+  });
+});
+
+const usedCodes = [{ code: 1, used: true }];
+const unusedCodes = [{ code: 1, used: false }];
+const validCode = 1;
+const invalidCode = -1;
+
+describe("verifyBackupCode", () => {
+  it("should throw error if all saved codes is used", async () => {
+    user.TFA.backupCodes = usedCodes;
+    await expect(verifyBackupCode(user, validCode)).rejects.toThrow(
+      "All backup codes have been used"
+    );
+  });
+
+  it("should throw error if no matched code found", async () => {
+    user.TFA.backupCodes = unusedCodes;
+    await expect(verifyBackupCode(user, invalidCode)).rejects.toThrow(
+      "Backup code is Invalid"
+    );
+  });
+
+  it("should return true and update the code status to be used", async () => {
+    user.TFA.backupCodes = unusedCodes;
+    await expect(verifyBackupCode(user, validCode)).resolves.toBeTruthy();
+    expect(user.TFA.backupCodes[0].used).toBeTruthy();
   });
 });
