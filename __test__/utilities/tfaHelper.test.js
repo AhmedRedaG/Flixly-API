@@ -43,7 +43,6 @@ beforeEach(() => {
     save: jest.fn().mockResolvedValue(true),
   };
 });
-const TFACode = 123456;
 
 describe("verifyAttempts", () => {
   it("should return true if attempts < max attempts", async () => {
@@ -86,6 +85,9 @@ describe("verifyAttempts", () => {
   });
 });
 
+const TFACode = 123456;
+const wrongTFACode = 123789;
+
 describe("verifySmsCode", () => {
   it("should throw error if no sms code was set", async () => {
     expect(verifyAttempts(user, "sms")).resolves.toBeTruthy();
@@ -103,7 +105,7 @@ describe("verifySmsCode", () => {
   });
 
   it("should throw error if code not matched saved one", async () => {
-    user.TFA.sms.code = 123789;
+    user.TFA.sms.code = wrongTFACode;
     user.TFA.sms.expiredAt = new Date() + SMS_DURATION;
     await expect(verifySmsCode(user, TFACode)).rejects.toThrow(
       "Invalid 2FA token"
