@@ -8,7 +8,7 @@ import * as configs from "./../config/index.js";
 const { HASH_BACKUP_CODES_ROUNDS } = configs.constants.bcrypt,
   { LOCK_DURATION, MAX_ATTEMPTS, BACKUP_CODE_COUNT } = configs.constants.tfa;
 
-const verifyAttempts = async (user, method) => {
+export const verifyAttempts = async (user, method) => {
   const data = user.TFA[method];
 
   if (data.locked) {
@@ -59,7 +59,7 @@ const resetVerificationCycleData = (user, method) => {
   }
 };
 
-const verifySmsCode = async (user, TFACode) => {
+export const verifySmsCode = async (user, TFACode) => {
   await verifyAttempts(user, "sms");
 
   if (!user.TFA.sms.code) {
@@ -79,7 +79,7 @@ const verifySmsCode = async (user, TFACode) => {
   return true;
 };
 
-const verifyTotpCode = async (user, TFACode) => {
+export const verifyTotpCode = async (user, TFACode) => {
   await verifyAttempts(user, "totp");
 
   const isValid = totp.verify({
@@ -97,7 +97,7 @@ const verifyTotpCode = async (user, TFACode) => {
   return true;
 };
 
-const verifyBackupCode = async (user, backupCode) => {
+export const verifyBackupCode = async (user, backupCode) => {
   const unusedCodes = user.TFA.backupCodes.filter((code) => !code.used);
   if (unusedCodes.length === 0) {
     throw new AppError("All backup codes have been used", 400);

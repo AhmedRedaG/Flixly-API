@@ -1,12 +1,17 @@
 import { jest, describe, it, expect } from "@jest/globals";
 
-jest.unstable_mockModule("jsonwebtoken", () => ({
-  sign: jest.fn((payload) => "hashed:" + payload._id),
-  verify: jest.fn((token) => {
-    if (token.length < 7) throw new Error("invalid length");
-    else return token.slice(7);
-  }),
-}));
+jest.unstable_mockModule("jsonwebtoken", () => {
+  return {
+    __esModule: true,
+    default: {
+      sign: jest.fn((payload) => "hashed:" + payload._id),
+      verify: jest.fn((token) => {
+        if (token.length < 7) throw new Error("invalid length");
+        else return token.slice(7);
+      }),
+    },
+  };
+});
 
 const { createAccessToken, verifyAccessToken } = await import(
   "../../src/utilities/jwtHelper.js"
