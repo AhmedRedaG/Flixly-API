@@ -1,5 +1,12 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 
+jest.unstable_mockModule("speakeasy", () => ({
+  totp: {
+    verify: jest.fn(),
+  },
+}));
+
+const { totp } = await import("speakeasy");
 const { verifyAttempts, verifySmsCode, verifyTotpCode, verifyBackupCode } =
   await import("../../src/utilities/tfaHelper.js");
 
@@ -27,6 +34,7 @@ beforeEach(() => {
     save: jest.fn().mockResolvedValue(true),
   };
 });
+const TFACode = 123456;
 
 describe("verifyAttempts", () => {
   it("should return true if attempts < max attempts", async () => {
@@ -69,29 +77,7 @@ describe("verifyAttempts", () => {
   });
 });
 
-// export const verifySmsCode = async (user, TFACode) => {
-//   await verifyAttempts(user, "sms");
-
-//   if (!user.TFA.sms.code) {
-//     throw new AppError("No active SMS code found");
-//   }
-
-//   if (user.TFA.sms.expiredAt < new Date()) {
-//     throw new AppError("2FA token expired", 401);
-//   }
-
-//   if (user.TFA.sms.code !== Number(TFACode)) {
-//     await incrementAttempts(user, "sms");
-//     throw new AppError("Invalid 2FA token", 401);
-//   }
-
-//   resetVerificationCycleData(user, "sms");
-//   return true;
-// };
-
 describe("verifySmsCode", () => {
-  const TFACode = 123456;
-
   it("should throw error if no sms code was set", async () => {
     expect(verifyAttempts(user, "sms")).resolves.toBeTruthy();
     await expect(verifySmsCode(user, TFACode)).rejects.toThrow(
@@ -119,5 +105,20 @@ describe("verifySmsCode", () => {
     user.TFA.sms.code = TFACode;
     user.TFA.sms.expiredAt = new Date() + SMS_DURATION;
     await expect(verifySmsCode(user, TFACode)).resolves.toBeTruthy();
+  });
+});
+
+describe("verifyTotpCode", () => {
+  it("should throw error if code not valid", async () => {
+    expect(verifyAttempts(user, "totp")).resolves.toBeTruthy();
+    totp.verify.mockReturnValueOnce(false);
+    await expect(verifyTotpCode(user, TFACode)).rejects.toThrow(
+      "Invalid 2FA token"
+    );
+  });
+
+  it("should return true in case of all conditions verified", async () => {
+    totp.verify.mockReturnValueOnce(true);
+    await expect(verifyTotpCode(user, TFACode)).resolves.toBeTruthy();
   });
 });
