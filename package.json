@@ -4,8 +4,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon src/server.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll"
+    "dev": "nodemon src/server.js",
+    "test": "set NODE_ENV=testing && node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "jest": {
     "transform": {}

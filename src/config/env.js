@@ -2,13 +2,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const env = {
-  nodeEnv: process.env.NODE_ENV || "development",
+  nodeEnv: process.env.NODE_ENV.trim() || "development",
   port: {
-    developing: process.env.DEVELOPING_PORT || 3000,
+    development: process.env.DEVELOPMENT_PORT || 3000,
     testing: process.env.TESTING_PORT || 3030,
   },
   mongoUri: {
-    developing: process.env.DEVELOPING_MONGODB_URI,
+    development: process.env.DEVELOPMENT_MONGODB_URI,
     testing: process.env.TESTING_MONGODB_URI,
   },
 
