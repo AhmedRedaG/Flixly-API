@@ -4,7 +4,7 @@ import AppError from "./appError.js";
 export const getUserByIdOrFail = async (userId) => {
   const user = await User.findById(userId);
   if (!user) {
-    throw new AppError("No user found", 404);
+    throw new AppError("User not found with the provided ID", 404);
   }
   return user;
 };
