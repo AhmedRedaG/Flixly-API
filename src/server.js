@@ -1,16 +1,22 @@
 import app from "./app.js";
 import * as configs from "./config/index.js";
 
-const PORT = configs.env.port;
+const PORT = configs.env.port[configs.env.nodeEnv];
 
-(async () => {
+let server;
+
+await (async () => {
   try {
     await configs.connectDB();
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+    server = app.listen(PORT, () => {
+      console.log(
+        `${configs.env.nodeEnv} Server running on http://localhost:${PORT}`
+      );
     });
   } catch (err) {
     console.error("Failed to start server:", err);
     process.exit(1);
   }
 })();
+
+export { server };
