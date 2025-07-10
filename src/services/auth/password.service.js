@@ -5,6 +5,9 @@ import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { sendResetPasswordMail } from "../../utilities/mailHelper/mailSender.js";
 import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
+import * as configs from "../../config/index.js";
+
+const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 
 export const changePasswordService = async (
   userId,
@@ -36,7 +39,11 @@ export const changePasswordService = async (
 
 export const requestPasswordResetService = async (email) => {
   const user = await User.findOne({ email });
-  if (!user) throw new AppError("Invalid email", 401);
+  if (!user)
+    return {
+      message:
+        "If an account exists for this email, a password reset link has been sent.",
+    };
 
   const payload = {
     _id: user._id,
@@ -45,9 +52,12 @@ export const requestPasswordResetService = async (email) => {
   };
   const resetToken = JwtHelper.createResetToken(payload);
 
-  const sendMailResult = await sendResetPasswordMail(user, resetToken);
+  await sendResetPasswordMail(user, resetToken);
 
-  return { message: sendMailResult };
+  return {
+    message:
+      "If an account exists for this email, a password reset link has been sent.",
+  };
 };
 
 export const resetPasswordService = async (resetToken, password) => {
@@ -65,7 +75,7 @@ export const resetPasswordService = async (resetToken, password) => {
   if (user.resetToken === resetToken)
     throw new AppError("Reset token is already used", 403);
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
   user.password = hashedPassword;
   user.resetToken = resetToken;
   user.refreshTokens = [];
