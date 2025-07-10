@@ -4,7 +4,7 @@ import * as CookieHelper from "../../utilities/cookieHelper.js";
 export const postRegister = async (req, res) => {
   const { name, email, password } = req.body;
   const data = await localServer.postRegisterService(name, email, password);
-  res.jsend.success(data);
+  res.jsend.success(data, 201);
 };
 
 export const verifyMail = async (req, res) => {
@@ -29,11 +29,11 @@ export const postLogin = async (req, res) => {
 
 export const postRefresh = async (req, res) => {
   const oldRefreshToken = req.cookies.refreshToken;
-  const { accessToken, refreshToken } = await localServer.postRefreshService(
+  const { refreshToken, ...data } = await localServer.postRefreshService(
     oldRefreshToken
   );
   CookieHelper.createRefreshTokenCookie(refreshToken, res);
-  res.jsend.success({ accessToken });
+  res.jsend.success(data);
 };
 
 export const postLogout = async (req, res) => {

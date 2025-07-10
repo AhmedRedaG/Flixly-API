@@ -44,7 +44,12 @@ export const verifyMailService = async (verifyToken) => {
     await generateTokensForUser(user);
   await user.save();
 
-  return { accessToken, refreshToken, userSafeData };
+  return {
+    accessToken,
+    refreshToken,
+    userSafeData,
+    message: "Email verified successfully",
+  };
 };
 
 export const postLoginService = async (email, password) => {
@@ -60,19 +65,31 @@ export const postLoginService = async (email, password) => {
   if (!user.verified) {
     const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
     const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
-    return { message: sendMailResult };
+    throw new AppError(
+      "Your account has not been verified " + sendMailResult,
+      401
+    );
   }
 
   if (user.TFA.status === true) {
     const tempToken = JwtHelper.createTempToken({ _id: user._id });
-    return { method: user.TFA.method, tempToken };
+    return {
+      method: user.TFA.method,
+      tempToken,
+      message: "Two-factor authentication required",
+    };
   }
 
   const { accessToken, refreshToken, userSafeData } =
     await generateTokensForUser(user);
   await user.save();
 
-  return { accessToken, refreshToken, userSafeData };
+  return {
+    accessToken,
+    refreshToken,
+    userSafeData,
+    message: "Login successful",
+  };
 };
 
 export const postRefreshService = async (oldRefreshToken) => {
@@ -105,18 +122,25 @@ export const postRefreshService = async (oldRefreshToken) => {
   user.refreshTokens = user.refreshTokens.slice(-5);
   await user.save();
 
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    message: "Tokens refreshed successfully",
+  };
 };
 
 export const postLogoutService = async (refreshToken, logoutFullCase) => {
-  if (!refreshToken) return;
+  if (!refreshToken)
+    return {
+      message: "Already logged out",
+    };
 
   let userId;
   try {
     const decoded = JwtHelper.verifyRefreshToken(refreshToken);
     userId = decoded._id;
   } catch (err) {
-    throw new AppError("Invalid or expired token");
+    throw new AppError("Invalid or expired token", 403);
   }
 
   const user = await getUserByIdOrFail(userId);
@@ -126,5 +150,7 @@ export const postLogoutService = async (refreshToken, logoutFullCase) => {
   else user.refreshTokens = [];
   await user.save();
 
-  return;
+  return {
+    message: "User logged out successfully",
+  };
 };
