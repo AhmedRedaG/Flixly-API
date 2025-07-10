@@ -4,8 +4,8 @@ import { getSafeData } from "./dataHelper.js";
 export const generateTokensForUser = async (user) => {
   const userSafeData = getSafeData(user);
 
-  const refreshToken = JwtHelper.createRefreshToken(userSafeData);
   const accessToken = JwtHelper.createAccessToken(userSafeData);
+  const refreshToken = JwtHelper.createRefreshToken({ _id: user._id });
 
   user.refreshTokens.push(refreshToken);
 

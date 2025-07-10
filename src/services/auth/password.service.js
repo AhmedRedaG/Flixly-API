@@ -45,12 +45,7 @@ export const requestPasswordResetService = async (email) => {
         "If an account exists for this email, a password reset link has been sent.",
     };
 
-  const payload = {
-    _id: user._id,
-    email: user.email,
-    type: "reset",
-  };
-  const resetToken = JwtHelper.createResetToken(payload);
+  const resetToken = JwtHelper.createResetToken({ _id: use._id });
 
   await sendResetPasswordMail(user, resetToken);
 
@@ -61,10 +56,8 @@ export const requestPasswordResetService = async (email) => {
 };
 
 export const resetPasswordService = async (resetToken, password) => {
-  let userId;
   const decoded = JwtHelper.verifyResetToken(resetToken);
-  if (decoded.type === "reset") userId = decoded._id;
-  else throw new AppError("Invalid Token Type");
+  const userId = decoded._id;
 
   const user = await getUserByIdOrFail(userId);
 
