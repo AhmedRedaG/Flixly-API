@@ -17,5 +17,10 @@ export const loginVerifyTFAService = async (userId, TFACode, method) => {
     await generateTokensForUser(user);
   await user.save();
 
-  return { accessToken, refreshToken, userSafeData };
+  return {
+    accessToken,
+    refreshToken,
+    userSafeData,
+    message: "Two-factor authentication verified successfully",
+  };
 };
