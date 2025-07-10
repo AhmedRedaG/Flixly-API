@@ -31,7 +31,8 @@ export const sendSmsVerificationCodeService = async (userId) => {
   await user.save();
 
   return {
-    phoneNumber: `*******${phoneNumber.slice(9)}`,
+    phoneNumber: `*******${phoneNumber.slice(-3)}`,
     TFAExpiredAt,
+    message: "Verification code sent successfully via SMS",
   };
 };
