@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 
 import * as configs from "./../config/index.js";
+import AppError from "./appError.js";
 
 const TOKEN_TYPES = {
   ACCESS: {
@@ -43,10 +44,15 @@ const verifyToken = (token, tokenType) => {
 
   try {
     return jwt.verify(token, secret, { algorithms: ["HS256"] });
-  } catch (error) {
-    throw new Error(
-      `Invalid ${tokenType.toLowerCase()} token: ${error.message}`
-    );
+  } catch (err) {
+    const message =
+      err.name === "TokenExpiredError"
+        ? "Access token expired"
+        : err.name === "JsonWebTokenError"
+        ? "Access token invalid"
+        : "Authentication failed";
+
+    throw new AppError(message, 403);
   }
 };
 

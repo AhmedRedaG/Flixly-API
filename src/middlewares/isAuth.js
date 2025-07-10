@@ -14,18 +14,7 @@ const isAuth = async (req, res, next) => {
 
   const accessToken = authorizationHeader.split(" ")[1];
 
-  try {
-    req.user = JwtHelper.verifyAccessToken(accessToken);
-  } catch (err) {
-    const message =
-      err.name === "TokenExpiredError"
-        ? "Access token expired"
-        : err.name === "JsonWebTokenError"
-        ? "Access token invalid"
-        : "Authentication failed";
-
-    throw new AppError(message, 403);
-  }
+  req.user = JwtHelper.verifyAccessToken(accessToken);
 
   next();
 };

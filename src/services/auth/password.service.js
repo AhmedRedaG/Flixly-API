@@ -62,13 +62,9 @@ export const requestPasswordResetService = async (email) => {
 
 export const resetPasswordService = async (resetToken, password) => {
   let userId;
-  try {
-    const decoded = JwtHelper.verifyResetToken(resetToken);
-    if (decoded.type === "reset") userId = decoded._id;
-    else throw new AppError("Invalid Token Type");
-  } catch (err) {
-    throw new AppError("Reset token is expired or invalid", 401);
-  }
+  const decoded = JwtHelper.verifyResetToken(resetToken);
+  if (decoded.type === "reset") userId = decoded._id;
+  else throw new AppError("Invalid Token Type");
 
   const user = await getUserByIdOrFail(userId);
 

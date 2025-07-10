@@ -27,13 +27,8 @@ export const postRegisterService = async (name, email, password) => {
 };
 
 export const verifyMailService = async (verifyToken) => {
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyVerifyToken(verifyToken);
-    userId = decoded._id;
-  } catch (err) {
-    throw new AppError("Verify token is expired or invalid", 401);
-  }
+  const decoded = JwtHelper.verifyVerifyToken(verifyToken);
+  const userId = decoded._id;
 
   const user = await getUserByIdOrFail(userId);
 
@@ -95,18 +90,8 @@ export const postLoginService = async (email, password) => {
 export const postRefreshService = async (oldRefreshToken) => {
   if (!oldRefreshToken) throw new AppError("No oldRefreshToken exist", 401);
 
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
-    userId = decoded._id;
-  } catch (err) {
-    throw new AppError(
-      err.name === "TokenExpiredError"
-        ? "Refresh token expired"
-        : "Refresh token invalid",
-      403
-    );
-  }
+  const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
+  const userId = decoded._id;
 
   const user = await getUserByIdOrFail(userId);
 
@@ -135,13 +120,8 @@ export const postLogoutService = async (refreshToken, logoutFullCase) => {
       message: "Already logged out",
     };
 
-  let userId;
-  try {
-    const decoded = JwtHelper.verifyRefreshToken(refreshToken);
-    userId = decoded._id;
-  } catch (err) {
-    throw new AppError("Invalid or expired token", 403);
-  }
+  const decoded = JwtHelper.verifyRefreshToken(refreshToken);
+  const userId = decoded._id;
 
   const user = await getUserByIdOrFail(userId);
 
