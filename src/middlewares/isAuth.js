@@ -1,33 +1,30 @@
 import * as JwtHelper from "../utilities/jwtHelper.js";
+import AppError from "../utilities/appError.js";
 
 const isAuth = async (req, res, next) => {
   const authorizationHeader = req.get("Authorization");
-  if (!authorizationHeader)
-    return res.jsend.fail(
-      { authorizationHeader: "Authorization header is missing" },
-      401
-    );
+
+  if (!authorizationHeader) {
+    throw new AppError("Authorization header is missing", 401);
+  }
 
   if (!authorizationHeader.startsWith("Bearer ")) {
-    return res.jsend.fail(
-      { authorizationHeader: "Invalid Authorization format" },
-      401
-    );
+    throw new AppError("Invalid Authorization format", 401);
   }
 
   const accessToken = authorizationHeader.split(" ")[1];
+
   try {
     req.user = JwtHelper.verifyAccessToken(accessToken);
   } catch (err) {
-    return res.jsend.fail(
-      {
-        accessToken:
-          err.name === "TokenExpiredError"
-            ? "Access token expired"
-            : "Access token invalid",
-      },
-      403
-    );
+    const message =
+      err.name === "TokenExpiredError"
+        ? "Access token expired"
+        : err.name === "JsonWebTokenError"
+        ? "Access token invalid"
+        : "Authentication failed";
+
+    throw new AppError(message, 403);
   }
 
   next();
