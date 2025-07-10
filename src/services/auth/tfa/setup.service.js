@@ -9,19 +9,22 @@ export const setupTFASmsService = async (userId, phoneNumber) => {
   const user = await getUserByIdOrFail(userId);
 
   if (user.TFA.sms.status === true)
-    throw new AppError("Phone number already set and 2fa is activated");
+    throw new AppError("Phone number already set and 2fa is activated", 409);
 
   user.TFA.sms.number = phoneNumber;
   await user.save();
 
-  return { phoneNumber };
+  return {
+    phoneNumber,
+    message: "Phone number has been set successfully for 2FA setup",
+  };
 };
 
 export const setupTFATotpService = async (userId) => {
   const user = await getUserByIdOrFail(userId);
 
   if (user.TFA.totp.status === true)
-    throw new AppError("totp already set and 2fa is activated");
+    throw new AppError("totp already set and 2fa is activated", 409);
 
   const secretOdj = speakeasy.generateSecret({
     length: 32,
@@ -33,7 +36,11 @@ export const setupTFATotpService = async (userId) => {
   user.TFA.totp.secret = secretOdj.base32;
   await user.save();
 
-  return { secret: secretOdj.base32, qrCodeDataURL };
+  return {
+    secret: secretOdj.base32,
+    qrCodeDataURL,
+    message: "TOTP secret generated successfully",
+  };
 };
 
 export const verifySetupTFAService = async (
@@ -48,13 +55,13 @@ export const verifySetupTFAService = async (
     throw new AppError(`This action cant be done using backup code`, 401);
 
   if (user.TFA[method].status === true)
-    throw new AppError(`${method} 2FA already verified`, 401);
+    throw new AppError(`${method} 2FA already verified`, 409);
 
   if (method === "sms" && !user.TFA.sms.number)
-    throw new AppError("No number founded");
+    throw new AppError("No phone number found for SMS verification");
 
   if (method === "totp" && !user.TFA.totp.secret)
-    throw new AppError("No secret founded");
+    throw new AppError("No secret found for TOTP verification");
 
   await tfaHelper.verifyTFACode(user, TFACode, method);
 
@@ -66,7 +73,7 @@ export const verifySetupTFAService = async (
   user.TFA[method].status = true;
   await user.save();
 
-  return { method };
+  return { method, message: `${method} 2FA has been verified successfully` };
 };
 
 export const revokeSetupTFAService = async (userId, TFACode, method) => {
@@ -76,7 +83,7 @@ export const revokeSetupTFAService = async (userId, TFACode, method) => {
     throw new AppError(`This action cant be done using backup code`, 401);
 
   if (user.TFA[method].status === false)
-    throw new AppError(`${method} 2FA already not setup`, 401);
+    throw new AppError(`${method} 2FA is not setup`, 409);
 
   await tfaHelper.verifyTFACode(user, TFACode, method);
 
@@ -86,5 +93,5 @@ export const revokeSetupTFAService = async (userId, TFACode, method) => {
   user.TFA[method].status = false;
   await user.save();
 
-  return { method };
+  return { method, message: `${method} 2FA has been revoked successfully` };
 };
