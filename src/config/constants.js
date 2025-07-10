@@ -1,3 +1,5 @@
+import rateLimit from "express-rate-limit";
+
 export const constants = {
   tfa: {
     TFA_DURATION: 1000 * 60 * 5,
@@ -19,5 +21,10 @@ export const constants = {
   bcrypt: {
     HASH_PASSWORD_ROUNDS: 12,
     HASH_BACKUP_CODES_ROUNDS: 10,
+  },
+
+  rateLimit: {
+    WINDOW_DURATION: 1000 * 60 * 15,
+    REQUESTS_BARE_WINDOW: 50,
   },
 };
