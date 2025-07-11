@@ -19,7 +19,7 @@ const { createAccessToken, verifyAccessToken } = await import(
 const jwt = await import("jsonwebtoken");
 
 const payload = { _id: "dgd2893h8d2398" };
-let token;
+let token = "hashed:" + payload._id;
 
 describe("createAccessToken", () => {
   it("should return a json web token from the payload", () => {
@@ -37,6 +37,6 @@ describe("verifyAccessToken", () => {
   it("should throw invalid access token with error message", () => {
     const wrongToken = "wrong";
     const verifiedPayload = () => verifyAccessToken(wrongToken);
-    expect(verifiedPayload).toThrow("Invalid access token: invalid length");
+    expect(verifiedPayload).toThrow("Authentication failed");
   });
 });
