@@ -3,14 +3,14 @@ import * as configs from "./config/index.js";
 
 const PORT = configs.env.port[configs.env.nodeEnv];
 
-let server;
+let server, mongooseConnection;
 
 await (async () => {
   try {
-    await configs.connectDB();
+    mongooseConnection = await configs.connectDB();
     server = app.listen(PORT, () => {
       console.log(
-        `${configs.env.nodeEnv} Server running on http://localhost:${PORT}`
+        `${configs.env.nodeEnv}: MongoDB connected and Server running on http://localhost:${PORT}`
       );
     });
   } catch (err) {
@@ -19,4 +19,4 @@ await (async () => {
   }
 })();
 
-export { server };
+export { server, mongooseConnection };
