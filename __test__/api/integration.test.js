@@ -7,10 +7,14 @@ import {
   afterAll,
   beforeEach,
 } from "@jest/globals";
+import jwt from "jsonwebtoken";
 
 import { server, mongooseConnection } from "../../src/server.js";
 import User from "../../src/models/user.js";
+import { createVerifyToken } from "../../src/utilities/jwtHelper.js";
+import { env } from "../../src/config/env.js";
 
+const { verifyTokenSecret } = env.jwt;
 let user;
 
 beforeEach(async () => {
@@ -104,6 +108,70 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.status).toBe("success");
       expect(res.body.data.userSafeData.email).toMatch(user.email);
       expect(res.body.data.message).toMatch("Email sent successfully");
+    });
+  });
+
+  describe("PATCH /api/v1/auth/local/verify/:verifyToken", () => {
+    it("should fail with 403 if token is invalid", async () => {
+      const res = await request(server).patch(
+        "/api/v1/auth/local/verify/invalidtoken"
+      );
+      expect(res.statusCode).toBe(403);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/invalid|authentication/i);
+    });
+
+    it("should fail with 403 if token is expired", async () => {
+      const expiredToken = jwt.sign(
+        { _id: "123456789012" },
+        verifyTokenSecret,
+        { expiresIn: -1 }
+      );
+      const res = await request(server).patch(
+        `/api/v1/auth/local/verify/${expiredToken}`
+      );
+      expect(res.statusCode).toBe(403);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/expired/i);
+    });
+
+    it("should fail with 404 if user does not exist", async () => {
+      const token = createVerifyToken({ _id: "123456789012345678901234" });
+      const res = await request(server).patch(
+        `/api/v1/auth/local/verify/${token}`
+      );
+      expect(res.statusCode).toBe(404);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/not found/i);
+    });
+
+    it("should fail with 403 if user is already verified", async () => {
+      const dbUser = await User.create(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+      const token = createVerifyToken({ _id: dbUser._id });
+      const res = await request(server).patch(
+        `/api/v1/auth/local/verify/${token}`
+      );
+      expect(res.statusCode).toBe(403);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/already verified/i);
+    });
+
+    it("should verify user and return tokens if token is valid and user is not verified", async () => {
+      const dbUser = await User.create(user);
+      const token = createVerifyToken({ _id: dbUser._id });
+      const res = await request(server).patch(
+        `/api/v1/auth/local/verify/${token}`
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data).toHaveProperty("accessToken");
+      expect(res.body.data).toHaveProperty("userSafeData");
+      expect(res.body.data.userSafeData.email).toBe(user.email);
+      expect(res.body.data.message).toMatch(/verified successfully/i);
+
+      const verifiedUser = await User.findById(dbUser._id);
+      expect(verifiedUser.verified).toBe(true);
     });
   });
 
