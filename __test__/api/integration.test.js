@@ -341,4 +341,59 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.data.message).toMatch(/refreshed successfully/i);
     });
   });
+
+  describe("DELETE /api/v1/auth/local/logout", () => {
+    it("should succeed and return already logged out if no refresh token cookie is present", async () => {
+      const res = await request(server).delete("/api/v1/auth/local/logout");
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data.message).toMatch(/already logged out/i);
+    });
+
+    it("should succeed and remove refresh token from user if valid", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+      const loginRes = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      const cookies = loginRes.headers["set-cookie"];
+      const refreshCookie = cookies.find((c) => c.startsWith("refreshToken="));
+      expect(refreshCookie).toBeDefined();
+      const res = await request(server)
+        .delete("/api/v1/auth/local/logout")
+        .set("Cookie", [refreshCookie]);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data.message).toMatch(/logged out successfully/i);
+
+      const dbUser = await User.findOne({ email: user.email });
+      expect(dbUser.refreshTokens.length).toBe(0);
+    });
+
+    it("should remove all refresh tokens if ?full=true is set", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+
+      const loginRes1 = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      const loginRes2 = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      const cookies2 = loginRes2.headers["set-cookie"];
+      const refreshCookie2 = cookies2.find((c) =>
+        c.startsWith("refreshToken=")
+      );
+      expect(refreshCookie2).toBeDefined();
+      const res = await request(server)
+        .delete("/api/v1/auth/local/logout?full=true")
+        .set("Cookie", [refreshCookie2]);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data.message).toMatch(/logged out successfully/i);
+
+      const dbUser = await User.findOne({ email: user.email });
+      expect(dbUser.refreshTokens.length).toBe(0);
+    });
+  });
 });
