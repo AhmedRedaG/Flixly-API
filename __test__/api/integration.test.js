@@ -38,6 +38,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.statusCode).toBe(422);
       expect(res.body.status).toBe("fail");
     });
+
     it("should fail if name is not valid", async () => {
       user.name = "";
       const res = await request(server)
@@ -47,6 +48,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.status).toBe("fail");
       expect(res.body.data).toEqual({ name: "Name must be valid." });
     });
+
     it("should fail if email is not valid", async () => {
       user.email = "@";
       const res = await request(server)
@@ -54,6 +56,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
         .send(user);
       expect(res.body.data).toEqual({ email: "Email must be valid" });
     });
+
     it("should fail if password is not valid", async () => {
       user.password = "12345678";
       const res = await request(server)
@@ -65,6 +68,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
           "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
       });
     });
+
     it("should fail if confirmPassword is not valid", async () => {
       user.confirmPassword = "invalid";
       const res = await request(server)
