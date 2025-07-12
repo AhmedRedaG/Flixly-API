@@ -14,7 +14,7 @@ import User from "../../src/models/user.js";
 import { createVerifyToken } from "../../src/utilities/jwtHelper.js";
 import { env } from "../../src/config/env.js";
 
-const { verifyTokenSecret } = env.jwt;
+const { verifyTokenSecret, refreshTokenSecret } = env.jwt;
 let user;
 
 beforeEach(async () => {
@@ -275,6 +275,70 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.status).toBe("success");
       expect(res.body.data).toHaveProperty("accessToken");
       expect(res.body.data.userSafeData.email).toBe(user.email);
+    });
+  });
+
+  describe("POST /api/v1/auth/local/refresh", () => {
+    it("should fail with 401 if no refresh token cookie is present", async () => {
+      const res = await request(server).post("/api/v1/auth/local/refresh");
+      expect(res.statusCode).toBe(401);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/no oldRefreshToken exist/i);
+    });
+
+    it("should fail with 403 if refresh token is invalid", async () => {
+      const res = await request(server)
+        .post("/api/v1/auth/local/refresh")
+        .set("Cookie", ["refreshToken=invalidtoken"]);
+      expect(res.statusCode).toBe(403);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/invalid/i);
+    });
+
+    it("should fail with 404 if user for refresh token does not exist", async () => {
+      const fakeId = "123456789012345678901234";
+      const token = jwt.sign({ _id: fakeId }, refreshTokenSecret, {
+        expiresIn: "7d",
+      });
+      const res = await request(server)
+        .post("/api/v1/auth/local/refresh")
+        .set("Cookie", [`refreshToken=${token}`]);
+      expect(res.statusCode).toBe(404);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/not found/i);
+    });
+
+    it("should fail with 403 if refresh token is not in user's refreshTokens", async () => {
+      const dbUser = await User.create(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+      const token = jwt.sign({ _id: dbUser._id }, refreshTokenSecret, {
+        expiresIn: "7d",
+      });
+      const res = await request(server)
+        .post("/api/v1/auth/local/refresh")
+        .set("Cookie", [`refreshToken=${token}`]);
+      expect(res.statusCode).toBe(403);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/invalid refresh token/i);
+    });
+
+    it("should succeed and return new tokens if refresh token is valid", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+
+      const loginRes = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      const cookies = loginRes.headers["set-cookie"];
+      const refreshCookie = cookies.find((c) => c.startsWith("refreshToken="));
+      expect(refreshCookie).toBeDefined();
+      const res = await request(server)
+        .post("/api/v1/auth/local/refresh")
+        .set("Cookie", [refreshCookie]);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data).toHaveProperty("accessToken");
+      expect(res.body.data.message).toMatch(/refreshed successfully/i);
     });
   });
 });
