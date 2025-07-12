@@ -103,4 +103,108 @@ describe("Integration Tests for All Endpoints", () => {
       expect(res.body.data.message).toMatch("Email sent successfully");
     });
   });
+
+  describe("POST /api/v1/auth/local/login", () => {
+    it("should fail with 422 if input is missing", async () => {
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send({});
+      expect(res.statusCode).toBe(422);
+      expect(res.body.status).toBe("fail");
+    });
+
+    it("should fail with 422 if email is invalid", async () => {
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send({ email: "invalid", password: "Password123!" });
+      expect(res.statusCode).toBe(422);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data).toHaveProperty("email");
+    });
+
+    it("should fail with 422 if password is missing", async () => {
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send({ email: "test@example.com" });
+      expect(res.statusCode).toBe(422);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data).toHaveProperty("password");
+    });
+
+    it("should fail with 401 if user does not exist", async () => {
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send({ email: "nouser@example.com", password: "Password123!" });
+      expect(res.statusCode).toBe(401);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/Invalid email/i);
+    });
+
+    it("should fail with 401 if user registered with Google", async () => {
+      await User.create({
+        name: "Google User",
+        email: "googleuser@example.com",
+        googleId: "googleid123",
+        verified: true,
+      });
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send({ email: "googleuser@example.com", password: "Irrelevant123!" });
+      expect(res.statusCode).toBe(401);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/registered with Google/i);
+    });
+
+    it("should fail with 401 if password is incorrect", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send({ email: user.email, password: "WrongPassword123!" });
+      expect(res.statusCode).toBe(401);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/Invalid password/i);
+    });
+
+    it("should fail with 401 if user is not verified", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      expect(res.statusCode).toBe(401);
+      expect(res.body.status).toBe("fail");
+      expect(res.body.data.message).toMatch(/not been verified/i);
+    }, 10000);
+
+    it("should require TFA if enabled", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      await User.updateOne(
+        { email: user.email },
+        { verified: true, "TFA.status": true, "TFA.method": "sms" }
+      );
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data).toHaveProperty("method", "sms");
+      expect(res.body.data).toHaveProperty("tempToken");
+      expect(res.body.data.message).toMatch(
+        /Two-factor authentication required/i
+      );
+    }, 10000);
+
+    it("should succeed and return tokens if credentials are valid", async () => {
+      await request(server).post("/api/v1/auth/local/register").send(user);
+      await User.updateOne({ email: user.email }, { verified: true });
+      const res = await request(server)
+        .post("/api/v1/auth/local/login")
+        .send(user);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("success");
+      expect(res.body.data).toHaveProperty("accessToken");
+      expect(res.body.data).toHaveProperty("refreshToken");
+      expect(res.body.data.userSafeData.email).toBe(user.email);
+    });
+  });
 });
