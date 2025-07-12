@@ -23,7 +23,7 @@ export const postRegisterService = async (name, email, password) => {
   const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
   const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
 
-  return { user: userSafeData, message: sendMailResult };
+  return { userSafeData, message: sendMailResult };
 };
 
 export const verifyMailService = async (verifyToken) => {
