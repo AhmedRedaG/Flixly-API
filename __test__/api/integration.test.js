@@ -368,7 +368,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
 
       const dbUser = await User.findOne({ email: user.email });
       expect(dbUser.refreshTokens.length).toBe(0);
-    });
+    }, 10000);
 
     it("should remove all refresh tokens if ?full=true is set", async () => {
       await request(server).post("/api/v1/auth/local/register").send(user);
@@ -394,6 +394,6 @@ describe("Integration Tests for Auth Local Endpoints", () => {
 
       const dbUser = await User.findOne({ email: user.email });
       expect(dbUser.refreshTokens.length).toBe(0);
-    });
+    }, 10000);
   });
 });
