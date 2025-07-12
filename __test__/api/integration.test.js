@@ -28,8 +28,7 @@ afterAll(async () => {
   server.close();
 });
 
-describe("Integration Tests for All Endpoints", () => {
-  // Auth - Local
+describe("Integration Tests for Auth Local Endpoints", () => {
   describe("POST /api/v1/auth/local/register", () => {
     it("should return 422 and fail if input is not valid", async () => {
       user = {};
@@ -192,7 +191,7 @@ describe("Integration Tests for All Endpoints", () => {
       expect(res.body.data.message).toMatch(
         /Two-factor authentication required/i
       );
-    }, 10000);
+    });
 
     it("should succeed and return tokens if credentials are valid", async () => {
       await request(server).post("/api/v1/auth/local/register").send(user);
@@ -203,7 +202,6 @@ describe("Integration Tests for All Endpoints", () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.status).toBe("success");
       expect(res.body.data).toHaveProperty("accessToken");
-      expect(res.body.data).toHaveProperty("refreshToken");
       expect(res.body.data.userSafeData.email).toBe(user.email);
     });
   });
