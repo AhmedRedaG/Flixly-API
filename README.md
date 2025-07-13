@@ -4,22 +4,22 @@ A robust and secure authentication system built with Node.js and Express, featur
 
 ## Features
 
-- 🔐 Secure JWT-based authentication with dual token system
-- 🔄 Refresh token rotation with multi-device support
-- 🚀 Express.js REST API with proper error handling
+- 🔐 Secure JWT-based authentication with dual token system (access & refresh tokens)
+- 🔄 Refresh token rotation with multi-device support (last 5 tokens per user)
+- 🚀 Express.js REST API with robust error handling (JSend format)
 - 📦 MongoDB integration with Mongoose
 - 🔑 Google OAuth 2.0 authentication support
 - 📱 Advanced Two-Factor Authentication (2FA):
   - SMS (phone-based) and TOTP (authenticator app) support
   - One-time backup codes for account recovery
-  - Method selection and management
-  - Lockout and brute-force protection
-- 📧 Password reset with email verification
-- 🔒 Advanced password validation and security
-- 🛡️ Sophisticated rate limiting protection
-- 🍪 Environment-aware HTTP-only cookie configuration
-- ✨ Comprehensive input validation and sanitization
-- 🚫 Protection against common security vulnerabilities
+  - Method selection, management, and removal
+  - Attempts tracking, lockout, and brute-force protection
+- 📧 Password reset with email verification (secure, token-based)
+- 🔒 Advanced password validation and security (strong password policy)
+- 🛡️ Sophisticated rate limiting protection (per endpoint)
+- 🍪 Environment-aware HTTP-only cookie configuration (secure, SameSite, path-restricted)
+- ✨ Comprehensive input validation and sanitization (express-validator)
+- 🚫 Protection against common security vulnerabilities (CORS, Helmet, etc.)
 
 ## Tech Stack
 
@@ -27,15 +27,15 @@ A robust and secure authentication system built with Node.js and Express, featur
 - Express.js
 - MongoDB (with Mongoose)
 - JSON Web Tokens (JWT)
-- Passport.js with Google OAuth 2.0
+- Passport.js (Google OAuth 2.0)
 - Nodemailer
 - bcrypt
-- Cookie Parser
-- Express Rate Limit
-- Express Validator
-- JSend Middleware
-- Helmet
-- CORS
+- cookie-parser
+- express-rate-limit
+- express-validator
+- jsend (response standardization)
+- helmet
+- cors
 - dotenv
 
 ## Prerequisites
@@ -136,16 +136,18 @@ PORT=3000
 │   │           ├── setup.service.js
 │   │           └── sms.service.js
 │   ├── utilities/
-│   │   ├── AppError.js
-│   │   ├── CookieHelper.js
+│   │   ├── appError.js
 │   │   ├── authHelper.js
 │   │   ├── cookieHelper.js
 │   │   ├── dataHelper.js
-│   │   ├── dbHelper.js
 │   │   ├── jwtHelper.js
-│   │   ├── mailSender.js
 │   │   ├── smsSender.js
-│   │   └── tfaHelper.js
+│   │   ├── tfaHelper.js
+│   │   └── mailHelper/
+│   │       ├── mailSender.js
+│   │       ├── mailService.js
+│   │       ├── resetPasswordMail.js
+│   │       └── verifyAccountMail.js
 ├── package.json
 ├── .env
 └── README.md
@@ -206,114 +208,41 @@ All API endpoints are prefixed with `/api/v1/`
 
 ## API Endpoints
 
-### Authentication & 2FA Routes (`/api/v1/auth`)
+All endpoints are prefixed with `/api/v1/`
 
-#### Register a new user
+### Authentication & 2FA (`/api/v1/auth`)
 
-- **POST** `/register`
-- **Body:** `{ name, email, password, confirmPassword }`
-- **Validation:**
-  - Name: 3-256 characters, letters and spaces only
-  - Email: Valid email format
-  - Password: Strong password requirements (uppercase, lowercase, number, special character)
-  - Confirm Password: Must match password
-- Creates a new user account
-
-#### Login (Step 1)
-
-- **POST** `/login`
-- **Body:** `{ email, password }`
-- **Response:**
-  - If 2FA enabled: `{ tempToken }` (use `/2fa/request` and `/2fa/verify`)
-  - If not: `{ accessToken, user }`
-
-#### Google OAuth Authentication
-
-- **GET** `/google`
-- Initiates Google OAuth flow
-- Redirects to Google login page
-- No request body needed
-
-#### Google OAuth Callback
-
-- **GET** `/google/callback`
-- Handles Google OAuth callback
-- Creates/authenticates user
-- Sets refresh token in HTTP-only cookie
-- Returns access token and user data
-
-#### Request Password Reset
-
-- **POST** `/reset-password`
-- **Body:** `{ "email": "string" }`
-- Sends password reset link to email
-- Rate limited for security
-- Returns success message when email is sent
-
-#### Reset Password with Token
-
-- **PATCH** `/reset-password/:resetToken`
-- **Params:** `resetToken` from email link
-- **Body:** `{ "password": "string" }`
-- Validates reset token (1-hour expiration)
-- Checks if token was already used
-- Updates password and invalidates all refresh tokens
-- Returns success message
-
-#### Change Password (Authenticated)
-
-- **PATCH** `/change-password`
-- **Headers:** `Authorization: Bearer <access_token>`
-- **Body:**
-  ```json
-  {
-    "oldPassword": "string",
-    "newPassword": "string"
-  }
-  ```
-- Verifies old password
-- Updates to new password
-- Invalidates all refresh tokens
-- Returns success message
+- **POST** `/register` — Register a new user
+  - Body: `{ name, email, password, confirmPassword }`
+- **POST** `/login` — Login (step 1)
+  - Body: `{ email, password }`
+  - Response: If 2FA enabled, returns `{ tempToken, phoneNumber? }`; else `{ accessToken, user }`
+- **GET** `/google` — Initiate Google OAuth
+- **GET** `/google/callback` — Google OAuth callback
+- **POST** `/reset-password` — Request password reset (body: `{ email }`)
+- **PATCH** `/reset-password/:resetToken` — Reset password with token
+- **PATCH** `/change-password` — Change password (auth required)
+  - Body: `{ oldPassword, newPassword }`
+- **POST** `/refresh` — Refresh access token (requires refresh token cookie)
+- **DELETE** `/logout` — Logout (requires refresh token cookie, `full=true` for all devices)
 
 #### 2FA Setup & Management
 
-- **PUT** `/2fa/setup/sms` (set phone number for SMS 2FA)
-- **PUT** `/2fa/setup/totp` (generate TOTP secret)
-- **POST** `/2fa/setup/verify` (verify code for SMS or TOTP setup)
-- **DELETE** `/2fa/setup/remove` (remove SMS or TOTP setup)
-- **POST** `/2fa/enable` (enable 2FA after verifying code, returns backup codes)
-- **DELETE** `/2fa/disable` (disable 2FA after verifying code)
-- **POST** `/2fa/backup-codes` (regenerate backup codes, verify code)
-- **POST** `/2fa/method` (get current 2FA method)
-- **POST** `/2fa/request` (send SMS code, must be authenticated)
-- **POST** `/2fa/temp-request` (send SMS code, with tempToken)
-- **POST** `/2fa/verify` (with tempToken, verify code or backup code, returns access/refresh tokens)
+- **PUT** `/2fa/setup/sms` — Set phone number for SMS 2FA
+- **PUT** `/2fa/setup/totp` — Generate TOTP secret
+- **POST** `/2fa/setup/verify` — Verify code for SMS or TOTP setup
+- **DELETE** `/2fa/setup/remove` — Remove SMS or TOTP setup
+- **POST** `/2fa/enable` — Enable 2FA after verifying code (returns backup codes)
+- **DELETE** `/2fa/disable` — Disable 2FA after verifying code
+- **POST** `/2fa/backup-codes` — Regenerate backup codes (verify code required)
+- **POST** `/2fa/method` — Get current 2FA method
+- **POST** `/2fa/request` — Send SMS code (authenticated)
+- **POST** `/2fa/temp-request` — Send SMS code (with tempToken)
+- **POST** `/2fa/verify` — Verify 2FA code or backup code (with tempToken, returns tokens)
 
-#### Refresh Token
+### User (`/api/v1/user`)
 
-- **POST** `/refresh`
-- **Cookies:** Required refresh token
-- Issues new access token
-- Rotates refresh token
-- Maintains last 5 refresh tokens only
-
-#### Logout
-
-- **DELETE** `/logout`
-- **Cookies:** Required refresh token
-- **Query Params:** `full=true` (optional, logs out from all devices)
-- Invalidates refresh token(s)
-- Clears refresh token cookie
-
-### Protected Routes (`/api/v1/user`)
-
-#### Get User Data
-
-- **GET** `/user`
-- **Headers:** `Authorization: Bearer <access_token>`
-- Returns the current user's data
-- Protected by JWT authentication middleware
+- **GET** `/user` — Get current user data (JWT required)
 
 ## Security Features
 
@@ -576,14 +505,14 @@ fetch("http://your-api/api/v1/auth/2fa/verify", {
 
 ## Best Practices Implemented
 
-- Token-based authentication
-- Secure password storage
-- Rate limiting
-- Input validation
-- Refresh token rotation
-- Secure cookie usage
-- Error handling
-- MongoDB best practices
+- Token-based authentication (JWT, refresh, temp, reset tokens)
+- Secure password storage (bcrypt)
+- Rate limiting (per endpoint, brute-force protection)
+- Input validation & sanitization (express-validator)
+- Refresh token rotation (multi-device, last 5 tokens)
+- Secure cookie usage (HTTP-only, SameSite, Secure, path-restricted)
+- Consistent error handling (JSend)
+- MongoDB & Mongoose best practices
 
 ## License
 
