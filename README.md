@@ -8,9 +8,9 @@ A robust and secure authentication system built with Node.js and Express, featur
 - 🔄 Refresh token rotation with multi-device support (last 5 tokens per user)
 - 🚀 Express.js REST API with robust error handling (JSend format)
 - 📦 MongoDB integration with Mongoose
-- 🔑 Google OAuth 2.0 authentication support
+- 🔑 Google OAuth 2.0 authentication support (Passport.js)
 - 📱 Advanced Two-Factor Authentication (2FA):
-  - SMS (phone-based) and TOTP (authenticator app) support
+  - SMS (phone-based, via Vonage) and TOTP (authenticator app, QR code via qrcode/speakeasy)
   - One-time backup codes for account recovery
   - Method selection, management, and removal
   - Attempts tracking, lockout, and brute-force protection
@@ -20,23 +20,28 @@ A robust and secure authentication system built with Node.js and Express, featur
 - 🍪 Environment-aware HTTP-only cookie configuration (secure, SameSite, path-restricted)
 - ✨ Comprehensive input validation and sanitization (express-validator)
 - 🚫 Protection against common security vulnerabilities (CORS, Helmet, etc.)
+- 🧪 Comprehensive testing with Jest & Supertest
 
 ## Tech Stack
 
 - Node.js
 - Express.js
 - MongoDB (with Mongoose)
-- JSON Web Tokens (JWT)
+- JSON Web Tokens (jsonwebtoken)
 - Passport.js (Google OAuth 2.0)
 - Nodemailer
 - bcrypt
 - cookie-parser
 - express-rate-limit
 - express-validator
-- jsend (response standardization)
+- jsend-middleware (response standardization)
 - helmet
 - cors
 - dotenv
+- @vonage/server-sdk (SMS)
+- speakeasy (TOTP 2FA)
+- qrcode (QR code for TOTP setup)
+- Jest & Supertest (testing)
 
 ## Prerequisites
 
@@ -73,17 +78,22 @@ VONAGE_API_SECRET=your_vonage_secret      # SMS provider secret
 
 4. Start the development server:
 
+Start the development server with nodemon:
+
 ```bash
-npm start
+npm run dev
 ```
+
+## Testing
+
+The project uses **Jest** and **Supertest** for unit and integration testing. Test files are located in the `__test__` directory.
 
 The server uses nodemon for development, which will automatically restart when you make changes.
 
-```env
-ACCESS_TOKEN_SECRET=your_access_token_secret
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
-MONGODB_URI=your_mongodb_connection_string
-PORT=3000
+Run all tests using Jest and Supertest:
+
+```bash
+npm test
 ```
 
 ## Project Structure
@@ -91,7 +101,12 @@ PORT=3000
 ```
 ├── src/
 │   ├── app.js
+│   ├── server.js
 │   ├── config/
+│   │   ├── constants.js
+│   │   ├── db.js
+│   │   ├── env.js
+│   │   ├── index.js
 │   │   └── passport.js
 │   ├── controllers/
 │   │   ├── user.js
@@ -148,6 +163,27 @@ PORT=3000
 │   │       ├── mailService.js
 │   │       ├── resetPasswordMail.js
 │   │       └── verifyAccountMail.js
+│   ├── validators/
+│   │   ├── fields/
+│   │   │   ├── email.js
+│   │   │   ├── index.js
+│   │   │   ├── name.js
+│   │   │   ├── password.js
+│   │   │   ├── phoneNumber.js
+│   │   │   └── tfa.js
+│   │   └── shared/
+│   │       └── auth.js
+├── public/
+│   └── mailImages/
+│       └── logo.png
+├── __test__/
+│   ├── api/
+│   │   └── integration.test.js
+│   └── utilities/
+│       ├── appError.test.js
+│       ├── authHelper.test.js
+│       ├── jwtHelper.test.js
+│       └── tfaHelper.test.js
 ├── package.json
 ├── .env
 └── README.md
