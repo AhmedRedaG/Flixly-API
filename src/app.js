@@ -11,6 +11,7 @@ import userRouter from "./routes/user.js";
 import rateLimiter from "./middlewares/rateLimiter.js";
 import requestDurationLogger from "./middlewares/requestDurationLogger.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import { swaggerMiddlewares } from "./middlewares/swaggerDocs.js";
 
 const app = express();
 app.use(cors());
@@ -23,10 +24,10 @@ app.use(jsendMiddleware());
 app.use(rateLimiter);
 app.use(requestDurationLogger);
 
+app.use("/api/v1/docs", swaggerMiddlewares);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
-
-app.use((req, res) => {
+app.use("/", (req, res) => {
   res.jsend.fail({ url: "Source location not found" }, 404);
 });
 app.use(errorHandler);
