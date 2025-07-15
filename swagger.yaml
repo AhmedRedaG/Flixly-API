@@ -17,3 +17,169 @@ info:
 servers:
   - url: http://localhost:3000/api/v1/
     description: Local server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Cookies:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "60d0fe4f5311236168a109ca"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          example: "john@example.com"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password, confirmPassword]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 256
+          example: "Ahmed Reda"
+        email:
+          type: string
+          format: email
+          example: "ahmed@example.com"
+        password:
+          type: string
+          format: password
+          example: "Password123!"
+        confirmPassword:
+          type: string
+          format: password
+          example: "Password123!"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "ahmed@example.com"
+        password:
+          type: string
+          format: password
+          example: "Password123!"
+
+    ChangePasswordRequest:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          example: "OldPassword123!"
+        newPassword:
+          type: string
+          format: password
+          example: "NewPassword123!"
+        TFACode:
+          description: "Two-Factor Authentication code if 2FA is enabled"
+          type: string
+          example: "123456"
+
+    EmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "ahmed@example.com"
+
+    PasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          example: "NewPassword123!"
+
+    TFASetupSmsRequest:
+      type: object
+      required: [phoneNumber]
+      properties:
+        phoneNumber:
+          type: string
+          example: "+1234567890"
+
+    TFAInput:
+      type: object
+      required: [method, TFACode]
+      properties:
+        method:
+          type: string
+          enum: [sms, totp, backup]
+          example: "sms"
+        TFACode:
+          type: string
+          example: "123456"
+
+    TFAVerifySetupRequest:
+      type: object
+      required: [method, TFACode]
+      properties:
+        method:
+          type: string
+          enum: [sms, totp]
+          example: "sms"
+        TFACode:
+          type: string
+          example: "123456"
+        enable:
+          type: boolean
+          example: true
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+
+    FailResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: fail
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: "Internal server error"
+
+security:
+  - BearerAuth: []
+  - Cookies: []
