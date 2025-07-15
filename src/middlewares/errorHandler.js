@@ -1,6 +1,10 @@
 import AppError from "../utilities/appError.js";
 
-const errorHandler = (err, req, res, next) => {
+const notFoundError = (req, res) => {
+  res.jsend.fail({ url: "Source location not found" }, 404);
+};
+
+const apiError = (err, req, res, next) => {
   if (err instanceof AppError) {
     const { message, statusCode } = err;
     res.jsend.fail({ message }, statusCode);
@@ -9,5 +13,7 @@ const errorHandler = (err, req, res, next) => {
     res.jsend.error("Internal server error");
   }
 };
+
+const errorHandler = [notFoundError, apiError];
 
 export default errorHandler;

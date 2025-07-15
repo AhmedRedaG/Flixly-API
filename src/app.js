@@ -27,9 +27,6 @@ app.use(requestDurationLogger);
 app.use("/api/v1/docs", swaggerMiddlewares);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
-app.use("/", (req, res) => {
-  res.jsend.fail({ url: "Source location not found" }, 404);
-});
 app.use(errorHandler);
 
 export default app;
