@@ -32,7 +32,7 @@ export const verifyMailService = async (verifyToken) => {
 
   const user = await getUserByIdOrFail(userId);
 
-  if (user.verified) throw new AppError("User is already verified", 403);
+  if (user.verified) throw new AppError("User is already verified", 409);
 
   user.verified = true;
   const { accessToken, refreshToken, userSafeData } =
@@ -49,19 +49,19 @@ export const verifyMailService = async (verifyToken) => {
 
 export const postLoginService = async (email, password) => {
   const user = await User.findOne({ email });
-  if (!user) throw new AppError("Invalid email", 401);
+  if (!user) throw new AppError("Invalid email or password", 401);
 
   if (!user.password)
     throw new AppError("This account was registered with Google.", 401);
 
   const matchedPasswords = await bcrypt.compare(password, user.password);
-  if (!matchedPasswords) throw new AppError("Invalid password", 401);
+  if (!matchedPasswords) throw new AppError("Invalid email or password", 401);
 
   if (!user.verified) {
     const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
     const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
     throw new AppError(
-      "Your account has not been verified " + sendMailResult,
+      "Account not verified and",
       401
     );
   }

@@ -183,3 +183,300 @@ components:
 security:
   - BearerAuth: []
   - Cookies: []
+
+tags:
+  - name: Auth (Local)
+    description: Local authentication endpoints
+  - name: Auth (Google)
+    description: Google OAuth2 authentication endpoints
+  - name: Auth (Password)
+    description: Password management endpoints
+  - name: Auth (2FA)
+    description: Two-factor authentication endpoints
+  - name: User
+    description: User endpoints
+
+paths:
+  # Auth (Local)
+  /auth/local/register:
+    post:
+      tags: [Auth (Local)]
+      summary: Register a new user
+      description: Register a new user with name, email, and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  userSafeData:
+                    _id: "60d0fe4f5311236168a109ca"
+                    name: "Ahmed Reda"
+                    email: "ahmed@example.com"
+                    role: "user"
+                  message: "Verification email sent."
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Email already in use"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Data"
+                  email: "Email must be valid"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
+
+  /auth/local/verify/{verifyToken}:
+    patch:
+      tags: [Auth (Local)]
+      summary: Verify user email
+      description: Verify a user's email address using a verification token.
+      parameters:
+        - in: path
+          name: verifyToken
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  message: "Email verified successfully."
+        "403":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Access token expired"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Authorization format"
+        "409":
+          description: User already verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "User already verified"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
+
+  /auth/local/login:
+    post:
+      tags: [Auth (Local)]
+      summary: Login with email and password
+      description: Authenticate user and return JWT access and refresh tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful or two-factor authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  userSafeData:
+                    _id: "60d0fe4f5311236168a109ca"
+                    name: "Ahmed Reda"
+                    email: "ahmed@example.com"
+                    role: "user"
+                  message: "Login successful"
+              example:
+                status: success
+                data:
+                  method: "sms"
+                  tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  message: "Two-factor authentication required"
+        "401":
+          description: Invalid credentials or account not verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid email or password"
+              example:
+                status: fail
+                data:
+                  message: "This account was registered with Google."
+              example:
+                status: fail
+                data:
+                  message: "Account not verified, please check your email for verification link."
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Data"
+                  email: "Email must be valid"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
+
+  /auth/local/refresh:
+    post:
+      tags: [Auth (Local)]
+      summary: Refresh JWT access token
+      description: Refresh the JWT access token using a valid refresh token (sent via cookie).
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  message: "Token refreshed successfully"
+        "401":
+          description: no refresh token exist in the cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "No oldRefreshToken exist"
+        "403":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Access token expired"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Authorization format"
+              example:
+                status: fail
+                data:
+                  message: "Invalid refresh token"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - Cookies: []
+
+  /auth/local/logout:
+    delete:
+      tags: [Auth (Local)]
+      summary: Logout user
+      description: Logout the user and clear refresh token cookie.
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  message: "User logged out successfully"
+        "400":
+          description: already logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Already logged out"
+        "403":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Access token expired"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Authorization format"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
