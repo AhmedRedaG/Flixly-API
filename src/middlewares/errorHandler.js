@@ -1,7 +1,7 @@
 import AppError from "../utilities/appError.js";
 
 const notFoundError = (req, res) => {
-  res.jsend.fail({ url: "Source location not found" }, 404);
+  res.jsend.fail({ message: "Source location not found" }, 404);
 };
 
 const apiError = (err, req, res, next) => {
