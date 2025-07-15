@@ -61,7 +61,7 @@ export const postLoginService = async (email, password) => {
     const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
     const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
     throw new AppError(
-      "Account not verified and",
+      "Account not verified, please check your email for verification link.",
       401
     );
   }
