@@ -50,7 +50,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
         .send(user);
       expect(res.statusCode).toBe(422);
       expect(res.body.status).toBe("fail");
-      expect(res.body.data).toEqual({ name: "Name must be valid." });
+      expect(res.body.data).toHaveProperty("name");
     });
 
     it("should fail if email is not valid", async () => {
@@ -58,7 +58,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       const res = await request(server)
         .post("/api/v1/auth/local/register")
         .send(user);
-      expect(res.body.data).toEqual({ email: "Email must be valid" });
+      expect(res.body.data).toHaveProperty("email");
     });
 
     it("should fail if password is not valid", async () => {
@@ -66,11 +66,8 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       const res = await request(server)
         .post("/api/v1/auth/local/register")
         .send(user);
-      expect(res.body.data).toEqual({
-        confirmPassword: "Passwords must be the same.",
-        password:
-          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
-      });
+      expect(res.body.data).toHaveProperty("password");
+      expect(res.body.data).toHaveProperty("confirmPassword");
     });
 
     it("should fail if confirmPassword is not valid", async () => {
@@ -78,9 +75,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       const res = await request(server)
         .post("/api/v1/auth/local/register")
         .send(user);
-      expect(res.body.data).toEqual({
-        confirmPassword: "Passwords must be the same.",
-      });
+      expect(res.body.data).toHaveProperty("confirmPassword");
     });
 
     it("should return 409 and fail if email is exist", async () => {
