@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import * as authPassword from "../../controllers/auth/password.js";
-import isAuth from "../../middlewares/isAuth.js";
+import { isAuth } from "../../middlewares/isAuth.js";
 import isValid from "../../middlewares/isValid.js";
 import * as authValidator from "../../validators/shared/auth.js";
 import * as fieldValidator from "../../validators/fields/index.js";

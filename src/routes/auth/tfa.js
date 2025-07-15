@@ -1,8 +1,7 @@
 import { Router } from "express";
 
 import * as authTFA from "../../controllers/auth/tfa/index.js";
-import isAuth from "../../middlewares/isAuth.js";
-import tempAuth from "../../middlewares/tempAuth.js";
+import { isAuth, isTempAuth } from "../../middlewares/isAuth.js";
 import isValid from "../../middlewares/isValid.js";
 import * as authValidator from "../../validators/shared/auth.js";
 import * as fieldValidator from "../../validators/fields/index.js";
@@ -61,14 +60,14 @@ router.post(
 router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
 
 // auth/2fa/sms/temp
-router.post("/sms/temp", tempAuth, authTFA.sendSmsVerificationCode);
+router.post("/sms/temp", isTempAuth, authTFA.sendSmsVerificationCode);
 
 // auth/2fa/verify
 router.post(
   "/verify",
   authValidator.TFAInput,
   isValid,
-  tempAuth,
+  isTempAuth,
   authTFA.loginVerifyTFA
 );
 
