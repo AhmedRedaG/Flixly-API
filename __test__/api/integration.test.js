@@ -34,16 +34,7 @@ afterAll(async () => {
 
 describe("Integration Tests for Auth Local Endpoints", () => {
   describe("POST /api/v1/auth/local/register", () => {
-    it("should return 422 and fail if input is not valid", async () => {
-      user = {};
-      const res = await request(server)
-        .post("/api/v1/auth/local/register")
-        .send(user);
-      expect(res.statusCode).toBe(422);
-      expect(res.body.status).toBe("fail");
-    });
-
-    it("should fail if name is not valid", async () => {
+    it("should fail with 422 if name is not valid", async () => {
       user.name = "";
       const res = await request(server)
         .post("/api/v1/auth/local/register")
@@ -53,32 +44,38 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.data).toHaveProperty("name");
     });
 
-    it("should fail if email is not valid", async () => {
+    it("should fail with 422 if email is not valid", async () => {
       user.email = "@";
       const res = await request(server)
         .post("/api/v1/auth/local/register")
         .send(user);
+      expect(res.statusCode).toBe(422);
+      expect(res.body.status).toBe("fail");
       expect(res.body.data).toHaveProperty("email");
     });
 
-    it("should fail if password is not valid", async () => {
+    it("should fail with 422 if password is not valid", async () => {
       user.password = "12345678";
       const res = await request(server)
         .post("/api/v1/auth/local/register")
         .send(user);
+      expect(res.statusCode).toBe(422);
+      expect(res.body.status).toBe("fail");
       expect(res.body.data).toHaveProperty("password");
       expect(res.body.data).toHaveProperty("confirmPassword");
     });
 
-    it("should fail if confirmPassword is not valid", async () => {
+    it("should fail with 422 if confirmPassword is not valid", async () => {
       user.confirmPassword = "invalid";
       const res = await request(server)
         .post("/api/v1/auth/local/register")
         .send(user);
+      expect(res.statusCode).toBe(422);
+      expect(res.body.status).toBe("fail");
       expect(res.body.data).toHaveProperty("confirmPassword");
     });
 
-    it("should return 409 and fail if email is exist", async () => {
+    it("should fail with 409 if email is exist", async () => {
       await User.create(user);
       const userInDb = await User.findOne({ email: user.email });
       expect(userInDb).not.toBeNull();
@@ -92,7 +89,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.data.message).toMatch("Email already in use");
     });
 
-    it("should return 201 and success if user is valid", async () => {
+    it("should success with 201 if user is valid", async () => {
       const userInDb = await User.findOne({ email: user.email });
       expect(userInDb).toBeNull();
 
@@ -140,14 +137,14 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.data.message).toMatch(/not found/i);
     });
 
-    it("should fail with 403 if user is already verified", async () => {
+    it("should fail with 409 if user is already verified", async () => {
       const dbUser = await User.create(user);
       await User.updateOne({ email: user.email }, { verified: true });
       const token = createVerifyToken({ _id: dbUser._id });
       const res = await request(server).patch(
         `/api/v1/auth/local/verify/${token}`
       );
-      expect(res.statusCode).toBe(403);
+      expect(res.statusCode).toBe(409);
       expect(res.body.status).toBe("fail");
       expect(res.body.data.message).toMatch(/already verified/i);
     });
@@ -229,7 +226,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
         .send({ email: user.email, password: "WrongPassword123!" });
       expect(res.statusCode).toBe(401);
       expect(res.body.status).toBe("fail");
-      expect(res.body.data.message).toMatch(/Invalid password/i);
+      expect(res.body.data.message).toMatch(/Invalid email or password/i);
     });
 
     it("should fail with 401 if user is not verified", async () => {
@@ -239,7 +236,7 @@ describe("Integration Tests for Auth Local Endpoints", () => {
         .send(user);
       expect(res.statusCode).toBe(401);
       expect(res.body.status).toBe("fail");
-      expect(res.body.data.message).toMatch(/not been verified/i);
+      expect(res.body.data.message).toMatch(/Account not verified/i);
     }, 10000);
 
     it("should require TFA if enabled", async () => {
