@@ -7,23 +7,18 @@ import * as authValidator from "../../validators/shared/auth.js";
 const router = Router();
 
 // POST auth/local/register
-router.post(
-  "/register",
-  authValidator.register,
-  isValid,
-  authLocal.postRegister
-);
+router.post("/register", authValidator.register, isValid, authLocal.register);
 
-// POST auth/local/verify/{verifyToken}
-router.post("/verify/:verifyToken", authLocal.verifyMail);
+// PATCH auth/local/verify/{verifyToken}
+router.patch("/verify/:verifyToken", authLocal.verifyMail);
 
 // POST auth/local/login
-router.post("/login", authValidator.login, isValid, authLocal.postLogin);
+router.post("/login", authValidator.login, isValid, authLocal.login);
 
 // POST auth/local/refresh
-router.post("/refresh", authLocal.postRefresh);
+router.post("/refresh", authLocal.refresh);
 
 // DELETE auth/local/logout
-router.delete("/logout", authLocal.postLogout);
+router.delete("/logout", authLocal.logout);
 
 export default router;

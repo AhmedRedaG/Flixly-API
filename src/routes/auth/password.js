@@ -14,7 +14,7 @@ router.patch(
   authValidator.changePassword,
   isValid,
   isAuth,
-  authPassword.patchChangePassword
+  authPassword.changePassword
 );
 
 // POST auth/password/reset
@@ -22,7 +22,7 @@ router.post(
   "/reset",
   fieldValidator.email,
   isValid,
-  authPassword.postRequestPasswordReset
+  authPassword.requestPasswordReset
 );
 
 // PATCH auth/password/reset/{resetToken}
@@ -30,7 +30,7 @@ router.patch(
   "/reset/:resetToken",
   fieldValidator.password,
   isValid,
-  authPassword.patchResetPassword
+  authPassword.resetPassword
 );
 
 export default router;
