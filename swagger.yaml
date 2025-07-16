@@ -835,7 +835,7 @@ paths:
 
   # Auth (2FA)
   /auth/2fa/setup/sms:
-    put:
+    post:
       tags: [Auth (2FA)]
       summary: Set phone number for SMS 2FA
       description: Set up a phone number for SMS two-factor authentication.
@@ -919,7 +919,7 @@ paths:
         - BearerAuth: []
 
   /auth/2fa/setup/totp:
-    put:
+    post:
       tags: [Auth (2FA)]
       summary: Generate TOTP secret
       description: Generate a TOTP secret and QR code for authenticator app setup.
@@ -1094,7 +1094,7 @@ paths:
       security:
         - BearerAuth: []
 
-    delete:
+    patch:
       tags: [Auth (2FA)]
       summary: Remove 2FA setup
       description: Remove the setup of SMS or TOTP 2FA method.
@@ -1288,7 +1288,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
       security:
         - BearerAuth: []
-    delete:
+    patch:
       tags: [Auth (2FA)]
       summary: Disable 2FA
       description: Disable 2FA after verifying the code.
