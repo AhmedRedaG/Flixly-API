@@ -282,14 +282,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FailResponse"
+              examples:
+                token_expired:
+                  summary: "Token Expired"
+                  description: "The verification token has expired"
+                  value:
+                    status: fail
+                    data:
+                      message: "Access token expired"
+                invalid_format:
+                  summary: "Invalid Format"
+                  description: "The token format is invalid"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid Authorization format"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
               example:
                 status: fail
                 data:
-                  message: "Access token expired"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Authorization format"
+                  message: "User not found with the provided ID"
         "409":
           description: User already verified
           content:
@@ -326,22 +343,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                  userSafeData:
-                    _id: "60d0fe4f5311236168a109ca"
-                    name: "Ahmed Reda"
-                    email: "ahmed@example.com"
-                    role: "user"
-                  message: "Login successful"
-              example:
-                status: success
-                data:
-                  method: "sms"
-                  tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                  message: "Two-factor authentication required"
+              examples:
+                login_success:
+                  summary: "Successful login"
+                  description: "User logged in successfully without 2FA"
+                  value:
+                    status: success
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      userSafeData:
+                        _id: "60d0fe4f5311236168a109ca"
+                        name: "Ahmed Reda"
+                        email: "ahmed@example.com"
+                        role: "user"
+                      message: "Login successful"
+                two_factor_required:
+                  summary: "2FA Required"
+                  description: "Two-factor authentication is required"
+                  value:
+                    status: success
+                    data:
+                      method: "sms"
+                      tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      message: "Two-factor authentication required"
         "401":
           description: Invalid credentials or account not verified
           content:
@@ -412,18 +436,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FailResponse"
+              examples:
+                token_expired:
+                  summary: "Token Expired"
+                  description: "The access token has expired"
+                  value:
+                    status: fail
+                    data:
+                      message: "Access token expired"
+                invalid_format:
+                  summary: "Invalid Format"
+                  description: "The authorization format is invalid"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid Authorization format"
+                invalid_refresh:
+                  summary: "Invalid Refresh Token"
+                  description: "The refresh token is invalid"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid refresh token"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
               example:
                 status: fail
                 data:
-                  message: "Access token expired"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Authorization format"
-              example:
-                status: fail
-                data:
-                  message: "Invalid refresh token"
+                  message: "User not found with the provided ID"
         "500":
           description: Internal server error
           content:
@@ -465,14 +509,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FailResponse"
+              examples:
+                token_expired:
+                  summary: "Token Expired"
+                  description: "The access token has expired"
+                  value:
+                    status: fail
+                    data:
+                      message: "Access token expired"
+                invalid_format:
+                  summary: "Invalid Format"
+                  description: "The authorization format is invalid"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid Authorization format"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
               example:
                 status: fail
                 data:
-                  message: "Access token expired"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Authorization format"
+                  message: "User not found with the provided ID"
         "500":
           description: Internal server error
           content:
@@ -520,22 +581,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Authorization header is missing"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Authorization format"
-              example:
-                status: fail
-                data:
-                  message: "2FA code is required"
-              example:
-                status: fail
-                data:
-                  message: "Old password is wrong"
+              examples:
+                missing_header:
+                  summary: "Missing Authorization"
+                  description: "The authorization header is missing"
+                  value:
+                    status: fail
+                    data:
+                      message: "Authorization header is missing"
+                invalid_format:
+                  summary: "Invalid Format"
+                  description: "The authorization format is invalid"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid Authorization format"
+                tfa_required:
+                  summary: "2FA Required"
+                  description: "Two-factor authentication code is required"
+                  value:
+                    status: fail
+                    data:
+                      message: "2FA code is required"
+                wrong_password:
+                  summary: "Wrong Password"
+                  description: "The old password is incorrect"
+                  value:
+                    status: fail
+                    data:
+                      message: "Old password is wrong"
         "404":
           description: User not found
           content:
@@ -641,14 +715,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Authorization header is missing"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Authorization format"
+              examples:
+                missing_header:
+                  summary: "Missing Authorization"
+                  description: "The authorization header is missing"
+                  value:
+                    status: fail
+                    data:
+                      message: "Authorization header is missing"
+                invalid_format:
+                  summary: "Invalid Format"
+                  description: "The authorization format is invalid"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid Authorization format"
         "403":
           description: Used token
           content:
