@@ -8,7 +8,7 @@ import * as fieldValidator from "../../validators/fields/index.js";
 
 const router = Router();
 
-// auth/password/change
+// PATCH auth/password/change
 router.patch(
   "/change",
   authValidator.changePassword,
@@ -17,7 +17,7 @@ router.patch(
   authPassword.patchChangePassword
 );
 
-// auth/password/reset
+// POST auth/password/reset
 router.post(
   "/reset",
   fieldValidator.email,
@@ -25,7 +25,7 @@ router.post(
   authPassword.postRequestPasswordReset
 );
 
-// auth/password/reset/{resetToken}
+// PATCH auth/password/reset/{resetToken}
 router.patch(
   "/reset/:resetToken",
   fieldValidator.password,
