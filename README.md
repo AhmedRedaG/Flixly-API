@@ -1,6 +1,10 @@
-# JWT Authentication API
+# Authentication & Authorization API
 
 A robust and secure authentication system built with Node.js and Express, featuring JWT (JSON Web Token) based authentication with refresh token rotation. This API provides a complete authentication and authorization solution that can be easily integrated into any REST API project.
+
+## API Documentation
+
+The complete API documentation is available at: [SwaggerHub Documentation](https://app.swaggerhub.com/apis-docs/Ahmed-Reda-Freelance/Authentication-Authorization-API/1.0.0)
 
 ## Features
 

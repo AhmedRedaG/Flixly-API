@@ -1,5 +1,5 @@
 {
-  "name": "jwt-authentication-api",
+  "name": "authentication-authorization-api",
   "version": "1.0.0",
   "main": "server.js",
   "type": "module",
