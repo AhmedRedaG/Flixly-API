@@ -6,6 +6,8 @@ A robust and secure authentication system built with Node.js and Express, featur
 
 The complete API documentation is available at: [SwaggerHub Documentation](https://app.swaggerhub.com/apis-docs/Ahmed-Reda-Freelance/Authentication-Authorization-API/1.0.0)
 
+**Interactive API Documentation**: Access the interactive Swagger UI at `/api/v1/docs` when the server is running.
+
 ## Features
 
 - 🔐 Secure JWT-based authentication with dual token system (access & refresh tokens)
@@ -13,6 +15,7 @@ The complete API documentation is available at: [SwaggerHub Documentation](https
 - 🚀 Express.js REST API with robust error handling (JSend format)
 - 📦 MongoDB integration with Mongoose
 - 🔑 Google OAuth 2.0 authentication support (Passport.js)
+- 📧 **Email verification system** with secure token-based verification
 - 📱 Advanced Two-Factor Authentication (2FA):
   - SMS (phone-based, via Vonage) and TOTP (authenticator app, QR code via qrcode/speakeasy)
   - One-time backup codes for account recovery
@@ -24,6 +27,8 @@ The complete API documentation is available at: [SwaggerHub Documentation](https
 - 🍪 Environment-aware HTTP-only cookie configuration (secure, SameSite, path-restricted)
 - ✨ Comprehensive input validation and sanitization (express-validator)
 - 🚫 Protection against common security vulnerabilities (CORS, Helmet, etc.)
+- 📊 **Request duration logging** for performance monitoring
+- 📚 **Interactive API documentation** with Swagger UI
 - 🧪 Comprehensive testing with Jest & Supertest
 
 ## Tech Stack
@@ -45,6 +50,8 @@ The complete API documentation is available at: [SwaggerHub Documentation](https
 - @vonage/server-sdk (SMS)
 - speakeasy (TOTP 2FA)
 - qrcode (QR code for TOTP setup)
+- swagger-ui-express (API documentation)
+- yamljs (Swagger YAML parsing)
 - Jest & Supertest (testing)
 
 ## Prerequisites
@@ -65,24 +72,41 @@ npm install
 3. Create a `.env` file in the root directory with the following variables:
 
 ```env
-PORT=3000                                  # Server port (default: 3000)
-MONGODB_URI=your_mongodb_connection_string # MongoDB connection string
+# Server Configuration
+NODE_ENV=development                    # Environment (development/testing/production)
+PORT=3000                              # Server port (default: 3000)
+
+# Database Configuration
+DEVELOPMENT_MONGODB_URI=your_mongodb_connection_string    # MongoDB connection string for development
+TESTING_MONGODB_URI=your_testing_mongodb_connection_string # MongoDB connection string for testing
+
+# JWT Configuration
 ACCESS_TOKEN_SECRET=your_secret_key        # JWT access token secret
 REFRESH_TOKEN_SECRET=your_secret_key       # JWT refresh token secret
 RESET_TOKEN_SECRET=your_secret_key         # Password reset token secret
 TEMP_TOKEN_SECRET=your_temp_token_secret   # Temp token secret for 2FA
+VERIFY_TOKEN_SECRET=your_verify_token_secret # Email verification token secret
+
+# Google OAuth Configuration
 GOOGLE_CLIENT_ID=your_google_client_id     # Google OAuth client ID
 GOOGLE_CLIENT_SECRET=your_google_secret    # Google OAuth client secret
-SERVER_MAIL=your_email@gmail.com          # Email for sending password reset
+
+# Email Configuration
+SMTP_HOST=smtp.gmail.com                   # SMTP host (default: smtp.gmail.com)
+SMTP_PORT=587                              # SMTP port (default: 587)
+SERVER_MAIL=your_email@gmail.com          # Email for sending notifications
 SERVER_MAIL_PASS=your_email_app_password  # Email app password for SMTP
-FRONTEND_URL=http://your-frontend-url     # Frontend URL for reset password page
+SUPPORT_MAIL=your_support_email@gmail.com # Support email (optional, defaults to SERVER_MAIL)
+
+# Frontend Configuration
+FRONTEND_URL=http://your-frontend-url     # Frontend URL for email links
+
+# SMS Configuration (Vonage)
 VONAGE_API_KEY=your_vonage_key            # SMS provider key
 VONAGE_API_SECRET=your_vonage_secret      # SMS provider secret
 ```
 
 4. Start the development server:
-
-Start the development server with nodemon:
 
 ```bash
 npm run dev
@@ -91,8 +115,6 @@ npm run dev
 ## Testing
 
 The project uses **Jest** and **Supertest** for unit and integration testing. Test files are located in the `__test__` directory.
-
-The server uses nodemon for development, which will automatically restart when you make changes.
 
 Run all tests using Jest and Supertest:
 
@@ -130,7 +152,7 @@ npm test
 │   │   ├── isValid.js
 │   │   ├── rateLimiter.js
 │   │   ├── requestDurationLogger.js
-│   │   └── tempAuth.js
+│   │   └── swaggerDocs.js
 │   ├── models/
 │   │   └── user.js
 │   ├── public/
@@ -189,7 +211,7 @@ npm test
 │       ├── jwtHelper.test.js
 │       └── tfaHelper.test.js
 ├── package.json
-├── .env
+├── swagger.yaml
 └── README.md
 ```
 
@@ -210,6 +232,7 @@ npm test
   password: { type: String },
   googleId: { type: String, unique: true, sparse: true },
   role: { type: String, enum: ["user", "admin"], default: "user" },
+  verified: { type: Boolean, default: false }, // Email verification status
   refreshTokens: [String],
   resetToken: { type: String },
   TFA: {
@@ -220,6 +243,7 @@ npm test
       number: { type: String },
       code: { type: String },
       expiredAt: { type: Date },
+      lastSentAt: { type: Date }, // Rate limiting for SMS
       attempts: { type: Number, default: 0 },
       locked: { type: Boolean, default: false },
       lockedUntil: { type: Date },
@@ -252,41 +276,56 @@ All endpoints are prefixed with `/api/v1/`
 
 ### Authentication & 2FA (`/api/v1/auth`)
 
-- **POST** `/register` — Register a new user
+- **POST** `/auth/local/register` — Register a new user
   - Body: `{ name, email, password, confirmPassword }`
-- **POST** `/login` — Login (step 1)
+  - **New**: Sends verification email automatically
+- **PATCH** `/auth/local/verify/:verifyToken` — **New**: Verify email address
+  - Verifies user account and returns access/refresh tokens
+- **POST** `/auth/local/login` — Login (step 1)
   - Body: `{ email, password }`
   - Response: If 2FA enabled, returns `{ tempToken, phoneNumber? }`; else `{ accessToken, user }`
-- **GET** `/google` — Initiate Google OAuth
-- **GET** `/google/callback` — Google OAuth callback
-- **POST** `/reset-password` — Request password reset (body: `{ email }`)
-- **PATCH** `/reset-password/:resetToken` — Reset password with token
-- **PATCH** `/change-password` — Change password (auth required)
+  - **Updated**: Checks for email verification before login
+- **GET** `/auth/google` — Initiate Google OAuth
+- **GET** `/auth/google/callback` — Google OAuth callback
+- **POST** `/auth/password/reset` — Request password reset (body: `{ email }`)
+- **PATCH** `/auth/password/reset/:resetToken` — Reset password with token
+- **PATCH** `/auth/password/change` — Change password (auth required)
   - Body: `{ oldPassword, newPassword }`
-- **POST** `/refresh` — Refresh access token (requires refresh token cookie)
-- **DELETE** `/logout` — Logout (requires refresh token cookie, `full=true` for all devices)
+- **POST** `/auth/refresh` — Refresh access token (requires refresh token cookie)
+- **DELETE** `/auth/logout` — Logout (requires refresh token cookie, `full=true` for all devices)
 
 #### 2FA Setup & Management
 
-- **PUT** `/2fa/setup/sms` — Set phone number for SMS 2FA
-- **PUT** `/2fa/setup/totp` — Generate TOTP secret
-- **POST** `/2fa/setup/verify` — Verify code for SMS or TOTP setup
-- **DELETE** `/2fa/setup/remove` — Remove SMS or TOTP setup
-- **POST** `/2fa/enable` — Enable 2FA after verifying code (returns backup codes)
-- **DELETE** `/2fa/disable` — Disable 2FA after verifying code
-- **POST** `/2fa/backup-codes` — Regenerate backup codes (verify code required)
-- **POST** `/2fa/method` — Get current 2FA method
-- **POST** `/2fa/request` — Send SMS code (authenticated)
-- **POST** `/2fa/temp-request` — Send SMS code (with tempToken)
-- **POST** `/2fa/verify` — Verify 2FA code or backup code (with tempToken, returns tokens)
+- **POST** `/auth/2fa/setup/sms` — Set phone number for SMS 2FA
+- **POST** `/auth/2fa/setup/totp` — Generate TOTP secret
+- **POST** `/auth/2fa/setup` — Verify code for SMS or TOTP setup
+- **DELETE** `/auth/2fa/setup/remove` — Remove SMS or TOTP setup
+- **POST** `/auth/2fa/enable` — Enable 2FA after verifying code (returns backup codes)
+- **DELETE** `/auth/2fa/disable` — Disable 2FA after verifying code
+- **POST** `/auth/2fa/backup-codes` — Regenerate backup codes (verify code required)
+- **POST** `/auth/2fa/method` — Get current 2FA method
+- **POST** `/auth/2fa/request` — Send SMS code (authenticated)
+- **POST** `/auth/2fa/temp-request` — Send SMS code (with tempToken)
+- **POST** `/auth/2fa/verify` — Verify 2FA code or backup code (with tempToken, returns tokens)
 
 ### User (`/api/v1/user`)
 
 - **GET** `/user` — Get current user data (JWT required)
 
+### API Documentation
+
+- **GET** `/docs` — **New**: Interactive Swagger UI documentation
+
 ## Security Features
 
-1. **Two-Factor Authentication (2FA)**
+1. **Email Verification System** - **New Feature**
+
+   - Automatic email verification on registration
+   - Secure token-based verification (3-hour expiration)
+   - Prevents login until email is verified
+   - Professional email templates with logo support
+
+2. **Two-Factor Authentication (2FA)**
 
    - SMS-based 2FA with phone verification
    - TOTP (authenticator app) 2FA support
@@ -294,16 +333,17 @@ All endpoints are prefixed with `/api/v1/`
    - Method selection and management
    - Attempts tracking, lockout, and brute-force protection
 
-2. **Complete Token Management**
+3. **Complete Token Management**
 
-   - Access Token: 2 hours expiration (configurable)
+   - Access Token: 15 minutes expiration (configurable)
    - Refresh Token: 7 days expiration
    - Temp Token: 10 minutes expiration (for 2FA)
+   - Verify Token: 3 hours expiration (for email verification)
    - Token rotation and multi-device support
    - Selective logout (single device or all devices)
    - Automatic token cleanup and management
 
-3. **HTTP-only Cookie Management**
+4. **HTTP-only Cookie Management**
 
    - Refresh tokens in HTTP-only cookies
    - Environment-based security settings:
@@ -313,14 +353,15 @@ All endpoints are prefixed with `/api/v1/`
    - 7-day cookie expiration
    - Protected against XSS attacks
 
-4. **Rate Limiting Protection**
+5. **Rate Limiting Protection**
 
-   - 5 attempts per 15-minute window (configurable)
+   - 50 requests per 15-minute window (configurable)
    - Applies to all authentication and 2FA endpoints
+   - SMS rate limiting (15-minute cooldown between SMS)
    - Standardized error messages
    - Protection against brute force and abuse
 
-5. **Input Validation & Sanitization**
+6. **Input Validation & Sanitization**
 
    - Name: 3-256 characters, letters and spaces
    - Email: Validation and normalization
@@ -328,28 +369,39 @@ All endpoints are prefixed with `/api/v1/`
    - Phone: International format validation
    - Password confirmation matching
 
-6. **Token Verification & Authorization**
+7. **Token Verification & Authorization**
 
-   - Bearer, refresh, reset, and temp token validation
+   - Bearer, refresh, reset, temp, and verify token validation
    - Proper token expiration handling
    - Clear error messages for missing/invalid/expired tokens
 
-7. **Additional Security Measures**
-   - CORS protection
-   - Helmet security headers
-   - Express security best practices
-   - JSend response standardization
-   - MongoDB best practices
-   - Environment-based configuration
+8. **Performance Monitoring** - **New Feature**
+
+   - Request duration logging for all endpoints
+   - Performance tracking and monitoring capabilities
+
+9. **API Documentation** - **New Feature**
+
+   - Interactive Swagger UI at `/api/v1/docs`
+   - Complete API specification with examples
+   - Request/response schemas and validation
+
+10. **Additional Security Measures**
+    - CORS protection
+    - Helmet security headers
+    - Express security best practices
+    - JSend response standardization
+    - MongoDB best practices
+    - Environment-based configuration
 
 ## Error Handling
 
 The API implements consistent error handling with jsend format and appropriate HTTP status codes:
 
 - `400` - Bad Request (Invalid input)
-- `401` - Unauthorized (Invalid credentials, Missing authorization header)
+- `401` - Unauthorized (Invalid credentials, Missing authorization header, Unverified account)
 - `403` - Forbidden (Invalid/Expired token)
-- `409` - Conflict (Email already exists)
+- `409` - Conflict (Email already exists, User already verified)
 - `422` - Unprocessable Entity (Validation failed)
 - `429` - Too Many Requests (Rate limit exceeded with 15-minute window)
 - `500` - Internal Server Error
@@ -383,11 +435,11 @@ Success responses:
 
 ## Usage Examples
 
-### Registration
+### Registration with Email Verification
 
 ```javascript
 // Register Request
-fetch('http://your-api/api/v1/auth/register', {
+fetch('http://your-api/api/v1/auth/local/register', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -404,21 +456,47 @@ fetch('http://your-api/api/v1/auth/register', {
 {
   "status": "success",
   "data": {
-    "user": {
+    "userSafeData": {
       "_id": "user_id",
       "name": "Ahmed Reda",
       "email": "ahmed@example.com",
       "role": "user"
-    }
+    },
+    "message": "Email sent successfully"
   }
 }
 ```
 
-### Login
+### Email Verification
+
+```javascript
+// Verify email with token from email
+fetch('http://your-api/api/v1/auth/local/verify/your_verify_token', {
+  method: 'PATCH'
+});
+
+// Response
+{
+  "status": "success",
+  "data": {
+    "accessToken": "your_access_token",
+    "userSafeData": {
+      "_id": "user_id",
+      "name": "Ahmed Reda",
+      "email": "ahmed@example.com",
+      "role": "user"
+    },
+    "message": "Email verified successfully"
+  }
+}
+// Note: Refresh token is set in HTTP-only cookie
+```
+
+### Login (with email verification check)
 
 ```javascript
 // Login Request
-fetch('http://your-api/api/v1/auth/login', {
+fetch('http://your-api/api/v1/auth/local/login', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -429,17 +507,26 @@ fetch('http://your-api/api/v1/auth/login', {
   })
 });
 
-// Response
+// Response (if email not verified)
+{
+  "status": "fail",
+  "data": {
+    "message": "Account not verified, please check your email for verification link."
+  }
+}
+
+// Response (if verified and no 2FA)
 {
   "status": "success",
   "data": {
     "accessToken": "your_access_token",
-    "user": {
+    "userSafeData": {
       "_id": "user_id",
       "name": "Ahmed Reda",
       "email": "ahmed@example.com",
       "role": "user"
-    }
+    },
+    "message": "Login successful"
   }
 }
 // Note: Refresh token is set in HTTP-only cookie
@@ -449,7 +536,7 @@ fetch('http://your-api/api/v1/auth/login', {
 
 ```javascript
 // Step 1: Login Request
-fetch("http://your-api/api/v1/auth/login", {
+fetch("http://your-api/api/v1/auth/local/login", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -458,7 +545,7 @@ fetch("http://your-api/api/v1/auth/login", {
   }),
 });
 // Response if 2FA enabled:
-// { status: 'fail', data: { tempToken: '...', phoneNumber: '+201234567890' } }
+// { status: 'success', data: { method: 'sms', tempToken: '...', message: 'Two-factor authentication required' } }
 
 // Step 2: Request SMS code (if using SMS)
 fetch("http://your-api/api/v1/auth/2fa/temp-request", {
@@ -479,7 +566,7 @@ fetch("http://your-api/api/v1/auth/2fa/verify", {
 // body: JSON.stringify({ tempToken, method: 'backup', backupCode: 'xxxx-xxxx' })
 
 // Response:
-// { status: 'success', data: { accessToken, user } }
+// { status: 'success', data: { accessToken, userSafeData } }
 ```
 
 ### 2FA Setup (SMS)
@@ -487,12 +574,12 @@ fetch("http://your-api/api/v1/auth/2fa/verify", {
 ```javascript
 // Set phone number
 fetch("http://your-api/api/v1/auth/2fa/setup/sms", {
-  method: "PUT",
+  method: "POST",
   headers: { Authorization: "Bearer ...", "Content-Type": "application/json" },
   body: JSON.stringify({ phoneNumber: "+201234567890" }),
 });
 // Verify code
-fetch("http://your-api/api/v1/auth/2fa/setup/verify", {
+fetch("http://your-api/api/v1/auth/2fa/setup", {
   method: "POST",
   headers: { Authorization: "Bearer ...", "Content-Type": "application/json" },
   body: JSON.stringify({ method: "sms", TFACode: "123456" }),
@@ -510,11 +597,11 @@ fetch("http://your-api/api/v1/auth/2fa/enable", {
 ```javascript
 // Generate TOTP secret
 fetch("http://your-api/api/v1/auth/2fa/setup/totp", {
-  method: "PUT",
+  method: "POST",
   headers: { Authorization: "Bearer ...", "Content-Type": "application/json" },
 });
 // Verify code
-fetch("http://your-api/api/v1/auth/2fa/setup/verify", {
+fetch("http://your-api/api/v1/auth/2fa/setup", {
   method: "POST",
   headers: { Authorization: "Bearer ...", "Content-Type": "application/json" },
   body: JSON.stringify({ method: "totp", TFACode: "123456" }),
@@ -540,12 +627,12 @@ fetch("http://your-api/api/v1/auth/2fa/verify", {
     backupCode: "xxxx-xxxx",
   }),
 });
-// Response: { status: 'success', data: { accessToken, user } }
+// Response: { status: 'success', data: { accessToken, userSafeData } }
 ```
 
 ## Best Practices Implemented
 
-- Token-based authentication (JWT, refresh, temp, reset tokens)
+- Token-based authentication (JWT, refresh, temp, reset, verify tokens)
 - Secure password storage (bcrypt)
 - Rate limiting (per endpoint, brute-force protection)
 - Input validation & sanitization (express-validator)
@@ -553,6 +640,9 @@ fetch("http://your-api/api/v1/auth/2fa/verify", {
 - Secure cookie usage (HTTP-only, SameSite, Secure, path-restricted)
 - Consistent error handling (JSend)
 - MongoDB & Mongoose best practices
+- Email verification system with professional templates
+- Performance monitoring with request duration logging
+- Interactive API documentation with Swagger UI
 
 ## License
 
