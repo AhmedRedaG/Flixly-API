@@ -587,7 +587,8 @@ paths:
                     data:
                       method: "sms"
                       tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      message: "Two-factor authentication required"        "401":
+                      message: "Two-factor authentication required"        
+        "401":
           description: Invalid Google credentials
           content:
             application/json:

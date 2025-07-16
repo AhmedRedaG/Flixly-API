@@ -3,10 +3,7 @@ import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
 
-export const authWithGoogleService = async (googleId) => {
-  const user = await User.findOne({ googleId });
-  if (!user) throw new AppError("Invalid googleId", 401);
-
+export const authWithGoogleService = async (user) => {
   if (user.TFA.status === true) {
     const tempToken = JwtHelper.createTempToken({ _id: user._id });
     return {

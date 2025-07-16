@@ -7,7 +7,7 @@ import User from "../models/user.js";
 const findOrCreateUser = async (profile) => {
   const oldUser = await User.findOne({ googleId: profile.id });
   if (oldUser) {
-    return oldUser.googleId;
+    return oldUser;
   }
 
   const newUser = await new User({
@@ -15,7 +15,7 @@ const findOrCreateUser = async (profile) => {
     email: profile.emails[0].value,
     googleId: profile.id,
   }).save();
-  return newUser.googleId;
+  return newUser;
 };
 
 passport.use(
@@ -27,8 +27,8 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const userGoogleId = await findOrCreateUser(profile);
-        done(null, userGoogleId);
+        const user = await findOrCreateUser(profile);
+        done(null, user);
       } catch (err) {
         done(err, null);
       }
