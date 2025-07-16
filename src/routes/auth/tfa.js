@@ -8,67 +8,66 @@ import * as fieldValidator from "../../validators/fields/index.js";
 
 const router = Router();
 
-// auth/2fa/setup/sms
-router.put(
+// === SETUP ROUTES ===
+// POST auth/2fa/setup/sms => Setup TFA via SMS
+router.post(
   "/setup/sms",
   fieldValidator.phoneNumber,
   isValid,
   isAuth,
   authTFA.setupTFASms
 );
+// POST auth/2fa/setup/totp => Setup TFA via TOTP
+router.post("/setup/totp", isAuth, authTFA.setupTFATotp);
+// POST auth/tfa/setup => Verify TFA setup
+// PATCH auth/tfa/setup => Revoke TFA setup
+router
+  .post(
+    "/setup",
+    authValidator.TFAInput,
+    isValid,
+    isAuth,
+    authTFA.verifySetupTFA
+  )
+  .patch(
+    "/setup",
+    authValidator.TFAInput,
+    isValid,
+    isAuth,
+    authTFA.revokeSetupTFA
+  );
 
-// auth/tfa/setup/totp
-router.put("/setup/totp", isAuth, authTFA.setupTFATotp);
+// === MANAGEMENT ROUTES ===
+// GET auth/2fa => Get current TFA status
+// POST auth/2fa => Enable TFA
+// PATCH auth/2fa => Disable TFA
+router
+  .get("/", isAuth, authTFA.getCurrentTFAStatus)
+  .post("/", authValidator.TFAInput, isValid, isAuth, authTFA.enableTFA)
+  .patch("/", authValidator.TFAInput, isValid, isAuth, authTFA.disableTFA);
 
-// auth/tfa/setup
-router.post(
-  "/setup",
-  authValidator.TFAInput,
-  isValid,
-  isAuth,
-  authTFA.verifySetupTFA
-);
-
-// auth/2fa/setup
-router.delete(
-  "/setup",
-  authValidator.TFAInput,
-  isValid,
-  isAuth,
-  authTFA.revokeSetupTFA
-);
-
-// auth/2fa
-router.get("/", isAuth, authTFA.getCurrentTFAStatus);
-
-// auth/2fa
-router.post("/", authValidator.TFAInput, isValid, isAuth, authTFA.enableTFA);
-
-// auth/2fa
-router.delete("/", authValidator.TFAInput, isValid, isAuth, authTFA.disableTFA);
-
-// auth/2fa/backup-codes
-router.post(
-  "/backup-codes",
-  authValidator.TFAInput,
-  isValid,
-  isAuth,
-  authTFA.regenerateBackupCodes
-);
-
-// auth/2fa/sms/verify
-router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
-
-// auth/2fa/sms/temp
-router.post("/sms/temp", isTempAuth, authTFA.sendSmsVerificationCode);
-
-// auth/2fa/verify
+// === VERIFICATION ROUTES ===
+// POST auth/2fa/verify => Verify login with TFA code
 router.post(
   "/verify",
   authValidator.TFAInput,
   isValid,
   isTempAuth,
   authTFA.loginVerifyTFA
+);
+// POST auth/2fa/sms/verify => Send verify TFA code via SMS for current auth
+// POST auth/2fa/sms/temp => Send verify TFA code via SMS for temporary auth
+router.post("/sms/verify", isAuth, authTFA.sendSmsVerificationCode);
+router.post("/sms/temp", isTempAuth, authTFA.sendSmsVerificationCode);
+
+// === UTILITY ROUTES ===
+// POST auth/2fa/backup-codes => Regenerate backup codes for TFA
+router.post(
+  "/backup-codes",
+  authValidator.TFAInput,
+  isValid,
+  isAuth,
+  authTFA.regenerateBackupCodes
 );
 
 export default router;
