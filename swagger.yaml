@@ -480,3 +480,210 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
       security: []
+
+  # Auth (Password)
+  /auth/password/change:
+    patch:
+      tags: [Auth (Password)]
+      summary: Change user password
+      description: Change the password for an authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  message: "Password has been successfully changed."
+        "400":
+          description: Invalid new password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "New password must be different from old password"
+        "401":
+          description: Invalid Authorization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Authorization header is missing"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Authorization format"
+              example:
+                status: fail
+                data:
+                  message: "2FA code is required"
+              example:
+                status: fail
+                data:
+                  message: "Old password is wrong"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "User not found with the provided ID"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Data"
+                  oldPassword: "Password must be valid"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - BearerAuth: []
+
+  /auth/password/reset:
+    post:
+      tags: [Auth (Password)]
+      summary: Request password reset
+      description: Send a password reset email to the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailRequest"
+      responses:
+        "200":
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  message: "If an account exists for this email, a password reset link has been sent."
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Data"
+                  email: "Email must be valid"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
+
+  /auth/password/reset/{resetToken}:
+    patch:
+      tags: [Auth (Password)]
+      summary: Reset password
+      description: Reset the user's password using a reset token.
+      parameters:
+        - in: path
+          name: resetToken
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordRequest"
+      responses:
+        "200":
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                data:
+                  message: "Password has been successfully reset."
+        "401":
+          description: Invalid Authorization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Authorization header is missing"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Authorization format"
+        "403":
+          description: Used token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Reset token is already used"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "User not found with the provided ID"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Data"
+                  password: "Password must be valid"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
