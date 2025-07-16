@@ -542,6 +542,69 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
       security: []
 
+  # Auth (Google)
+  /auth/google:
+    get:
+      tags: [Auth (Google)]
+      summary: Google OAuth2 login
+      description: Redirects user to Google for authentication.
+      responses:
+        "302":
+          description: Redirect to Google OAuth2
+      security: []
+
+  /auth/google/callback:
+    get:
+      tags: [Auth (Google)]
+      summary: Google OAuth2 callback
+      description: Handles Google OAuth2 callback and authenticates user.
+      responses:
+        "200":
+          description: Login successful or two-factor authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              examples:
+                login_success:
+                  summary: "Successful login"
+                  description: "User logged in successfully without 2FA"
+                  value:
+                    status: success
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      userSafeData:
+                        _id: "60d0fe4f5311236168a109ca"
+                        name: "Ahmed Reda"
+                        email: "ahmed@example.com"
+                        role: "user"
+                      message: "Login successful"
+                two_factor_required:
+                  summary: "2FA Required"
+                  description: "Two-factor authentication is required"
+                  value:
+                    status: success
+                    data:
+                      method: "sms"
+                      tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      message: "Two-factor authentication required"        "401":
+          description: Invalid Google credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailResponse"
+              example:
+                status: fail
+                data:
+                  message: "Invalid Google credentials"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security: []
+
   # Auth (Password)
   /auth/password/change:
     patch:
