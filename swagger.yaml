@@ -6,9 +6,15 @@ info:
     Comprehensive API for user authentication, authorization, and two-factor authentication (2FA).
 
     **Response Format:**
-    - Success: `{ status: "success", data: {...} }`
-    - Fail: `{ status: "fail", data: { message: "...", ...} }`
-    - Error: `{ status: "error", message: "..." }`
+    - All responses follow a consistent format:
+
+    ```json
+    {
+      "status": "success" | "fail" | "error",
+      "data": {...} | null,
+      "message": "..."
+    }
+    ```
   contact:
     name: Ahmed Reda
     url: https://github.com/AhmedRedaG/Authentication-Authorization-CAT
@@ -30,23 +36,6 @@ components:
       name: refreshToken
 
   schemas:
-    User:
-      type: object
-      properties:
-        _id:
-          type: string
-          example: "60d0fe4f5311236168a109ca"
-        name:
-          type: string
-          example: "John Doe"
-        email:
-          type: string
-          example: "john@example.com"
-        role:
-          type: string
-          enum: [user, admin]
-          example: "user"
-
     RegisterRequest:
       type: object
       required: [name, email, password, confirmPassword]
@@ -193,8 +182,6 @@ tags:
     description: Password management endpoints
   - name: Auth (2FA)
     description: Two-factor authentication endpoints
-  - name: User
-    description: User endpoints
 
 paths:
   # Auth (Local)
@@ -224,7 +211,7 @@ paths:
                     name: "Ahmed Reda"
                     email: "ahmed@example.com"
                     role: "user"
-                  message: "Verification email sent."
+                  message: "Email sent successfully"
         "409":
           description: Email already in use
           content:
@@ -372,18 +359,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid email or password"
-              example:
-                status: fail
-                data:
-                  message: "This account was registered with Google."
-              example:
-                status: fail
-                data:
-                  message: "Account not verified, please check your email for verification link."
+              examples:
+                invalid_credentials:
+                  summary: "Invalid Credentials"
+                  description: "Email or password is incorrect"
+                  value:
+                    status: fail
+                    data:
+                      message: "Invalid email or password"
+                google_account:
+                  summary: "Google Account"
+                  description: "User trying to login with local auth but account was created with Google"
+                  value:
+                    status: fail
+                    data:
+                      message: "This account was registered with Google."
+                unverified_account:
+                  summary: "Unverified Account"
+                  description: "User account exists but email verification is pending"
+                  value:
+                    status: fail
+                    data:
+                      message: "Account not verified, please check your email for verification link."
         "422":
           description: Validation error
           content:
@@ -484,25 +481,26 @@ paths:
       description: Logout the user and clear refresh token cookie.
       responses:
         "200":
-          description: Logout successful
+          description: Logout successful or already logged out
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  message: "User logged out successfully"
-        "400":
-          description: already logged out
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Already logged out"
+              examples:
+                successful_logout:
+                  summary: "Successful Logout"
+                  description: "User was logged in and has been successfully logged out"
+                  value:
+                    status: success
+                    data:
+                      message: "User logged out successfully"
+                already_logged_out:
+                  summary: "Already Logged Out"
+                  description: "User was already logged out, no action needed"
+                  value:
+                    status: success
+                    data:
+                      message: "Already logged out"
         "403":
           description: Invalid or expired token
           content:
@@ -540,7 +538,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-      security: []
+      security:
+        - BearerAuth: []
+        - Cookies: []
 
   # Auth (Google)
   /auth/google:
@@ -587,7 +587,7 @@ paths:
                     data:
                       method: "sms"
                       tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      message: "Two-factor authentication required"        
+                      message: "Two-factor authentication required"
         "401":
           description: Invalid Google credentials
           content:
@@ -1025,7 +1025,7 @@ paths:
                   value:
                     status: fail
                     data:
-                      message: "No phone number found for SMS verification"  
+                      message: "No phone number found for SMS verification"
         "401":
           description: Invalid Authorization
           content:
@@ -1093,7 +1093,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
       security:
         - BearerAuth: []
-      
+
     delete:
       tags: [Auth (2FA)]
       summary: Remove 2FA setup
