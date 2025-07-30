@@ -305,15 +305,6 @@ paths:
                         email: "ahmed@example.com"
                         role: "user"
                       message: "Login successful"
-                two_factor_required:
-                  summary: "2FA Required"
-                  description: "Two-factor authentication is required"
-                  value:
-                    status: success
-                    data:
-                      method: "sms"
-                      tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      message: "Two-factor authentication required"
         "401":
           description: Invalid credentials or account not verified
           content:
@@ -540,15 +531,6 @@ paths:
                         email: "ahmed@example.com"
                         role: "user"
                       message: "Login successful"
-                two_factor_required:
-                  summary: "2FA Required"
-                  description: "Two-factor authentication is required"
-                  value:
-                    status: success
-                    data:
-                      method: "sms"
-                      tempToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      message: "Two-factor authentication required"
         "401":
           description: Invalid Google credentials
           content:

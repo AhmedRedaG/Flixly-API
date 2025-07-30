@@ -15,7 +15,6 @@
   "license": "ISC",
   "description": "robust and secure authentication system",
   "dependencies": {
-    "@vonage/server-sdk": "^3.21.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -30,8 +29,6 @@
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "qrcode": "^1.5.4",
-    "speakeasy": "^2.0.0",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
   },

@@ -34,9 +34,4 @@ export const env = {
   },
 
   frontendUrl: process.env.FRONTEND_URL,
-
-  sms: {
-    vonageApiKey: process.env.VONAGE_API_KEY,
-    vonageApiSecret: process.env.VONAGE_API_SECRET,
-  },
 };
