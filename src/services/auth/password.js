@@ -5,14 +5,14 @@ import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { sendResetPasswordMail } from "../../utilities/mailHelper/mailSender.js";
 import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
-import * as configs from "../../config/index.js";
+import * as configs from "../../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 
 export const changePasswordService = async (
   userId,
   oldPassword,
-  newPassword,
+  newPassword
 ) => {
   const user = await getUserByIdOrFail(userId);
 

@@ -1,4 +1,4 @@
-import * as googleServer from "../../services/auth/google.service.js";
+import * as googleServer from "../../services/auth/google.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const authWithGoogle = async (req, res) => {

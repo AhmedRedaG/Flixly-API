@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-import * as configs from "./../config/index.js";
+import * as configs from "../../config/index.js";
 import AppError from "./appError.js";
 
 const TOKEN_TYPES = {

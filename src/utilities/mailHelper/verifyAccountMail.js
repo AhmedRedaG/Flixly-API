@@ -1,5 +1,5 @@
 import EmailService from "./mailService.js";
-import * as configs from "../../config/index.js";
+import * as configs from "../../../config/index.js";
 
 export default class VerifyAccountMail extends EmailService {
   createMail(user, verifyToken) {

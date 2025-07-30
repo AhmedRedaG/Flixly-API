@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit";
 
-import * as configs from "../config/index.js";
+import * as configs from "../../config/index.js";
 
 const { WINDOW_DURATION, REQUESTS_BARE_WINDOW } = configs.constants.rateLimit;
 

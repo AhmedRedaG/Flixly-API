@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
 import * as configs from "./index.js";
-import User from "../models/user.js";
+import User from "../src/models/user.js";
 
 const findOrCreateUser = async (profile) => {
   const oldUser = await User.findOne({ googleId: profile.id });

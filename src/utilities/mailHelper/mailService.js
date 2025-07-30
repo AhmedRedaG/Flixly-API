@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import { join } from "path";
 import { existsSync } from "fs";
 
-import * as configs from "../../config/index.js";
+import * as configs from "../../../config/index.js";
 
 export default class EmailService {
   constructor() {

@@ -1,5 +1,5 @@
 import app from "./app.js";
-import * as configs from "./config/index.js";
+import * as configs from "../config/index.js";
 
 const PORT = configs.env.port[configs.env.nodeEnv];
 

@@ -1,4 +1,4 @@
-import * as localServer from "../../services/auth/local.service.js";
+import * as localServer from "../../services/auth/local.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const register = async (req, res) => {

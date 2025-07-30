@@ -1,4 +1,4 @@
-import * as passwordServer from "../../services/auth/password.service.js";
+import * as passwordServer from "../../services/auth/password.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const changePassword = async (req, res) => {

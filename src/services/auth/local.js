@@ -7,7 +7,7 @@ import { generateTokensForUser } from "../../utilities/authHelper.js";
 import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
 import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
 
-import * as configs from "../../config/index.js";
+import * as configs from "../../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 

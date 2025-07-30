@@ -12,7 +12,7 @@ import jwt from "jsonwebtoken";
 import { server, mongooseConnection } from "../../src/server.js";
 import User from "../../src/models/user.js";
 import { createVerifyToken } from "../../src/utilities/jwtHelper.js";
-import { env } from "../../src/config/env.js";
+import { env } from "../../config/env.js";
 
 const { verifyTokenSecret, refreshTokenSecret } = env.jwt;
 let user;

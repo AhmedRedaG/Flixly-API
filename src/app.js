@@ -5,7 +5,7 @@ import helmet from "helmet";
 import cors from "cors";
 import passport from "passport";
 
-import "./config/passport.js";
+import "../config/passport.js";
 import authRouter from "./routes/auth/index.js";
 import userRouter from "./routes/user.js";
 import rateLimiter from "./middlewares/rateLimiter.js";
