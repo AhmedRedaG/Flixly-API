@@ -239,24 +239,6 @@ describe("Integration Tests for Auth Local Endpoints", () => {
       expect(res.body.data.message).toMatch(/Account not verified/i);
     }, 10000);
 
-    it("should require TFA if enabled", async () => {
-      await request(server).post("/api/v1/auth/local/register").send(user);
-      await User.updateOne(
-        { email: user.email },
-        { verified: true, "TFA.status": true, "TFA.method": "sms" }
-      );
-      const res = await request(server)
-        .post("/api/v1/auth/local/login")
-        .send(user);
-      expect(res.statusCode).toBe(200);
-      expect(res.body.status).toBe("success");
-      expect(res.body.data).toHaveProperty("method", "sms");
-      expect(res.body.data).toHaveProperty("tempToken");
-      expect(res.body.data.message).toMatch(
-        /Two-factor authentication required/i
-      );
-    });
-
     it("should succeed and return tokens if credentials are valid", async () => {
       await request(server).post("/api/v1/auth/local/register").send(user);
       await User.updateOne({ email: user.email }, { verified: true });

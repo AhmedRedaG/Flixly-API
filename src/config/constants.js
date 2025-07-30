@@ -1,14 +1,6 @@
 import rateLimit from "express-rate-limit";
 
 export const constants = {
-  tfa: {
-    TFA_DURATION: 1000 * 60 * 5,
-    SMS_DURATION: 1000 * 60 * 15,
-    LOCK_DURATION: 1000 * 60 * 15,
-    MAX_ATTEMPTS: 5,
-    BACKUP_CODE_COUNT: 10,
-  },
-
   jwt: {
     ACCESS_TOKEN_AGE: "15m",
     REFRESH_TOKEN_AGE: "7d",

@@ -13,15 +13,8 @@ export const changePasswordService = async (
   userId,
   oldPassword,
   newPassword,
-  TFACode
 ) => {
   const user = await getUserByIdOrFail(userId);
-
-  if (user.TFA.status === true) {
-    if (!TFACode) throw new AppError("2FA code is required", 401);
-
-    await verifyTFACode(user, TFACode, user.TFA.method);
-  }
 
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords) throw new AppError("Old password is wrong", 401);

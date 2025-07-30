@@ -20,44 +20,6 @@ const userSchema = new Schema(
     verified: { type: Boolean, default: false },
     refreshTokens: [String],
     resetToken: { type: String },
-    TFA: {
-      type: {
-        status: { type: Boolean, default: false },
-        method: {
-          type: String,
-          enum: ["sms", "totp"],
-          default: null,
-        },
-        sms: {
-          status: { type: Boolean, default: false },
-          number: { type: String },
-          code: { type: String },
-          expiredAt: { type: Date },
-          lastSentAt: { type: Date },
-          attempts: { type: Number, default: 0 },
-          locked: { type: Boolean, default: false },
-          lockedUntil: { type: Date },
-          _id: false,
-        },
-        totp: {
-          status: { type: Boolean, default: false },
-          secret: { type: String },
-          attempts: { type: Number, default: 0 },
-          locked: { type: Boolean, default: false },
-          lockedUntil: { type: Date },
-          _id: false,
-        },
-        backupCodes: [
-          {
-            code: { type: String },
-            used: { type: Boolean, default: false },
-            _id: false,
-          },
-        ],
-      },
-      default: {},
-      _id: false,
-    },
   },
   {
     timestamps: true,
