@@ -1,0 +1,48 @@
+import { DataTypes, Model } from "sequelize";
+
+export default (sequelize) => {
+  class User extends Model {
+    static associate(models) {
+      User.hasMany(models.RefreshToken, {
+        foreignKey: "user_id",
+        as: "refreshTokens",
+      });
+
+      User.hasOne(models.ResetToken, {
+        foreignKey: "user_id",
+        as: "resetToken",
+      });
+    }
+  }
+
+  User.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
+      first_name: { type: DataTypes.STRING, allowNull: false },
+      last_name: { type: DataTypes.STRING, allowNull: false },
+      username: { type: DataTypes.STRING, allowNull: false, unique: true },
+      email: { type: DataTypes.STRING, allowNull: false, unique: true },
+      google_id: { type: DataTypes.STRING, unique: true },
+      password: DataTypes.STRING,
+      verified: { type: DataTypes.BOOLEAN, defaultValue: false },
+      avatar: DataTypes.STRING,
+      bio: DataTypes.STRING,
+    },
+    {
+      sequelize,
+      modelName: "User",
+      tableName: "users",
+      timestamps: true,
+      paranoid: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      deletedAt: "deleted_at",
+    }
+  );
+
+  return User;
+};
