@@ -1,4 +1,4 @@
-import User from "../../models/user.js";
+import User from "../../../database/models/user.js";
 import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";

@@ -10,7 +10,7 @@ import {
 import jwt from "jsonwebtoken";
 
 import { server, mongooseConnection } from "../../src/server.js";
-import User from "../../src/models/user.js";
+import User from "../../database/models/user.js";
 import { createVerifyToken } from "../../src/utilities/jwtHelper.js";
 import { env } from "../../config/env.js";
 

@@ -1,16 +1,17 @@
 import app from "./app.js";
 import * as configs from "../config/index.js";
 
-const PORT = configs.env.port[configs.env.nodeEnv];
+import { sequelize } from "../database/models/index.js";
 
+// I will change it later
 let server, mongooseConnection;
 
 await (async () => {
   try {
-    mongooseConnection = await configs.connectDB();
+    sequelizeConnection = await sequelize.authenticate();
     server = app.listen(PORT, () => {
       console.log(
-        `${configs.env.nodeEnv}: MongoDB connected and Server running on http://localhost:${PORT}`
+        `${configs.env.nodeEnv}: Database connected and Server running on http://localhost:${PORT}`
       );
     });
   } catch (err) {
@@ -19,4 +20,5 @@ await (async () => {
   }
 })();
 
+// need changes in tests also
 export { server, mongooseConnection };

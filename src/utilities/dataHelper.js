@@ -1,4 +1,4 @@
-import User from "../models/user.js";
+import User from "../../database/models/user.js";
 import AppError from "./appError.js";
 
 export const getUserByIdOrFail = async (userId) => {

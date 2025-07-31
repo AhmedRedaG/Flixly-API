@@ -4,8 +4,15 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "set NODE_ENV=testing && node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "set NODE_ENV=testing && node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "db:create": "npx sequelize-cli db:create",
+    "db:drop": "npx sequelize-cli db:drop",
+    "db:migrate": "npx sequelize-cli db:migrate",
+    "db:migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "db:seed": "npx sequelize-cli db:seed:all",
+    "db:reset": "npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db:migrate"
   },
   "jest": {
     "transform": {}
@@ -28,11 +35,15 @@
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "jest": "^30.0.4",
+    "sequelize-cli": "^6.6.3",
     "supertest": "^7.1.3"
   }
 }
