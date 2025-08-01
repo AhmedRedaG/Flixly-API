@@ -6,18 +6,16 @@ import * as configs from "../../config/index.js";
 
 const { REFRESH_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 
-export const generateTokensForUser = async (user) => {
-  const userSafeData = getSafeData(user);
-
-  const accessToken = JwtHelper.createAccessToken(userSafeData);
-  const refreshToken = JwtHelper.createRefreshToken({ id: user.id });
+export const generateTokensForUser = async (userId) => {
+  const accessToken = JwtHelper.createAccessToken({ id: userId });
+  const refreshToken = JwtHelper.createRefreshToken({ id: userId });
 
   await user.createRefreshToken({
     token: refreshToken,
     expiresAt: new Date(Date.now() + REFRESH_TOKEN_AGE_IN_MS),
   });
 
-  return { accessToken, refreshToken, userSafeData };
+  return { accessToken, refreshToken };
 };
 
 export const extractAuthorizationHeader = (req) => {
