@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-import User from "../../../database/models/user.js";
+import { db } from "../../../database/models/index.js";
 import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { sendResetPasswordMail } from "../../utilities/mailHelper/mailSender.js";
@@ -8,13 +8,15 @@ import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
 import * as configs from "../../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
+const { User, ResetToken, RefreshToken } = db;
 
 export const changePasswordService = async (
   userId,
   oldPassword,
   newPassword
 ) => {
-  const user = await getUserByIdOrFail(userId);
+  const user = await User.findByPk(userId);
+  if (!user) throw new AppError("User not found with the provided ID", 404);
 
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords) throw new AppError("Old password is wrong", 401);
@@ -22,29 +24,21 @@ export const changePasswordService = async (
   if (newPassword === oldPassword)
     throw new AppError("New password must be different from old password");
 
-  const newHashedPassword = await bcrypt.hash(newPassword, 12);
+  const newHashedPassword = await bcrypt.hash(
+    newPassword,
+    HASH_PASSWORD_ROUNDS
+  );
   user.password = newHashedPassword;
-  user.refreshTokens = [];
   await user.save();
 
-  return { message: "Password has been successfully changed." };
-};
-
-export const requestPasswordResetService = async (email) => {
-  const user = await User.findOne({ email });
-  if (!user)
-    return {
-      message:
-        "If an account exists for this email, a password reset link has been sent.",
-    };
-
-  const resetToken = JwtHelper.createResetToken({ _id: use._id });
-
-  await sendResetPasswordMail(user, resetToken);
+  await RefreshToken.destroy({
+    where: {
+      user_id: user.id,
+    },
+  });
 
   return {
-    message:
-      "If an account exists for this email, a password reset link has been sent.",
+    message: "Password has been successfully changed. Please login again.",
   };
 };
 
