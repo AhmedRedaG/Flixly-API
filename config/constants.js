@@ -4,8 +4,9 @@ export const constants = {
   jwt: {
     ACCESS_TOKEN_AGE: "15m",
     REFRESH_TOKEN_AGE: "7d",
-    REFRESH_TOKEN_AGE_IN_MS: 7 * 24 * 60 * 60 * 1000, // = 7d
+    REFRESH_TOKEN_AGE_IN_MS: 7 * 24 * 60 * 60 * 1000,
     RESET_TOKEN_AGE: "1h",
+    RESET_TOKEN_AGE_IN_MS: 60 * 60 * 1000,
     TEMP_TOKEN_AGE: "10m",
     VERIFY_TOKEN_AGE: "3h",
   },

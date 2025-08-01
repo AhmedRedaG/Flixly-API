@@ -8,6 +8,7 @@ import { getUserByIdOrFail } from "../../utilities/dataHelper.js";
 import * as configs from "../../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
+const { RESET_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 const { User, ResetToken, RefreshToken } = db;
 
 export const changePasswordService = async (
@@ -46,6 +47,11 @@ export const requestResetPasswordMailService = async (email) => {
   const user = await User.findOne({ where: { email } });
   if (user) {
     const resetToken = JwtHelper.createResetToken({ id: user.id });
+
+    await user.createResetToken({
+      token: resetToken,
+      expiresAt: new Date(Date.now() + RESET_TOKEN_AGE_IN_MS),
+    });
 
     // async mail request without await to avoid blocking I/O
     sendResetPasswordMail(user, resetToken).catch((error) => {
