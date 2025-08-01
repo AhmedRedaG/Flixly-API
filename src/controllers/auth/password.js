@@ -3,9 +3,9 @@ import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const changePassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user._id;
+  const user = req.user;
   const data = await passwordServer.changePasswordService(
-    userId,
+    user,
     oldPassword,
     newPassword
   );

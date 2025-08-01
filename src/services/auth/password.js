@@ -11,14 +11,8 @@ const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 const { RESET_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 const { User, ResetToken, RefreshToken } = db;
 
-export const changePasswordService = async (
-  userId,
-  oldPassword,
-  newPassword
-) => {
-  const user = await User.findByPk(userId);
-  if (!user) throw new AppError("User not found with the provided ID", 404);
-
+export const changePasswordService = async (user, oldPassword, newPassword) => {
+  // verify old password
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords) throw new AppError("Old password is wrong", 401);
 
