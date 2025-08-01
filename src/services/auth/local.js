@@ -5,12 +5,13 @@ import { db } from "../../../database/models/index.js";
 import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
-import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
+import { getSafeData } from "../../utilities/dataHelper.js";
 import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
 import * as configs from "../../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
-const { User } = db;
+const { REFRESH_TOKEN_AGE_IN_MS } = configs.constants.jwt;
+const { User, RefreshToken } = db;
 
 export const postRegisterService = async (
   firstName,
@@ -51,7 +52,10 @@ export const verifyMailService = async (verifyToken) => {
   const decoded = JwtHelper.verifyVerifyToken(verifyToken);
   const userId = decoded.id;
 
-  const user = await getUserByIdOrFail(userId);
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new AppError("User not found with the provided ID", 404);
+  }
 
   if (user.verified) throw new AppError("User is already verified", 409);
   user.verified = true;
@@ -71,28 +75,26 @@ export const verifyMailService = async (verifyToken) => {
 
 export const postLoginService = async (email, password) => {
   const user = await User.findOne({ where: { email } });
-  if (!user) throw new AppError("Invalid email or password", 401);
 
-  // google account
-  if (!user.password)
-    throw new AppError("This account was registered with Google.", 401);
+  // (no password) => google account
+  const isPasswordValid = user?.password
+    ? await bcrypt.compare(password, user.password)
+    : false;
 
-  const matchedPasswords = await bcrypt.compare(password, user.password);
-  if (!matchedPasswords) throw new AppError("Invalid email or password", 401);
+  if (!user || !user.password || !isPasswordValid) {
+    throw new AppError("Invalid email or password", 401);
+  }
 
   // not verified account
   if (!user.verified) {
-    const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
-    const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
     throw new AppError(
-      "Account not verified, please check your email for verification link.",
+      "Account not verified. Please check your email for the verification link.",
       401
     );
   }
 
   const { accessToken, refreshToken, userSafeData } =
     await generateTokensForUser(user);
-  await user.save();
 
   return {
     accessToken,
@@ -108,17 +110,30 @@ export const postRefreshService = async (oldRefreshToken) => {
   const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
   const userId = decoded.id;
 
-  const user = await getUserByIdOrFail(userId);
+  const refreshTokenRecord = await RefreshToken.findOne({
+    where: {
+      token: oldRefreshToken,
+      expiresAt: {
+        [Op.gt]: new Date(),
+      },
+    },
+    include: {
+      model: User,
+      as: "user",
+    },
+  });
+  if (!refreshTokenRecord) {
+    throw new AppError("Invalid or expired refresh token", 403);
+  }
 
-  const refreshTokenIndex = user.findIndex((rf) => rf === oldRefreshToken);
-  if (refreshTokenIndex === -1)
-    throw new AppError("Invalid refresh token", 403);
-
+  const user = refreshTokenRecord.user;
   const { accessToken, refreshToken } = await generateTokensForUser(user);
 
-  user.refreshTokens[refreshTokenIndex] = refreshToken;
-  user.refreshTokens = user.refreshTokens.slice(-5);
-  await user.save();
+  // to ignore token rotation and reuse
+  await refreshTokenRecord.update({
+    token: refreshToken,
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_AGE_IN_MS),
+  });
 
   return {
     accessToken,
