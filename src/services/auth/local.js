@@ -28,21 +28,21 @@ export const postRegisterService = async (
   if (userExisted) throw new AppError("Username or Email already in use", 409);
 
   const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
-  const user = (
-    await User.create({
-      firstName,
-      lastName,
-      username,
-      email,
-      bio,
-      password: hashedPassword,
-    })
-  ).toJSON();
+
+  const user = await User.create({
+    firstName,
+    lastName,
+    username,
+    email,
+    bio,
+    password: hashedPassword,
+  });
   const userSafeData = getSafeData(user);
 
   const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
   console.log(verifyToken);
 
+  // async mail request without await to avoid blocking I/O
   sendVerifyTokenMail(user, verifyToken).catch((error) => {
     console.error(
       `Failed to send verification email for user ${user.id}:`,
@@ -58,6 +58,7 @@ export const postRegisterService = async (
 };
 
 export const verifyMailService = async (verifyToken) => {
+  // verify token validation and expiration
   const decoded = JwtHelper.verifyVerifyToken(verifyToken);
   const userId = decoded.id;
 
@@ -116,9 +117,11 @@ export const postLoginService = async (email, password) => {
 export const postRefreshService = async (oldRefreshToken) => {
   if (!oldRefreshToken) throw new AppError("No oldRefreshToken exist", 401);
 
+  // verify token validation and expiration
   const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
   const userId = decoded.id;
 
+  // to ignore token rotation and reuse
   const refreshTokenRecord = await RefreshToken.findOne({
     where: {
       token: oldRefreshToken,
@@ -127,7 +130,6 @@ export const postRefreshService = async (oldRefreshToken) => {
   if (!refreshTokenRecord) {
     throw new AppError("Invalid refresh token", 403);
   }
-  // to ignore token rotation and reuse
   await refreshTokenRecord.destroy();
 
   // no need for join
