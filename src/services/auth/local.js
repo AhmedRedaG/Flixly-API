@@ -8,7 +8,6 @@ import { generateTokensForUser } from "../../utilities/authHelper.js";
 import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
 import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
 import * as configs from "../../../config/index.js";
-import { where } from "sequelize";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 const { User } = db;
@@ -55,11 +54,12 @@ export const verifyMailService = async (verifyToken) => {
   const user = await getUserByIdOrFail(userId);
 
   if (user.verified) throw new AppError("User is already verified", 409);
-
   user.verified = true;
+  await user.save();
+
+  // generate safe data and access token for client and refresh token for cookie
   const { accessToken, refreshToken, userSafeData } =
     await generateTokensForUser(user);
-  await user.save();
 
   return {
     accessToken,
@@ -70,17 +70,19 @@ export const verifyMailService = async (verifyToken) => {
 };
 
 export const postLoginService = async (email, password) => {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ where: { email } });
   if (!user) throw new AppError("Invalid email or password", 401);
 
+  // google account
   if (!user.password)
     throw new AppError("This account was registered with Google.", 401);
 
   const matchedPasswords = await bcrypt.compare(password, user.password);
   if (!matchedPasswords) throw new AppError("Invalid email or password", 401);
 
+  // not verified account
   if (!user.verified) {
-    const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
+    const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
     const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
     throw new AppError(
       "Account not verified, please check your email for verification link.",
@@ -104,13 +106,11 @@ export const postRefreshService = async (oldRefreshToken) => {
   if (!oldRefreshToken) throw new AppError("No oldRefreshToken exist", 401);
 
   const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
-  const userId = decoded._id;
+  const userId = decoded.id;
 
   const user = await getUserByIdOrFail(userId);
 
-  const refreshTokenIndex = user.refreshTokens.findIndex(
-    (rf) => rf === oldRefreshToken
-  );
+  const refreshTokenIndex = user.findIndex((rf) => rf === oldRefreshToken);
   if (refreshTokenIndex === -1)
     throw new AppError("Invalid refresh token", 403);
 
