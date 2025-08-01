@@ -19,6 +19,7 @@ export const changePasswordService = async (user, oldPassword, newPassword) => {
   if (newPassword === oldPassword)
     throw new AppError("New password must be different from old password");
 
+  // hash new password and save
   const newHashedPassword = await bcrypt.hash(
     newPassword,
     HASH_PASSWORD_ROUNDS
@@ -26,6 +27,7 @@ export const changePasswordService = async (user, oldPassword, newPassword) => {
   user.password = newHashedPassword;
   await user.save();
 
+  // remove all refresh tokens
   await RefreshToken.destroy({
     where: {
       user_id: user.id,
@@ -42,6 +44,7 @@ export const requestResetPasswordMailService = async (email) => {
   if (user) {
     const resetToken = JwtHelper.createResetToken({ id: user.id });
 
+    console.log(resetToken);
     await user.createResetToken({
       token: resetToken,
       expiresAt: new Date(Date.now() + RESET_TOKEN_AGE_IN_MS),
@@ -56,6 +59,7 @@ export const requestResetPasswordMailService = async (email) => {
     });
   }
 
+  // to avoid user enumeration
   return {
     message:
       "If an account exists for this email, a password reset link has been sent.",
@@ -66,8 +70,7 @@ export const resetPasswordService = async (resetToken, password) => {
   const decoded = JwtHelper.verifyResetToken(resetToken);
   const userId = decoded.id;
 
-  const user = await User.findByPk(userId);
-  if (!user) throw new AppError("User not found with the provided ID", 404);
+  const user = await getUserByIdOrFail(userId);
 
   // to ignore token rotation and reuse
   const resetTokenRecord = await ResetToken.findOne({
@@ -78,10 +81,12 @@ export const resetPasswordService = async (resetToken, password) => {
   if (!resetTokenRecord) throw new AppError("Reset token is already used", 403);
   await resetTokenRecord.destroy();
 
+  // hash new password and save
   const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
   user.password = hashedPassword;
   await user.save();
 
+  // remove all refresh tokens
   await RefreshToken.destroy({
     where: {
       user_id: user.id,

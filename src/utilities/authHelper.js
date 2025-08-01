@@ -6,9 +6,9 @@ import * as configs from "../../config/index.js";
 
 const { REFRESH_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 
-export const generateTokensForUser = async (userId) => {
-  const accessToken = JwtHelper.createAccessToken({ id: userId });
-  const refreshToken = JwtHelper.createRefreshToken({ id: userId });
+export const generateTokensForUser = async (user) => {
+  const accessToken = JwtHelper.createAccessToken({ id: user.id });
+  const refreshToken = JwtHelper.createRefreshToken({ id: user.id });
 
   await user.createRefreshToken({
     token: refreshToken,
