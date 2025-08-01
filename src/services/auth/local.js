@@ -10,7 +10,6 @@ import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
 import * as configs from "../../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
-const { REFRESH_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 const { User, RefreshToken } = db;
 
 export const postRegisterService = async (
@@ -123,25 +122,21 @@ export const postRefreshService = async (oldRefreshToken) => {
   const refreshTokenRecord = await RefreshToken.findOne({
     where: {
       token: oldRefreshToken,
-      expiresAt: {
-        [Op.gt]: new Date(),
-      },
-    },
-    include: {
-      model: User,
-      as: "user",
     },
   });
   if (!refreshTokenRecord) {
-    throw new AppError("Invalid or expired refresh token", 403);
+    throw new AppError("Invalid refresh token", 403);
   }
-
-  const user = refreshTokenRecord.user;
-  console.log(user);
-  const { accessToken, refreshToken } = await generateTokensForUser(user);
-
   // to ignore token rotation and reuse
   await refreshTokenRecord.destroy();
+
+  // no need for join
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new AppError("User not found with the provided ID", 404);
+  }
+
+  const { accessToken, refreshToken } = await generateTokensForUser(user);
 
   return {
     accessToken,
@@ -167,8 +162,8 @@ export const postLogoutService = async (oldRefreshToken, logoutFullCase) => {
   if (!logoutFullCase) {
     await RefreshToken.destroy({
       where: {
-        token: oldRefreshToken
-      }
+        token: oldRefreshToken,
+      },
     });
   } else {
     await RefreshToken.destroy({
