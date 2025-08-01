@@ -150,21 +150,33 @@ export const postRefreshService = async (oldRefreshToken) => {
   };
 };
 
-export const postLogoutService = async (refreshToken, logoutFullCase) => {
-  if (!refreshToken)
+export const postLogoutService = async (oldRefreshToken, logoutFullCase) => {
+  if (!oldRefreshToken)
     return {
       message: "Already logged out",
     };
 
-  const decoded = JwtHelper.verifyRefreshToken(refreshToken);
-  const userId = decoded._id;
+  const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
+  const userId = decoded.id;
 
-  const user = await getUserByIdOrFail(userId);
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new AppError("User not found with the provided ID", 404);
+  }
 
-  if (!logoutFullCase)
-    user.refreshTokens = user.refreshTokens.filter((rt) => rt !== refreshToken);
-  else user.refreshTokens = [];
-  await user.save();
+  if (!logoutFullCase) {
+    await RefreshToken.destroy({
+      where: {
+        token: oldRefreshToken
+      }
+    });
+  } else {
+    await RefreshToken.destroy({
+      where: {
+        user_id: user.id,
+      },
+    });
+  }
 
   return {
     message: "User logged out successfully",
