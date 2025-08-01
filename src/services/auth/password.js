@@ -42,6 +42,26 @@ export const changePasswordService = async (
   };
 };
 
+export const requestResetPasswordMailService = async (email) => {
+  const user = await User.findOne({ where: { email } });
+  if (user) {
+    const resetToken = JwtHelper.createResetToken({ id: user.id });
+
+    // async mail request without await to avoid blocking I/O
+    sendResetPasswordMail(user, resetToken).catch((error) => {
+      console.error(
+        `Failed to send password reset email for user ${user.id}:`,
+        error
+      );
+    });
+  }
+
+  return {
+    message:
+      "If an account exists for this email, a password reset link has been sent.",
+  };
+};
+
 export const resetPasswordService = async (resetToken, password) => {
   const decoded = JwtHelper.verifyResetToken(resetToken);
   const userId = decoded._id;
