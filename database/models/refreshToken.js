@@ -26,8 +26,7 @@ export default (sequelize) => {
         allowNull: false,
         unique: true,
       },
-      created_at: DataTypes.DATE,
-      expires_at: DataTypes.DATE,
+      expiresAt: { type: DataTypes.DATE, field: "expires_at" },
     },
     {
       sequelize,

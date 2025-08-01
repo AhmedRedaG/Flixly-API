@@ -42,6 +42,7 @@ export const postRegisterService = async (
   const userSafeData = getSafeData(user);
 
   const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
+  console.log(verifyToken);
   const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
 
   return { userSafeData, message: `Verification ${sendMailResult}` };
@@ -49,7 +50,7 @@ export const postRegisterService = async (
 
 export const verifyMailService = async (verifyToken) => {
   const decoded = JwtHelper.verifyVerifyToken(verifyToken);
-  const userId = decoded._id;
+  const userId = decoded.id;
 
   const user = await getUserByIdOrFail(userId);
 

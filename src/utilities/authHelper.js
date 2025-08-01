@@ -2,13 +2,20 @@ import * as JwtHelper from "./jwtHelper.js";
 import { getSafeData } from "./dataHelper.js";
 import AppError from "./appError.js";
 
+import * as configs from "../../config/index.js";
+
+const { REFRESH_TOKEN_AGE_IN_MS } = configs.constants.jwt;
+
 export const generateTokensForUser = async (user) => {
   const userSafeData = getSafeData(user);
 
   const accessToken = JwtHelper.createAccessToken(userSafeData);
-  const refreshToken = JwtHelper.createRefreshToken({ _id: user._id });
+  const refreshToken = JwtHelper.createRefreshToken({ id: user.id });
 
-  user.refreshTokens.push(refreshToken);
+  await user.createRefreshToken({
+    token: refreshToken,
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_AGE_IN_MS),
+  });
 
   return { accessToken, refreshToken, userSafeData };
 };
