@@ -22,7 +22,7 @@ router.post(
   "/reset",
   fieldValidator.email,
   isValid,
-  authPassword.requestPasswordReset
+  authPassword.requestResetPasswordMail
 );
 
 // PATCH auth/password/reset/{resetToken}

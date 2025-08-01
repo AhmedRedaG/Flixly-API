@@ -13,9 +13,9 @@ export const changePassword = async (req, res) => {
   res.jsend.success(data);
 };
 
-export const requestPasswordReset = async (req, res) => {
+export const requestResetPasswordMail = async (req, res) => {
   const { email } = req.body;
-  const data = await passwordServer.requestPasswordResetService(email);
+  const data = await passwordServer.requestResetPasswordMailService(email);
   res.jsend.success(data);
 };
 
