@@ -11,9 +11,12 @@ export const getUserByIdOrFail = async (userId) => {
 
 export const getSafeData = (user) => {
   return {
-    _id: user._id,
-    name: user.name,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username,
     email: user.email,
+    bio: user.bio,
     role: user.role,
+    verified: user.verified,
   };
 };

@@ -23,7 +23,7 @@ export default class VerifyAccountMail extends EmailService {
 
   generatePlainTextContent(user, verifyUrl) {
     return `
-Hi ${user.name},
+Hi ${user.firstName} ${user.lastName},
 
 Welcome to JWT-AUTH! We're excited to have you on board.
 
@@ -50,7 +50,7 @@ Need help? Contact us at ${configs.env.email.supportEmail}`;
   <h2 style="text-align: center; color: #333;">✅ Verify Your Account</h2>
   
   <p style="font-size: 16px; color: #555;">
-    Hi <strong>${user.name}</strong>,
+    Hi <strong>${user.firstName} ${user.lastName}</strong>,
   </p>
   
   <p style="font-size: 16px; color: #555;">

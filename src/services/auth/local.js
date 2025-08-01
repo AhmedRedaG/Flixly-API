@@ -1,29 +1,50 @@
 import bcrypt from "bcrypt";
+import { Op } from "sequelize";
 
-import User from "../../../database/models/user.js";
+import { db } from "../../../database/models/index.js";
 import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
 import { getUserByIdOrFail, getSafeData } from "../../utilities/dataHelper.js";
 import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
-
 import * as configs from "../../../config/index.js";
+import { where } from "sequelize";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
+const { User } = db;
 
-export const postRegisterService = async (name, email, password) => {
-  const userExisted = await User.findOne({ email });
-  if (userExisted) throw new AppError("Email already in use", 409);
+export const postRegisterService = async (
+  firstName,
+  lastName,
+  username,
+  email,
+  password,
+  bio
+) => {
+  const userExisted = await User.findOne({
+    where: {
+      [Op.or]: [{ username }, { email }],
+    },
+  });
+  if (userExisted) throw new AppError("Username or Email already in use", 409);
 
   const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
-  const newUser = new User({ name, email, password: hashedPassword });
-  const user = await newUser.save();
+  const user = (
+    await User.create({
+      firstName,
+      lastName,
+      username,
+      email,
+      bio,
+      password: hashedPassword,
+    })
+  ).toJSON();
   const userSafeData = getSafeData(user);
 
-  const verifyToken = JwtHelper.createVerifyToken({ _id: user._id });
+  const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
   const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
 
-  return { userSafeData, message: sendMailResult };
+  return { userSafeData, message: `Verification ${sendMailResult}` };
 };
 
 export const verifyMailService = async (verifyToken) => {

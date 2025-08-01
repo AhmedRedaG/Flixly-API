@@ -2,8 +2,16 @@ import * as localServer from "../../services/auth/local.js";
 import * as CookieHelper from "../../utilities/cookieHelper.js";
 
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
-  const data = await localServer.postRegisterService(name, email, password);
+  const { firstName, lastName, username, email, password, bio } = req.body;
+  // still need to add avatar endpoint
+  const data = await localServer.postRegisterService(
+    firstName,
+    lastName,
+    username,
+    email,
+    password,
+    bio
+  );
   res.jsend.success(data, 201);
 };
 

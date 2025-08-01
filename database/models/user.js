@@ -22,8 +22,16 @@ export default (sequelize) => {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      first_name: { type: DataTypes.STRING, allowNull: false },
-      last_name: { type: DataTypes.STRING, allowNull: false },
+      firstName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: "first_name",
+      },
+      lastName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: "last_name",
+      },
       username: { type: DataTypes.STRING, allowNull: false, unique: true },
       email: { type: DataTypes.STRING, allowNull: false, unique: true },
       google_id: { type: DataTypes.STRING, unique: true },

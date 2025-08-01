@@ -1,7 +1,10 @@
 import * as fields from "../fields/index.js";
 
 export const register = [
-  fields.name,
+  fields.firstName,
+  fields.lastName,
+  fields.username,
+  fields.bio,
   fields.email,
   fields.password,
   fields.confirmPassword,
