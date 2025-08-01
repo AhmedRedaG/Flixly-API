@@ -64,18 +64,29 @@ export const requestResetPasswordMailService = async (email) => {
 
 export const resetPasswordService = async (resetToken, password) => {
   const decoded = JwtHelper.verifyResetToken(resetToken);
-  const userId = decoded._id;
+  const userId = decoded.id;
 
-  const user = await getUserByIdOrFail(userId);
+  const user = await User.findByPk(userId);
+  if (!user) throw new AppError("User not found with the provided ID", 404);
 
-  if (user.resetToken === resetToken)
-    throw new AppError("Reset token is already used", 403);
+  // to ignore token rotation and reuse
+  const resetTokenRecord = await ResetToken.findOne({
+    where: {
+      token: resetToken,
+    },
+  });
+  if (!resetTokenRecord) throw new AppError("Reset token is already used", 403);
+  await resetTokenRecord.destroy();
 
   const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
   user.password = hashedPassword;
-  user.resetToken = resetToken;
-  user.refreshTokens = [];
   await user.save();
+
+  await RefreshToken.destroy({
+    where: {
+      user_id: user.id,
+    },
+  });
 
   return { message: "Password has been successfully reset." };
 };
