@@ -43,9 +43,19 @@ export const postRegisterService = async (
 
   const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
   console.log(verifyToken);
-  const sendMailResult = await sendVerifyTokenMail(user, verifyToken);
 
-  return { userSafeData, message: `Verification ${sendMailResult}` };
+  sendVerifyTokenMail(user, verifyToken).catch((error) => {
+    console.error(
+      `Failed to send verification email for user ${user.id}:`,
+      error
+    );
+  });
+
+  return {
+    userSafeData,
+    message:
+      "Registration successful. A verification link is being sent to your email.",
+  };
 };
 
 export const verifyMailService = async (verifyToken) => {
@@ -127,13 +137,11 @@ export const postRefreshService = async (oldRefreshToken) => {
   }
 
   const user = refreshTokenRecord.user;
+  console.log(user);
   const { accessToken, refreshToken } = await generateTokensForUser(user);
 
   // to ignore token rotation and reuse
-  await refreshTokenRecord.update({
-    token: refreshToken,
-    expiresAt: new Date(Date.now() + REFRESH_TOKEN_AGE_IN_MS),
-  });
+  await refreshTokenRecord.destroy();
 
   return {
     accessToken,

@@ -9,3 +9,6 @@ export const getSafeData = (user) => {
     verified: user.verified,
   };
 };
+
+// placeholder
+export const getUserByIdOrFail = () => {};
