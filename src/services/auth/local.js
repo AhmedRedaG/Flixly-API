@@ -5,7 +5,7 @@ import { db } from "../../../database/models/index.js";
 import AppError from "../../utilities/appError.js";
 import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
-import { getSafeData } from "../../utilities/dataHelper.js";
+import { getSafeData, getUserByIdOrFail } from "../../utilities/dataHelper.js";
 import { sendVerifyTokenMail } from "../../utilities/mailHelper/mailSender.js";
 import * as configs from "../../../config/index.js";
 
@@ -62,18 +62,15 @@ export const verifyMailService = async (verifyToken) => {
   const decoded = JwtHelper.verifyVerifyToken(verifyToken);
   const userId = decoded.id;
 
-  const user = await User.findByPk(userId);
-  if (!user) {
-    throw new AppError("User not found with the provided ID", 404);
-  }
+  const user = await getUserByIdOrFail(userId);
 
   if (user.verified) throw new AppError("User is already verified", 409);
   user.verified = true;
   await user.save();
 
   // generate safe data and access token for client and refresh token for cookie
-  const { accessToken, refreshToken, userSafeData } =
-    await generateTokensForUser(user);
+  const { accessToken, refreshToken } = await generateTokensForUser(user);
+  const userSafeData = getSafeData(user);
 
   return {
     accessToken,
@@ -103,8 +100,8 @@ export const postLoginService = async (email, password) => {
     );
   }
 
-  const { accessToken, refreshToken, userSafeData } =
-    await generateTokensForUser(user);
+  const { accessToken, refreshToken } = await generateTokensForUser(user);
+  const userSafeData = getSafeData(user);
 
   return {
     accessToken,
@@ -133,10 +130,7 @@ export const postRefreshService = async (oldRefreshToken) => {
   await refreshTokenRecord.destroy();
 
   // no need for join
-  const user = await User.findByPk(userId);
-  if (!user) {
-    throw new AppError("User not found with the provided ID", 404);
-  }
+  const user = await getUserByIdOrFail(userId);
 
   const { accessToken, refreshToken } = await generateTokensForUser(user);
 
@@ -156,10 +150,7 @@ export const postLogoutService = async (oldRefreshToken, logoutFullCase) => {
   const decoded = JwtHelper.verifyRefreshToken(oldRefreshToken);
   const userId = decoded.id;
 
-  const user = await User.findByPk(userId);
-  if (!user) {
-    throw new AppError("User not found with the provided ID", 404);
-  }
+  const user = await getUserByIdOrFail(userId);
 
   if (!logoutFullCase) {
     await RefreshToken.destroy({
