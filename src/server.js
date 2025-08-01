@@ -3,8 +3,10 @@ import * as configs from "../config/index.js";
 
 import { sequelize } from "../database/models/index.js";
 
+const PORT = configs.env.port[configs.env.nodeEnv];
+
 // I will change it later
-let server, mongooseConnection;
+let server, mongooseConnection, sequelizeConnection;
 
 await (async () => {
   try {
