@@ -3,9 +3,15 @@ import AppError from "./appError.js";
 
 const { User } = db;
 
-export const getSafeData = (user) => {
-  const { password, id, googleId, deleted_at, ...userSafeData } = user.toJSON();
-  return userSafeData;
+export const getSafeData = (user, options = { public: false }) => {
+  const { password, id, googleId, ...safeData } = user.toJSON();
+
+  if (options.public) {
+    const { created_at, updated_at, verified, role, ...publicData } = safeData;
+    return publicData;
+  }
+
+  return safeData;
 };
 
 export const getUserByIdOrFail = async (userId) => {

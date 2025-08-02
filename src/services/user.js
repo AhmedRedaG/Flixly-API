@@ -166,17 +166,15 @@ export const getPublicUserInfoService = async (username) => {
     include: {
       model: Channel,
       as: "channel",
-      attributes: {
-        include: [
-          "username",
-          "name",
-          "description",
-          "avatar",
-          "banner",
-          "subscribers",
-          "views_count",
-        ],
-      },
+      attributes: [
+        "username",
+        "name",
+        "description",
+        "avatar",
+        "banner",
+        "subscribers",
+        "views_count",
+      ],
     },
   });
   if (!user) throw new AppError("User not found with the provided ID", 404);
