@@ -20,10 +20,11 @@ router.get("/me", isAuth, channelController.getChannel);
 // Response: { channel with stats, recent videos }
 router.get("/:username", channelController.getPublicChannel);
 
-// PUT /api/channels/:channelId
+// PUT /api/channels/me
 // Headers: Authorization (channel owner)
 // Body: { name?, description?, avatar?, banner? }
 // Response: { channel }
+router.put("/me", isAuth, channelController.updateChannel);
 
 // DELETE /api/channels/:channelId
 // Headers: Authorization (channel owner)

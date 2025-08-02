@@ -101,6 +101,29 @@ export const getPublicChannelService = async (username) => {
 // Headers: Authorization (channel owner)
 // Body: { name?, description?, avatar?, banner? }
 // Response: { channel }
+export const updateChannelService = async (
+  user,
+  name,
+  description,
+  avatar,
+  banner
+) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  if (name) channel.name = name;
+  if (description) channel.description = description;
+  if (avatar) channel.avatar = avatar;
+  if (banner) channel.banner = banner;
+
+  await channel.save();
+
+  const { id, user_id, ...channelData } = channel.toJSON();
+
+  return {
+    channel: channelData,
+  };
+};
 
 // DELETE /api/channels/:channelId
 // Headers: Authorization (channel owner)

@@ -35,10 +35,23 @@ export const getPublicChannel = async (req, res) => {
   res.jsend.success(data);
 };
 
-// PUT /api/channels/:channelId
+// PUT /api/channels/me
 // Headers: Authorization (channel owner)
 // Body: { name?, description?, avatar?, banner? }
 // Response: { channel }
+export const updateChannel = async (req, res) => {
+  const user = req.user;
+  const { name, username, description, avatar, banner } = req.body;
+  const data = await channelServer.updateChannelService(
+    user,
+    name,
+    username,
+    description,
+    avatar,
+    banner
+  );
+  res.jsend.success(data);
+};
 
 // DELETE /api/channels/:channelId
 // Headers: Authorization (channel owner)
