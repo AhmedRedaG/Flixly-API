@@ -1,12 +1,3 @@
-// GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
-// Response: { comments[], pagination }
-
-// POST /api/videos/:videoId/comments
-// Headers: Authorization
-// Body: { content, parent_comment_id? }
-// Response: { comment }
-
 // PUT /api/comments/:commentId
 // Headers: Authorization (comment owner)
 // Body: { content }

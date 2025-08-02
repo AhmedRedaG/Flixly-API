@@ -8,7 +8,7 @@
 // GET /api/search/suggestions
 // Query: ?q=partial_query&limit=10
 // Response: { suggestions[] }
-
+//
 // GET /api/search/autocomplete
 // Query: ?q=partial_query&type=videos|channels|tags
 // Response: { autocomplete[] }

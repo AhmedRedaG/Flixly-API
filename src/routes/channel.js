@@ -26,7 +26,19 @@
 // Query: ?page=1&limit=20
 // Response: { playlists[], pagination }
 
+// GET /api/channels/:channelId/playlists
+// Query: ?page=1&limit=20 (public only)
+// Response: { playlists[], pagination }
+
 // GET /api/channels/:channelId/subscribers
 // Headers: Authorization (channel owner only)
 // Query: ?page=1&limit=20
 // Response: { subscribers[], pagination }
+
+// POST /api/channels/:channelId/subscribe
+// Headers: Authorization
+// Response: { subscribed: true, subscribers_count }
+
+// DELETE /api/channels/:channelId/subscribe
+// Headers: Authorization
+// Response: { subscribed: false, subscribers_count }

@@ -28,4 +28,19 @@ router.get("/", isAuth, getUser);
 // GET /api/users/:userId/profile
 // Response: { user public profile with channel info }
 
+// GET /api/users/me/subscriptions
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { subscriptions[], pagination }
+
+// GET /api/users/me/subscriptions/feed
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos from subscribed channels[], pagination }
+
+// GET /api/users/me/playlists
+// Headers: Authorization
+// Query: ?page=1&limit=20&include_public=true
+// Response: { playlists[], pagination }
+
 export default router;

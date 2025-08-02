@@ -23,12 +23,3 @@
 // DELETE /api/playlists/:playlistId/videos/:videoId
 // Headers: Authorization (playlist owner)
 // Response: { message: "Video removed from playlist" }
-
-// GET /api/users/me/playlists
-// Headers: Authorization
-// Query: ?page=1&limit=20&include_public=true
-// Response: { playlists[], pagination }
-
-// GET /api/channels/:channelId/playlists
-// Query: ?page=1&limit=20 (public only)
-// Response: { playlists[], pagination }

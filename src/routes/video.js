@@ -1,3 +1,33 @@
+/**
+ * VIDEO CRUD
+ */
+// POST /api/videos
+// Headers: Authorization
+// Content-Type: multipart/form-data
+// Body: { title, description?, video_file, thumbnail?, tags[], is_private?, publish_at? }
+// Response: { video, upload_url? }
+
+// GET /api/videos/:videoId
+// Query: ?include_comments=true&comments_page=1&comments_limit=10
+// Response: { video with channel, tags, comments?, view_count }
+
+// PUT /api/videos/:videoId
+// Headers: Authorization (video owner)
+// Body: { title?, description?, thumbnail?, is_private?, tags[] }
+// Response: { video }
+
+// DELETE /api/videos/:videoId
+// Headers: Authorization (video owner)
+// Response: { message: "Video deleted" }
+
+// PATCH /api/videos/:videoId/publish
+// Headers: Authorization (video owner)
+// Body: { publish_at? } // null = publish now
+// Response: { video }
+
+/**
+ * VIDEO DISCOVERY & SEARCH
+ */
 // GET /api/videos
 // Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
 // Response: { videos[], pagination, filters }
@@ -39,3 +69,12 @@
 // Headers: Authorization (video owner only)
 // Query: ?page=1&limit=20&type=like|dislike
 // Response: { reactions[], pagination }
+
+// GET /api/videos/:videoId/comments
+// Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
+// Response: { comments[], pagination }
+
+// POST /api/videos/:videoId/comments
+// Headers: Authorization
+// Body: { content, parent_comment_id? }
+// Response: { comment }
