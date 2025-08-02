@@ -7,6 +7,6 @@ export const authWithGoogle = async (req, res) => {
     user
   );
   CookieHelper.createRefreshTokenCookie(refreshToken, res);
-  // res.redirect(`http://frontend/oauth-success?token=${accessToken}`);
+  // res.redirect(`${configs.env.frontendUrl}/oauth-success/${accessToken}`);
   res.jsend.success(data);
 };
