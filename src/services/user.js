@@ -1,13 +1,50 @@
-import { Router } from "express";
+import { db } from "../../database/models/index.js";
+import { getSafeData } from "../utilities/dataHelper.js";
 
-import { isAuth } from "../middlewares/isAuth.js";
-
-const router = Router();
+const { User } = db;
 
 // GET /api/v1/users/me
 // Headers: Authorization
 // Response: { user with channel info }
-router.get("/me", isAuth, );
+export const getUserInfoService = async (user) => {
+  const userData = getSafeData(user);
+  const [
+    channel,
+    viewCount,
+    reactionCount,
+    commentCount,
+    subscriptionsCount,
+    playlistsCount,
+    reportsCount,
+  ] = await Promise.all([
+    user.getChannel({
+      attributes: { exclude: ["id", "user_id", "deleted_at"] },
+    }),
+    user.countVideoViews(),
+    user.countVideoReactions(),
+    user.countVideoComments(),
+    user.countSubscriptions(),
+    user.countPlaylists(),
+    user.countReports(),
+  ]);
+
+  const stats = {
+    totalViews: viewCount,
+    totalReactions: reactionCount,
+    totalComments: commentCount,
+    totalSubscriptions: subscriptionsCount,
+    totalPlaylists: playlistsCount,
+    totalReports: reportsCount,
+  };
+
+  return {
+    user: {
+      ...userData,
+      channel,
+      stats,
+    },
+  };
+};
 
 // PUT /api/users/me
 // Headers: Authorization
@@ -40,5 +77,3 @@ router.get("/me", isAuth, );
 // Headers: Authorization
 // Query: ?page=1&limit=20&include_public=true
 // Response: { playlists[], pagination }
-
-export default router;

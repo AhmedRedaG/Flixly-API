@@ -1,13 +1,13 @@
-import { Router } from "express";
-
-import { isAuth } from "../middlewares/isAuth.js";
-
-const router = Router();
+import * as userService from "../services/user.js";
 
 // GET /api/v1/users/me
 // Headers: Authorization
 // Response: { user with channel info }
-router.get("/me", isAuth, );
+export const getUserInfo = async (req, res) => {
+  const user = req.user;
+  const data = await userService.getUserInfoService(user);
+  res.jsend.success(data);
+};
 
 // PUT /api/users/me
 // Headers: Authorization
@@ -40,5 +40,3 @@ router.get("/me", isAuth, );
 // Headers: Authorization
 // Query: ?page=1&limit=20&include_public=true
 // Response: { playlists[], pagination }
-
-export default router;

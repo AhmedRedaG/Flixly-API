@@ -1,13 +1,14 @@
 import { Router } from "express";
 
 import { isAuth } from "../middlewares/isAuth.js";
+import * as userController from "../controllers/user.js";
 
 const router = Router();
 
 // GET /api/v1/users/me
 // Headers: Authorization
 // Response: { user with channel info }
-router.get("/me", isAuth, );
+router.get("/me", isAuth, userController.getUserInfo);
 
 // PUT /api/users/me
 // Headers: Authorization
