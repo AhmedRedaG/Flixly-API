@@ -30,7 +30,7 @@ export default {
       parent_comment_id: {
         type: Sequelize.UUID,
         references: {
-          model: "comments",
+          model: "video_comments",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -55,7 +55,7 @@ export default {
       },
     });
 
-    await queryInterface.addIndex("comments", ["video_id"]);
+    await queryInterface.addIndex("video_comments", ["video_id"]);
   },
 
   async down(queryInterface, Sequelize) {
