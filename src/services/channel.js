@@ -1,7 +1,7 @@
 import { db } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
 
-const { Channel } = db;
+const { Channel, Video } = db;
 
 // POST /api/channels
 // Headers: Authorization
@@ -35,13 +35,69 @@ export const createChannelService = async (
   };
 };
 
-// GET /api/channels/:channelId
+// GET /api/channels/me
+// Authorization: Bearer token
 // Response: { channel with stats, recent videos }
+export const getChannelService = async (user) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
 
-// GET /api/channels/username/:username
+  const recentVideos = await channel.getVideos({
+    attributes: { exclude: ["channel_id"] },
+    order: [["created_at", "DESC"]],
+    limit: 10,
+    raw: true,
+  });
+
+  const { id, user_id, ...channelData } = channel.toJSON();
+
+  return {
+    channel: {
+      ...channelData,
+      recentVideos,
+    },
+  };
+};
+
+// GET /api/channels/:username
 // Response: { channel with stats, recent videos }
+export const getPublicChannelService = async (username) => {
+  const channel = await Channel.findOne({ where: { username } });
+  if (!channel) throw new AppError("Channel not found", 404);
 
-// PUT /api/channels/:channelId
+  const publicVideoFields = [
+    "id",
+    "title",
+    "description",
+    "url",
+    "thumbnail",
+    "views_count",
+    "likes_count",
+    "dislikes_count",
+    "comments_count",
+    "duration",
+    "publish_at",
+  ];
+
+  const recentVideos = await channel.getVideos({
+    attributes: publicVideoFields,
+    where: { is_published: true, is_private: false },
+    order: [["created_at", "DESC"]],
+    limit: 10,
+    raw: true,
+  });
+
+  const { id, user_id, ...channelData } = channel.toJSON();
+
+  return {
+    channel: {
+      ...channelData,
+      recentVideos,
+    },
+  };
+};
+
+// PUT /api/channels/me
 // Headers: Authorization (channel owner)
 // Body: { name?, description?, avatar?, banner? }
 // Response: { channel }

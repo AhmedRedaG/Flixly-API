@@ -18,11 +18,22 @@ export const createChannel = async (req, res) => {
   res.jsend.success(data, 201);
 };
 
-// GET /api/channels/:channelId
+// GET /api/channels/me
+// Authorization: Bearer token
 // Response: { channel with stats, recent videos }
+export const getChannel = async (req, res) => {
+  const user = req.user;
+  const data = await channelServer.getChannelService(user);
+  res.jsend.success(data);
+};
 
-// GET /api/channels/username/:username
+// GET /api/channels/:username
 // Response: { channel with stats, recent videos }
+export const getPublicChannel = async (req, res) => {
+  const { username } = req.params;
+  const data = await channelServer.getPublicChannelService(username);
+  res.jsend.success(data);
+};
 
 // PUT /api/channels/:channelId
 // Headers: Authorization (channel owner)

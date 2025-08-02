@@ -11,11 +11,14 @@ const router = Router();
 // Response: { channel }
 router.post("/me", isAuth, channelController.createChannel);
 
-// GET /api/channels/:channelId
+// GET /api/channels/me
+// Authorization: Bearer token
 // Response: { channel with stats, recent videos }
+router.get("/me", isAuth, channelController.getChannel);
 
-// GET /api/channels/username/:username
+// GET /api/channels/:username
 // Response: { channel with stats, recent videos }
+router.get("/:username", channelController.getPublicChannel);
 
 // PUT /api/channels/:channelId
 // Headers: Authorization (channel owner)
