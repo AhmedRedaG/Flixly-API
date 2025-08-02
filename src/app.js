@@ -3,11 +3,11 @@ import cookieParser from "cookie-parser";
 import jsendMiddleware from "jsend-middleware";
 import helmet from "helmet";
 import cors from "cors";
-import passport from "passport";
 
 import "../config/passport.js";
 import authRouter from "./routes/auth/index.js";
 import userRouter from "./routes/user.js";
+import channelRouter from "./routes/channel.js";
 import rateLimiter from "./middlewares/rateLimiter.js";
 import requestDurationLogger from "./middlewares/requestDurationLogger.js";
 import errorHandler from "./middlewares/errorHandler.js";
@@ -26,6 +26,7 @@ app.use(requestDurationLogger);
 app.use("/api/v1/docs", swaggerMiddlewares);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/channels", channelRouter);
 app.use(errorHandler);
 
 export default app;

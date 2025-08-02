@@ -1,7 +1,22 @@
+import * as channelServer from "../services/channel.js";
+
 // POST /api/channels
 // Headers: Authorization
 // Body: { username, name, description, avatar?, banner? }
 // Response: { channel }
+export const createChannel = async (req, res) => {
+  const user = req.user;
+  const { username, name, description, avatar, banner } = req.body;
+  const data = await channelServer.createChannelService(
+    user,
+    username,
+    name,
+    description,
+    avatar,
+    banner
+  );
+  res.jsend.success(data, 201);
+};
 
 // GET /api/channels/:channelId
 // Response: { channel with stats, recent videos }

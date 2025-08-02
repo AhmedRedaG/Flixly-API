@@ -1,7 +1,39 @@
+import { db } from "../../database/models/index.js";
+import AppError from "../utilities/appError.js";
+
+const { Channel } = db;
+
 // POST /api/channels
 // Headers: Authorization
 // Body: { username, name, description, avatar?, banner? }
 // Response: { channel }
+export const createChannelService = async (
+  user,
+  username,
+  name,
+  description,
+  avatar,
+  banner
+) => {
+  const channelExisted = await user.getChannel();
+  if (channelExisted) throw new AppError("User already has a channel", 409);
+
+  const usernameExisted = await Channel.findOne({ where: { username } });
+  if (usernameExisted) throw new AppError("Username already exists", 409);
+
+  const channelData = await user.createChannel({
+    username,
+    name,
+    description,
+    avatar,
+    banner,
+  });
+  const { id, user_id, ...channel } = channelData.toJSON();
+
+  return {
+    channel,
+  };
+};
 
 // GET /api/channels/:channelId
 // Response: { channel with stats, recent videos }

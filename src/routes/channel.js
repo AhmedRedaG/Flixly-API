@@ -1,7 +1,15 @@
-// POST /api/channels
+import { Router } from "express";
+
+import * as channelController from "../controllers/channel.js";
+import { isAuth } from "../middlewares/isAuth.js";
+
+const router = Router();
+
+// POST /api/channels/me
 // Headers: Authorization
 // Body: { username, name, description, avatar?, banner? }
 // Response: { channel }
+router.post("/me", isAuth, channelController.createChannel);
 
 // GET /api/channels/:channelId
 // Response: { channel with stats, recent videos }
@@ -42,3 +50,5 @@
 // DELETE /api/channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: false, subscribers_count }
+
+export default router;
