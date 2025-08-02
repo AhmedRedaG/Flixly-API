@@ -1,6 +1,4 @@
 import nodemailer from "nodemailer";
-import { join } from "path";
-import { existsSync } from "fs";
 
 import * as configs from "../../../config/index.js";
 
@@ -41,19 +39,5 @@ export default class EmailService {
     } catch (error) {
       throw new Error(`Failed to send email: ${error.message}`);
     }
-  }
-
-  getLogoAttachment() {
-    const logoPath = join(process.cwd(), "public", "mailImages", "logo.png");
-
-    if (!existsSync(logoPath)) {
-      return null;
-    }
-
-    return {
-      filename: "logo.png",
-      path: logoPath,
-      cid: "logo@jwt-auth.com",
-    };
   }
 }

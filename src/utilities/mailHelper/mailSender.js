@@ -17,7 +17,6 @@ export const sendMailService = async (user, token, mailType) => {
     const mailOptions = mailInstance.createMail(user, token);
     await mailInstance.sendMail(mailOptions);
 
-    return "Email sent successfully";
   } catch (error) {
     throw new Error(`Failed to send ${mailType} email: ${error.message}`);
   }

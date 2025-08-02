@@ -4,26 +4,21 @@ import * as configs from "../../../config/index.js";
 export default class ResetPasswordMail extends EmailService {
   createMail(user, resetToken) {
     const resetUrl = `${configs.env.frontendUrl}/reset-password/${resetToken}`;
-    const logoAttachment = this.getLogoAttachment();
 
     const mailOptions = {
-      from: `"JWT-AUTH" <${configs.env.email.serverEmail}>`,
+      from: `"Flixly" <${configs.env.email.serverEmail}>`,
       to: user.email,
       subject: "Reset Your Password",
       text: this.generatePlainTextContent(user, resetUrl),
-      html: this.generateHtmlContent(user, resetUrl, !!logoAttachment),
+      html: this.generateHtmlContent(user, resetUrl),
     };
-
-    if (logoAttachment) {
-      mailOptions.attachments = [logoAttachment];
-    }
 
     return mailOptions;
   }
 
   generatePlainTextContent(user, resetUrl) {
     return `
-Hi ${user.name},
+Hi ${user.firstName},
 
 We received a request to reset your password for your account.
 
@@ -33,24 +28,18 @@ ${resetUrl}
 If you did not request this, please ignore this email. This reset link will expire shortly for your security.
 
 Thanks,
-The JWT-AUTH Team
+The Flixly Team
 
 Need help? Contact us at ${configs.env.email.supportEmail}`;
   }
 
-  generateHtmlContent(user, resetUrl, hasLogo) {
-    const logoImg = hasLogo
-      ? `<img style="width:50px;" src="cid:logo@jwt-auth.com" alt="logo"/>`
-      : "";
-
+  generateHtmlContent(user, resetUrl) {
     return `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
-  ${logoImg}
-
   <h2 style="text-align: center; color: #333;">🔒 Reset Your Password</h2>
   
   <p style="font-size: 16px; color: #555;">
-    Hi <strong>${user.name}</strong>,
+    Hi <strong>${user.firstName}</strong>,
   </p>
   
   <p style="font-size: 16px; color: #555;">
@@ -71,7 +60,7 @@ Need help? Contact us at ${configs.env.email.supportEmail}`;
   <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
   
   <p style="font-size: 12px; color: #aaa; text-align: center;">
-    © ${new Date().getFullYear()} JWT-AUTH. All rights reserved.<br>
+    © ${new Date().getFullYear()} Flixly. All rights reserved.<br>
     Need help? Contact us at <a href="mailto:${
       configs.env.email.supportEmail
     }" style="color: #888;">${configs.env.email.supportEmail}</a>
