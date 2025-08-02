@@ -22,7 +22,7 @@ export default (sequelize, DataTypes) => {
       });
 
       // Video has many comments
-      Video.hasMany(models.Comment, {
+      Video.hasMany(models.VideoComment, {
         foreignKey: "video_id",
         as: "comments",
       });
