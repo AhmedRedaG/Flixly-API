@@ -37,7 +37,7 @@ export default {
       banner: {
         type: Sequelize.STRING,
       },
-      views: {
+      views_count: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },

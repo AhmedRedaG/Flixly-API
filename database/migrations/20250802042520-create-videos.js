@@ -35,7 +35,7 @@ export default {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
-      views: {
+      views_count: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },
