@@ -34,6 +34,7 @@ router.put(
 // DELETE /api/users/me
 // Headers: Authorization
 // Response: { message: "Account deleted" }
+router.delete("/me", isAuth, userController.deleteAccount);
 
 // GET /api/users/:userId/profile
 // Response: { user public profile with channel info }

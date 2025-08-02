@@ -47,6 +47,12 @@ export const changePassword = async (req, res) => {
 // DELETE /api/users/me
 // Headers: Authorization
 // Response: { message: "Account deleted" }
+export const deleteAccount = async (req, res) => {
+  const user = req.user;
+  const data = await userServer.deleteAccountService(user);
+  CookieHelper.clearRefreshTokenCookie(res);
+  res.jsend.success(data);
+};
 
 // GET /api/users/:userId/profile
 // Response: { user public profile with channel info }

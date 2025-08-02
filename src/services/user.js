@@ -113,6 +113,12 @@ export const changePasswordService = async (user, oldPassword, newPassword) => {
 // DELETE /api/users/me
 // Headers: Authorization
 // Response: { message: "Account deleted" }
+export const deleteAccountService = async (user) => {
+  await user.destroy();
+  return {
+    message: "Account deleted successfully",
+  };
+}
 
 // GET /api/users/:userId/profile
 // Response: { user public profile with channel info }
