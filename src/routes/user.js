@@ -36,10 +36,7 @@ router.put(
 // Response: { message: "Account deleted" }
 router.delete("/me", isAuth, userController.deleteAccount);
 
-// GET /api/users/:userId/profile
-// Response: { user public profile with channel info }
-
-// GET /api/users/me/subscriptions
+/// GET /api/users/me/subscriptions
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { subscriptions[], pagination }
@@ -53,5 +50,19 @@ router.delete("/me", isAuth, userController.deleteAccount);
 // Headers: Authorization
 // Query: ?page=1&limit=20&include_public=true
 // Response: { playlists[], pagination }
+
+// GET /api/users/me/views
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+// GET /api/users/me/likes
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+// GET /api/users/:username
+// Response: { user public profile with channel info }
+router.get("/:username", userController.getPublicUserInfo);
 
 export default router;

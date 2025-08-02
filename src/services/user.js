@@ -7,6 +7,7 @@ import * as configs from "../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 const {
+  User,
   RefreshToken,
   ResetToken,
   Channel,
@@ -34,7 +35,7 @@ export const getUserInfoService = async (user) => {
     reportsCount,
   ] = await Promise.all([
     user.getChannel({
-      attributes: { exclude: ["id", "user_id", "deleted_at"] },
+      attributes: { exclude: ["id", "user_id"] },
     }),
     user.countVideoViews(),
     user.countVideoReactions(),
@@ -132,9 +133,6 @@ export const deleteAccountService = async (user) => {
   };
 };
 
-// GET /api/users/:userId/profile
-// Response: { user public profile with channel info }
-
 // GET /api/users/me/subscriptions
 // Headers: Authorization
 // Query: ?page=1&limit=20
@@ -149,3 +147,43 @@ export const deleteAccountService = async (user) => {
 // Headers: Authorization
 // Query: ?page=1&limit=20&include_public=true
 // Response: { playlists[], pagination }
+
+// GET /api/users/me/views
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+// GET /api/users/me/likes
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+// GET /api/users/:username
+// Response: { user public profile with channel info }
+export const getPublicUserInfoService = async (username) => {
+  const user = await User.findOne({
+    where: { username },
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: {
+        include: [
+          "username",
+          "name",
+          "description",
+          "avatar",
+          "banner",
+          "subscribers",
+          "views_count",
+        ],
+      },
+    },
+  });
+  if (!user) throw new AppError("User not found with the provided ID", 404);
+
+  const userData = getSafeData(user, { public: true });
+
+  return {
+    user: userData,
+  };
+};

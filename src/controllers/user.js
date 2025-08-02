@@ -53,10 +53,6 @@ export const deleteAccount = async (req, res) => {
   CookieHelper.clearRefreshTokenCookie(res);
   res.jsend.success(data);
 };
-
-// GET /api/users/:userId/profile
-// Response: { user public profile with channel info }
-
 // GET /api/users/me/subscriptions
 // Headers: Authorization
 // Query: ?page=1&limit=20
@@ -71,3 +67,21 @@ export const deleteAccount = async (req, res) => {
 // Headers: Authorization
 // Query: ?page=1&limit=20&include_public=true
 // Response: { playlists[], pagination }
+
+// GET /api/users/me/views
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+// GET /api/users/me/likes
+// Headers: Authorization
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+// GET /api/users/:username
+// Response: { user public profile with channel info }
+export const getPublicUserInfo = async (req, res) => {
+  const { username } = req.params;
+  const data = await userServer.getPublicUserInfoService(username);
+  res.jsend.success(data);
+};
