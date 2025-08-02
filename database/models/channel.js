@@ -60,7 +60,7 @@ export default (sequelize) => {
       banner: {
         type: DataTypes.STRING,
       },
-      views: {
+      views_count: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
       },

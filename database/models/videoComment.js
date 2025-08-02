@@ -62,5 +62,5 @@ export default (sequelize, DataTypes) => {
     }
   );
 
-  return Comment;
+  return VideoComment;
 };

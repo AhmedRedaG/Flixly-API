@@ -74,7 +74,7 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-      views: {
+      views_count: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
       },
