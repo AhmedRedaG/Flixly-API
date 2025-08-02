@@ -125,31 +125,41 @@ export const updateChannelService = async (
   };
 };
 
-// DELETE /api/channels/:channelId
+// DELETE /api/channels/:username
 // Headers: Authorization (channel owner)
 // Response: { message: "Channel deleted" }
+export const deleteChannelService = async (user) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
 
-// GET /api/channels/:channelId/videos
+  await channel.destroy();
+
+  return {
+    message: "Channel deleted successfully",
+  };
+};
+
+// GET /api/channels/:username/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
 
-// GET /api/channels/:channelId/playlists
+// GET /api/channels/:username/playlists
 // Query: ?page=1&limit=20
 // Response: { playlists[], pagination }
 
-// GET /api/channels/:channelId/playlists
+// GET /api/channels/:username/playlists
 // Query: ?page=1&limit=20 (public only)
 // Response: { playlists[], pagination }
 
-// GET /api/channels/:channelId/subscribers
+// GET /api/channels/me/subscribers
 // Headers: Authorization (channel owner only)
 // Query: ?page=1&limit=20
 // Response: { subscribers[], pagination }
 
-// POST /api/channels/:channelId/subscribe
+// POST /api/channels/:username/subscribe
 // Headers: Authorization
 // Response: { subscribed: true, subscribers_count }
 
-// DELETE /api/channels/:channelId/subscribe
+// DELETE /api/channels/:username/subscribe
 // Headers: Authorization
 // Response: { subscribed: false, subscribers_count }

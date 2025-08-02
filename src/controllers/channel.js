@@ -53,9 +53,14 @@ export const updateChannel = async (req, res) => {
   res.jsend.success(data);
 };
 
-// DELETE /api/channels/:channelId
+// DELETE /api/channels/me
 // Headers: Authorization (channel owner)
 // Response: { message: "Channel deleted" }
+export const deleteChannel = async (req, res) => {
+  const user = req.user;
+  const data = await channelServer.deleteChannelService(user);
+  res.jsend.success(data);
+};
 
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular

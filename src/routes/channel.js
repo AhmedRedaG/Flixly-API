@@ -26,9 +26,10 @@ router.get("/:username", channelController.getPublicChannel);
 // Response: { channel }
 router.put("/me", isAuth, channelController.updateChannel);
 
-// DELETE /api/channels/:channelId
+// DELETE /api/channels/me
 // Headers: Authorization (channel owner)
 // Response: { message: "Channel deleted" }
+router.delete("/me", isAuth, channelController.deleteChannel);
 
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
