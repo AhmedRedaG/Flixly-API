@@ -1,25 +1,34 @@
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('reset_tokens', {
+    await queryInterface.createTable("reset_tokens", {
       user_id: {
         type: Sequelize.UUID,
         primaryKey: true,
+        allowNull: false,
         references: {
-          model: 'users',
-          key: 'id',
+          model: "users",
+          key: "id",
         },
-        onDelete: 'CASCADE',
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       token: {
         type: Sequelize.TEXT,
         allowNull: false,
       },
-      created_at: Sequelize.DATE,
-      expires_at: Sequelize.DATE,
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      expires_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
     });
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable('reset_tokens');
+    await queryInterface.dropTable("reset_tokens");
   },
 };

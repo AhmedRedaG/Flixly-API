@@ -5,6 +5,7 @@ export default {
         type: Sequelize.UUID,
         defaultValue: Sequelize.literal("gen_random_uuid()"),
         primaryKey: true,
+        allowNull: false,
       },
       user_id: {
         type: Sequelize.UUID,
@@ -13,6 +14,7 @@ export default {
           model: "users",
           key: "id",
         },
+        onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
       token: {
@@ -20,8 +22,15 @@ export default {
         allowNull: false,
         unique: true,
       },
-      created_at: Sequelize.DATE,
-      expires_at: Sequelize.DATE,
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      expires_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
     });
 
     await queryInterface.addIndex("refresh_tokens", ["user_id"]);

@@ -5,6 +5,7 @@ export default {
         type: Sequelize.UUID,
         defaultValue: Sequelize.literal("gen_random_uuid()"),
         primaryKey: true,
+        allowNull: false,
       },
       first_name: {
         type: Sequelize.STRING,
@@ -41,9 +42,23 @@ export default {
       bio: {
         type: Sequelize.STRING,
       },
-      created_at: Sequelize.DATE,
-      updated_at: Sequelize.DATE,
-      deleted_at: Sequelize.DATE,
+      role: {
+        type: Sequelize.ENUM("user", "admin"),
+        defaultValue: "user",
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      deleted_at: {
+        type: Sequelize.DATE,
+      },
     });
   },
 
