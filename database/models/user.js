@@ -34,7 +34,7 @@ export default (sequelize) => {
       },
       username: { type: DataTypes.STRING, allowNull: false, unique: true },
       email: { type: DataTypes.STRING, allowNull: false, unique: true },
-      google_id: { type: DataTypes.STRING, unique: true },
+      googleId: { type: DataTypes.STRING, unique: true, field: "google_id" },
       password: DataTypes.STRING,
       verified: { type: DataTypes.BOOLEAN, defaultValue: false },
       avatar: DataTypes.STRING,

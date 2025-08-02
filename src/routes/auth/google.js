@@ -8,7 +8,7 @@ const router = Router();
 // GET auth/google
 router.get(
   "/",
-  passport.authenticate("google", { scope: ["profile", "emails"] })
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
 // GET auth/google/callback

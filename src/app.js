@@ -18,7 +18,6 @@ app.use(cors());
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
-app.use(passport.initialize());
 app.use(jsendMiddleware());
 
 app.use(rateLimiter);

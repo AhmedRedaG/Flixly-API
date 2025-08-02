@@ -1,12 +1,9 @@
-import User from "../../../database/models/user.js";
-import AppError from "../../utilities/appError.js";
-import * as JwtHelper from "../../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../../utilities/authHelper.js";
+import { getSafeData } from "../../utilities/dataHelper.js";
 
 export const authWithGoogleService = async (user) => {
-  const { accessToken, refreshToken, userSafeData } =
-    await generateTokensForUser(user);
-  await user.save();
+  const { accessToken, refreshToken } = await generateTokensForUser(user);
+  const userSafeData = getSafeData(user);
 
   return {
     accessToken,
