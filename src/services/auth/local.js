@@ -82,14 +82,14 @@ export const verifyMailService = async (verifyToken) => {
 
 export const postLoginService = async (email, password) => {
   const user = await User.findOne({ where: { email } });
+  if (!user) throw new AppError("Invalid email or password", 401);
 
   // (no password) => google account
   if (!user.password)
     throw new AppError("This account was registered with Google.", 401);
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
-
-  if (!user || !isPasswordValid) {
+  if (!isPasswordValid) {
     throw new AppError("Invalid email or password", 401);
   }
 
