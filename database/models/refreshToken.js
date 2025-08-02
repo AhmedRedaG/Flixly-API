@@ -1,6 +1,6 @@
-import { DataTypes, Model } from "sequelize";
+import { Model } from "sequelize";
 
-export default (sequelize) => {
+export default (sequelize, DataTypes) => {
   class RefreshToken extends Model {
     static associate(models) {
       RefreshToken.belongsTo(models.User, {

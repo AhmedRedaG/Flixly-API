@@ -1,6 +1,6 @@
-import { Model, DataTypes } from "sequelize";
+import { Model } from "sequelize";
 
-export default (sequelize) => {
+export default (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
       // User has one channel
