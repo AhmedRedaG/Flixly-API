@@ -12,6 +12,9 @@ const { RESET_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 const { User, ResetToken, RefreshToken } = db;
 
 export const changePasswordService = async (user, oldPassword, newPassword) => {
+  if (!user.password)
+    throw new AppError("This account was registered with Google.", 401);
+
   // verify old password
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords) throw new AppError("Old password is wrong", 401);

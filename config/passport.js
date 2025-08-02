@@ -33,6 +33,8 @@ const findOrCreateUser = async (profile) => {
     username,
     email: profile.emails[0].value,
     googleId: profile.id,
+    verified: true,
+    avatar: profile.photos[0].value,
   });
   return newUser;
 };

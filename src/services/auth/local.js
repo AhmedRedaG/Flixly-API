@@ -84,11 +84,12 @@ export const postLoginService = async (email, password) => {
   const user = await User.findOne({ where: { email } });
 
   // (no password) => google account
-  const isPasswordValid = user?.password
-    ? await bcrypt.compare(password, user.password)
-    : false;
+  if (!user.password)
+    throw new AppError("This account was registered with Google.", 401);
 
-  if (!user || !user.password || !isPasswordValid) {
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!user || !isPasswordValid) {
     throw new AppError("Invalid email or password", 401);
   }
 
