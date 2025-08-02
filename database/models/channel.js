@@ -85,11 +85,9 @@ export default (sequelize) => {
       sequelize,
       modelName: "Channel",
       tableName: "channels",
-      paranoid: true,
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-      deletedAt: "deleted_at",
     }
   );
 

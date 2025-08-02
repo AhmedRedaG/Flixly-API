@@ -93,10 +93,8 @@ export default (sequelize, DataTypes) => {
       modelName: "User",
       tableName: "users",
       timestamps: true,
-      paranoid: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-      deletedAt: "deleted_at",
     }
   );
 

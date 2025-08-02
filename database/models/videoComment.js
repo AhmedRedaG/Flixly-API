@@ -53,11 +53,9 @@ export default (sequelize, DataTypes) => {
       sequelize,
       modelName: "VideoComment",
       tableName: "video_comments",
-      paranoid: true,
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-      deletedAt: "deleted_at",
       indexes: [{ fields: ["video_id"] }],
     }
   );

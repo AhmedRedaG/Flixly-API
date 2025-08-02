@@ -42,11 +42,9 @@ export default (sequelize, DataTypes) => {
       sequelize,
       modelName: "Report",
       tableName: "reports",
-      paranoid: true,
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-      deletedAt: "deleted_at",
       indexes: [{ fields: ["target_id"] }],
     }
   );

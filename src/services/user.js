@@ -6,7 +6,18 @@ import { getSafeData } from "../utilities/dataHelper.js";
 import * as configs from "../../config/index.js";
 
 const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
-const { User, RefreshToken } = db;
+const {
+  RefreshToken,
+  ResetToken,
+  Channel,
+  Playlist,
+  Video,
+  Subscription,
+  VideoReaction,
+  VideoView,
+  VideoComment,
+  Report,
+} = db;
 
 // GET /api/v1/users/me
 // Headers: Authorization
@@ -115,10 +126,11 @@ export const changePasswordService = async (user, oldPassword, newPassword) => {
 // Response: { message: "Account deleted" }
 export const deleteAccountService = async (user) => {
   await user.destroy();
+
   return {
     message: "Account deleted successfully",
   };
-}
+};
 
 // GET /api/users/:userId/profile
 // Response: { user public profile with channel info }

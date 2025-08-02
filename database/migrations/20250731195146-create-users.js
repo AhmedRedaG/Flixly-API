@@ -56,9 +56,6 @@ export default {
         allowNull: false,
         defaultValue: Sequelize.NOW,
       },
-      deleted_at: {
-        type: Sequelize.DATE,
-      },
     });
   },
 
