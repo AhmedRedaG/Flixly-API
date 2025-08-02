@@ -4,15 +4,8 @@ import AppError from "./appError.js";
 const { User } = db;
 
 export const getSafeData = (user) => {
-  return {
-    firstName: user.firstName,
-    lastName: user.lastName,
-    username: user.username,
-    email: user.email,
-    bio: user.bio,
-    role: user.role,
-    verified: user.verified,
-  };
+  const { password, id, googleId, deleted_at, ...userSafeData } = user.toJSON();
+  return userSafeData;
 };
 
 export const getUserByIdOrFail = async (userId) => {
