@@ -11,36 +11,6 @@ const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
 const { RESET_TOKEN_AGE_IN_MS } = configs.constants.jwt;
 const { User, ResetToken, RefreshToken } = db;
 
-export const changePasswordService = async (user, oldPassword, newPassword) => {
-  if (!user.password)
-    throw new AppError("This account was registered with Google.", 401);
-
-  // verify old password
-  const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
-  if (!matchedPasswords) throw new AppError("Old password is wrong", 401);
-
-  if (newPassword === oldPassword)
-    throw new AppError("New password must be different from old password");
-
-  // hash new password and save
-  const newHashedPassword = await bcrypt.hash(
-    newPassword,
-    HASH_PASSWORD_ROUNDS
-  );
-  user.password = newHashedPassword;
-  await user.save();
-
-  // remove all refresh tokens
-  await RefreshToken.destroy({
-    where: {
-      user_id: user.id,
-    },
-  });
-
-  return {
-    message: "Password has been successfully changed. Please login again.",
-  };
-};
 
 export const requestResetPasswordMailService = async (email) => {
   const user = await User.findOne({ where: { email } });

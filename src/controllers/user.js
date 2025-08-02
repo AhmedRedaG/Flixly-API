@@ -1,11 +1,12 @@
-import * as userService from "../services/user.js";
+import * as userServer from "../services/user.js";
+import * as CookieHelper from "../utilities/cookieHelper.js";
 
 // GET /api/v1/users/me
 // Headers: Authorization
 // Response: { user with channel info }
 export const getUserInfo = async (req, res) => {
   const user = req.user;
-  const data = await userService.getUserInfoService(user);
+  const data = await userServer.getUserInfoService(user);
   res.jsend.success(data);
 };
 
@@ -13,11 +14,35 @@ export const getUserInfo = async (req, res) => {
 // Headers: Authorization
 // Body: { first_name?, last_name?, username?, bio?, avatar? }
 // Response: { user }
+export const updateUserInfo = async (req, res) => {
+  const user = req.user;
+  const { firstName, lastName, username, bio, avatar } = req.body;
+  const data = await userServer.updateUserInfoService(
+    user,
+    firstName,
+    lastName,
+    username,
+    bio,
+    avatar
+  );
+  res.jsend.success(data);
+};
 
 // PUT /api/users/me/password
 // Headers: Authorization
 // Body: { current_password, new_password }
 // Response: { message: "Password updated" }
+export const changePassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = req.user;
+  const data = await userServer.changePasswordService(
+    user,
+    oldPassword,
+    newPassword
+  );
+  CookieHelper.clearRefreshTokenCookie(res);
+  res.jsend.success(data);
+};
 
 // DELETE /api/users/me
 // Headers: Authorization

@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import { isAuth } from "../middlewares/isAuth.js";
 import * as userController from "../controllers/user.js";
+import * as authValidator from "../validators/shared/auth.js";
+import isValid from "../middlewares/isValid.js";
 
 const router = Router();
 
@@ -14,11 +16,20 @@ router.get("/me", isAuth, userController.getUserInfo);
 // Headers: Authorization
 // Body: { first_name?, last_name?, username?, bio?, avatar? }
 // Response: { user }
+router.put("/me", isAuth, userController.updateUserInfo);
 
 // PUT /api/users/me/password
 // Headers: Authorization
 // Body: { current_password, new_password }
 // Response: { message: "Password updated" }
+// PATCH auth/password/change
+router.put(
+  "/me/password",
+  authValidator.changePassword,
+  isValid,
+  isAuth,
+  userController.changePassword
+);
 
 // DELETE /api/users/me
 // Headers: Authorization
