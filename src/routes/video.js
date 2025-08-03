@@ -43,6 +43,7 @@ router.delete("/me/:videoId", isAuth, videoController.deleteVideo);
 // Headers: Authorization (video owner)
 // Body: { publish_at? } // null = publish now
 // Response: { video }
+router.patch("/me/:videoId/publish", isAuth, videoController.publishVideo);
 
 /**
  * VIDEO DISCOVERY & SEARCH

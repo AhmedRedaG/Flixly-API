@@ -86,6 +86,13 @@ export const deleteVideo = async (req, res) => {
 // Headers: Authorization (video owner)
 // Body: { publish_at? } // null = publish now
 // Response: { video }
+export const publishVideo = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const { publish_at } = req.body;
+  const data = await videoServer.publishVideoService(user, videoId, publish_at);
+  res.jsend.success(data);
+};
 
 /**
  * VIDEO DISCOVERY & SEARCH

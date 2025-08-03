@@ -208,6 +208,28 @@ export const deleteVideoService = async (user, videoId) => {
 // Headers: Authorization (video owner)
 // Body: { publish_at? } // null = publish now
 // Response: { video }
+export const publishVideoService = async (user, videoId, publish_at) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
+  if (!video) throw new AppError("Video not found", 404);
+
+  if (video.is_published) throw new AppError("Video already published", 409);
+
+  if (video.processing_status !== "completed")
+    throw new AppError("Video process not completed yet", 409);
+
+  // need to fix
+  if (publish_at && publish_at > new Date()) video.publish_at = publish_at;
+  else video.publish_at = new Date();
+
+  video.is_published = true;
+
+  await video.save();
+
+  return video;
+};
 
 /**
  * VIDEO DISCOVERY & SEARCH
