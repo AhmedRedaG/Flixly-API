@@ -34,6 +34,7 @@ router.delete("/me", isAuth, channelController.deleteChannel);
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
+router.get("/:username/videos", channelController.getPublicChannelVideos);
 
 // GET /api/channels/:channelId/playlists
 // Query: ?page=1&limit=20

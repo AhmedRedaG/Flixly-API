@@ -65,6 +65,17 @@ export const deleteChannel = async (req, res) => {
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
+export const getPublicChannelVideos = async (req, res) => {
+  const { username } = req.params;
+  const { page, limit, sort } = req.query;
+  const data = await channelServer.getPublicChannelVideosService(
+    username,
+    page,
+    limit,
+    sort
+  );
+  res.jsend.success(data);
+};
 
 // GET /api/channels/:channelId/playlists
 // Query: ?page=1&limit=20

@@ -3,6 +3,20 @@ import AppError from "../utilities/appError.js";
 
 const { Channel, Video } = db;
 
+const publicVideoFields = [
+  "id",
+  "title",
+  "description",
+  "url",
+  "thumbnail",
+  "views_count",
+  "likes_count",
+  "dislikes_count",
+  "comments_count",
+  "duration",
+  "publish_at",
+];
+
 // POST /api/channels
 // Headers: Authorization
 // Body: { username, name, description, avatar?, banner? }
@@ -64,20 +78,6 @@ export const getChannelService = async (user) => {
 export const getPublicChannelService = async (username) => {
   const channel = await Channel.findOne({ where: { username } });
   if (!channel) throw new AppError("Channel not found", 404);
-
-  const publicVideoFields = [
-    "id",
-    "title",
-    "description",
-    "url",
-    "thumbnail",
-    "views_count",
-    "likes_count",
-    "dislikes_count",
-    "comments_count",
-    "duration",
-    "publish_at",
-  ];
 
   const recentVideos = await channel.getVideos({
     attributes: publicVideoFields,
@@ -142,6 +142,47 @@ export const deleteChannelService = async (user) => {
 // GET /api/channels/:username/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
+export const getPublicChannelVideosService = async (
+  username,
+  inPage,
+  inLimit,
+  sort
+) => {
+  const channel = await Channel.findOne({ where: { username } });
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest"
+      ? [["created_at", "DESC"]]
+      : sort === "oldest"
+      ? [["created_at", "ASC"]]
+      : [["views_count", "DESC"]];
+
+  const videos = await channel.getVideos({
+    attributes: publicVideoFields,
+    where: { is_published: true, is_private: false },
+    order,
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
 
 // GET /api/channels/:username/playlists
 // Query: ?page=1&limit=20
