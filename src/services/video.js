@@ -190,6 +190,19 @@ export const updateVideoService = async (
 // DELETE /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Response: { message: "Video deleted" }
+export const deleteVideoService = async (user, videoId) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
+  if (!video) throw new AppError("Video not found", 404);
+
+  await video.destroy();
+
+  return {
+    message: "Video deleted successfully",
+  };
+};
 
 // PATCH /api/videos/:videoId/publish
 // Headers: Authorization (video owner)

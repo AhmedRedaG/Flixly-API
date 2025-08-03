@@ -75,6 +75,12 @@ export const updateVideo = async (req, res) => {
 // DELETE /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Response: { message: "Video deleted" }
+export const deleteVideo = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const data = await videoServer.deleteVideoService(user, videoId);
+  res.jsend.success(data);
+};
 
 // PATCH /api/videos/:videoId/publish
 // Headers: Authorization (video owner)

@@ -37,6 +37,7 @@ router.put("/me/:videoId", isAuth, videoController.updateVideo);
 // DELETE /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Response: { message: "Video deleted" }
+router.delete("/me/:videoId", isAuth, videoController.deleteVideo);
 
 // PATCH /api/videos/:videoId/publish
 // Headers: Authorization (video owner)
