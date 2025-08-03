@@ -28,10 +28,11 @@ router.get("/:videoId/comments", videoController.getPublicVideoComments);
 // Response: { video with channel, tags, comments?, view_count }
 router.get("/me/:videoId", isAuth, videoController.getVideo);
 
-// PUT /api/videos/:videoId
+// PUT /api/videos/me/:videoId
 // Headers: Authorization (video owner)
 // Body: { title?, description?, thumbnail?, is_private?, tags[] }
 // Response: { video }
+router.put("/me/:videoId", isAuth, videoController.updateVideo);
 
 // DELETE /api/videos/:videoId
 // Headers: Authorization (video owner)

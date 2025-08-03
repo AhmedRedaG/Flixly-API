@@ -163,6 +163,29 @@ export const getVideoService = async (user, videoId) => {
 // Headers: Authorization (video owner)
 // Body: { title?, description?, is_private?, tags[] }
 // Response: { video }
+export const updateVideoService = async (
+  user,
+  videoId,
+  title,
+  description,
+  is_private,
+  tags
+) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
+  if (!video) throw new AppError("Video not found", 404);
+
+  if (title) video.title = title;
+  if (description) video.description = description;
+  if (is_private !== undefined) video.is_private = is_private;
+  // if (tags) await video.setTags(tags); // need to implement
+
+  await video.save();
+
+  return video;
+};
 
 // DELETE /api/videos/:videoId
 // Headers: Authorization (video owner)

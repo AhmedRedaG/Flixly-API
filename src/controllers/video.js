@@ -57,6 +57,20 @@ export const getVideo = async (req, res) => {
 // Headers: Authorization (video owner)
 // Body: { title?, description?, thumbnail?, is_private?, tags[] }
 // Response: { video }
+export const updateVideo = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const { title, description, is_private, tags } = req.body;
+  const data = await videoServer.updateVideoService(
+    user,
+    videoId,
+    title,
+    description,
+    is_private,
+    tags
+  );
+  res.jsend.success(data);
+};
 
 // DELETE /api/videos/:videoId
 // Headers: Authorization (video owner)
