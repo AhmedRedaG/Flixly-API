@@ -31,6 +31,12 @@ router.put("/me", isAuth, channelController.updateChannel);
 // Response: { message: "Channel deleted" }
 router.delete("/me", isAuth, channelController.deleteChannel);
 
+// GET /api/channels/me/videos
+// Authorization: Bearer token
+// Query: ?page=1&limit=20&sort=newest|oldest|popular&privateOnly=true|false&unpublishedOnly=true|false
+// Response: { videos[], pagination }
+router.get("/me/videos", isAuth, channelController.getChannelVideos);
+
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }

@@ -139,6 +139,59 @@ export const deleteChannelService = async (user) => {
   };
 };
 
+// GET /api/channels/me/videos
+// Authorization: Bearer token
+// Query: ?page=1&limit=20&sort=newest|oldest|popular&privateOnly=true|false&unpublishedOnly=true|false
+// Response: { videos[], pagination }
+export const getChannelVideosService = async (
+  user,
+  inPage,
+  inLimit,
+  sort,
+  privateOnly,
+  unpublishedOnly
+) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest"
+      ? [["created_at", "DESC"]]
+      : sort === "oldest"
+      ? [["created_at", "ASC"]]
+      : [["views_count", "DESC"]];
+  const where = privateOnly
+    ? { is_private: true }
+    : unpublishedOnly
+    ? { is_published: false }
+    : {};
+
+  const videos = await channel.getVideos({
+    attributes: { exclude: ["channel_id"] },
+    where,
+    order,
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
+
 // GET /api/channels/:username/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }

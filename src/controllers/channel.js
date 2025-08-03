@@ -62,6 +62,24 @@ export const deleteChannel = async (req, res) => {
   res.jsend.success(data);
 };
 
+// GET /api/channels/me/videos
+// Authorization: Bearer token
+// Query: ?page=1&limit=20&sort=newest|oldest|popular&privateOnly=true|false&unpublishedOnly=true|false
+// Response: { videos[], pagination }
+export const getChannelVideos = async (req, res) => {
+  const user = req.user;
+  const { page, limit, sort, privateOnly, unpublishedOnly } = req.query;
+  const data = await channelServer.getChannelVideosService(
+    user,
+    page,
+    limit,
+    sort,
+    privateOnly,
+    unpublishedOnly
+  );
+  res.jsend.success(data);
+};
+
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
