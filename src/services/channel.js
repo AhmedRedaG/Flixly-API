@@ -1,7 +1,7 @@
-import { db } from "../../database/models/index.js";
+import { db, sequelize } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
 
-const { User, Channel, Video } = db;
+const { User, Channel, Subscription } = db;
 
 const publicVideoFields = [
   "id",
@@ -294,7 +294,70 @@ export const getChannelSubscribersService = async (
 // POST /api/channels/:username/subscribe
 // Headers: Authorization
 // Response: { subscribed: true, subscribers_count }
+export const subscribeChannelService = async (user, username) => {
+  const channel = await Channel.findOne({ where: { username } });
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  if (channel.user_id === user.id)
+    throw new AppError("Cannot subscribe to own channel", 409);
+
+  const subscription = await Subscription.findOne({
+    where: { subscriber_id: user.id, channel_id: channel.id },
+  });
+  if (subscription)
+    throw new AppError("Already subscribed to this channel", 409);
+
+  const transaction = await sequelize.transaction();
+  try {
+    await Promise.all([
+      channel.increment("subscribers", { transaction }),
+      channel.createSubscription({ subscriber_id: user.id }, { transaction }),
+    ]);
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw new Error(err.message);
+  }
+
+  return {
+    subscribed: true,
+    subscribersCount: channel.subscribers,
+  };
+};
 
 // DELETE /api/channels/:username/subscribe
 // Headers: Authorization
 // Response: { subscribed: false, subscribers_count }
+export const unsubscribeChannelService = async (user, username) => {
+  const channel = await Channel.findOne({ where: { username } });
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  if (channel.user_id === user.id)
+    throw new AppError("Cannot unsubscribe to own channel", 409);
+
+  const subscription = await Subscription.findOne({
+    where: { subscriber_id: user.id, channel_id: channel.id },
+  });
+  if (!subscription)
+    throw new AppError("Already unsubscribed to this channel", 409);
+
+  const transaction = await sequelize.transaction();
+  try {
+    await Promise.all([
+      channel.decrement("subscribers", { transaction }),
+      Subscription.destroy({
+        where: { subscriber_id: user.id, channel_id: channel.id },
+        transaction,
+      }),
+    ]);
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw new Error(err.message);
+  }
+
+  return {
+    subscribed: false,
+    subscribersCount: channel.subscribers,
+  };
+};

@@ -59,9 +59,15 @@ router.get("/me/subscribers", isAuth, channelController.getChannelSubscribers);
 // POST /api/channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: true, subscribers_count }
+router.post("/:username/subscribe", isAuth, channelController.subscribeChannel);
 
 // DELETE /api/channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: false, subscribers_count }
+router.delete(
+  "/:username/subscribe",
+  isAuth,
+  channelController.unsubscribeChannel
+);
 
 export default router;

@@ -122,7 +122,19 @@ export const getChannelSubscribers = async (req, res) => {
 // POST /api/channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: true, subscribers_count }
+export const subscribeChannel = async (req, res, next) => {
+  const user = req.user;
+  const { username } = req.params;
+  const data = await channelServer.subscribeChannelService(user, username);
+  res.jsend.success(data);
+};
 
 // DELETE /api/channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: false, subscribers_count }
+export const unsubscribeChannel = async (req, res) => {
+  const user = req.user;
+  const { username } = req.params;
+  const data = await channelServer.unsubscribeChannelService(user, username);
+  res.jsend.success(data);
+};
