@@ -20,6 +20,20 @@ const {
   Report,
 } = db;
 
+const publicVideoFields = [
+  "id",
+  "title",
+  "description",
+  "url",
+  "thumbnail",
+  "views_count",
+  "likes_count",
+  "dislikes_count",
+  "comments_count",
+  "duration",
+  "publish_at",
+];
+
 // GET /api/v1/users/me
 // Headers: Authorization
 // Response: { user with channel info }
@@ -180,6 +194,67 @@ export const getUserSubscriptionsService = async (
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos from subscribed channels[], pagination }
+export const getUserSubscriptionsFeedService = async (
+  user,
+  inPage,
+  inLimit
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+
+  // const subscriptions = await user.getSubscriptions({
+  //   include: {
+  //     model: Channel,
+  //     as: "channel",
+  //   },
+  // });
+  // const channels = subscriptions.map((subscription) => subscription.channel);
+  // const videos = await Promise.all(
+  //   channels.map((channel) =>
+  //     channel.getVideos({
+  //       attributes: publicVideoFields,
+  //       where: { is_published: true, is_private: false },
+  //       order: [["created_at", "DESC"]],
+  //       limit,
+  //       offset,
+  //       raw: true,
+  //     })
+  //   )
+  // );
+  // const total = videos.flat().length || 0;
+
+  const videos = Video.findAll({
+    attributes: publicVideoFields,
+    include: {
+      model: Channel,
+      as: "channel",
+      include: {
+        model: Subscription,
+        as: "subscriptions",
+        where: { subscriber_id: user.id },
+      },
+    },
+    where: { is_published: true, is_private: false },
+    order: [["publish_at", "DESC"]],
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
 
 // GET /api/users/me/playlists
 // Headers: Authorization

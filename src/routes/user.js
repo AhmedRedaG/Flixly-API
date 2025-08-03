@@ -46,6 +46,11 @@ router.get("/me/subscriptions", isAuth, userController.getUserSubscriptions);
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos from subscribed channels[], pagination }
+router.get(
+  "/me/subscriptions/feed",
+  isAuth,
+  userController.getUserSubscriptionsFeed
+);
 
 // GET /api/users/me/playlists
 // Headers: Authorization
