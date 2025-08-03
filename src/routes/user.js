@@ -38,8 +38,9 @@ router.delete("/me", isAuth, userController.deleteAccount);
 
 /// GET /api/users/me/subscriptions
 // Headers: Authorization
-// Query: ?page=1&limit=20
+// Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscriptions[], pagination }
+router.get("/me/subscriptions", isAuth, userController.getUserSubscriptions);
 
 // GET /api/users/me/subscriptions/feed
 // Headers: Authorization

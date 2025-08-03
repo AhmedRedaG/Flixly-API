@@ -55,8 +55,19 @@ export const deleteAccount = async (req, res) => {
 };
 // GET /api/users/me/subscriptions
 // Headers: Authorization
-// Query: ?page=1&limit=20
+// Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscriptions[], pagination }
+export const getUserSubscriptions = async (req, res) => {
+  const user = req.user;
+  const { page, limit, sort } = req.query;
+  const data = await userServer.getUserSubscriptionsService(
+    user,
+    page,
+    limit,
+    sort
+  );
+  res.jsend.success(data);
+};
 
 // GET /api/users/me/subscriptions/feed
 // Headers: Authorization

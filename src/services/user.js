@@ -135,8 +135,46 @@ export const deleteAccountService = async (user) => {
 
 // GET /api/users/me/subscriptions
 // Headers: Authorization
-// Query: ?page=1&limit=20
+// Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscriptions[], pagination }
+export const getUserSubscriptionsService = async (
+  user,
+  inPage,
+  inLimit,
+  sort
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
+  const subscriptions = await user.getSubscriptions({
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: ["username", "name", "avatar"],
+    },
+    attributes: ["created_at"],
+    order,
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = subscriptions?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    subscriptions,
+    pagination,
+  };
+};
 
 // GET /api/users/me/subscriptions/feed
 // Headers: Authorization
