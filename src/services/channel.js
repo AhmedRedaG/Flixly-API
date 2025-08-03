@@ -1,7 +1,7 @@
 import { db } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
 
-const { Channel, Video } = db;
+const { User, Channel, Video } = db;
 
 const publicVideoFields = [
   "id",
@@ -247,8 +247,49 @@ export const getPublicChannelVideosService = async (
 
 // GET /api/channels/me/subscribers
 // Headers: Authorization (channel owner only)
-// Query: ?page=1&limit=20
+// Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscribers[], pagination }
+export const getChannelSubscribersService = async (
+  user,
+  inPage,
+  inLimit,
+  sort
+) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
+  const subscribers = await channel.getSubscriptions({
+    include: {
+      model: User,
+      as: "subscriber",
+      attributes: ["username", "firstName", "lastName", "avatar"],
+    },
+    attributes: { exclude: ["channel_id"] },
+    order,
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = subscribers?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    subscribers,
+    pagination,
+  };
+};
 
 // POST /api/channels/:username/subscribe
 // Headers: Authorization

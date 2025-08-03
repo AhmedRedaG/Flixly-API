@@ -50,10 +50,11 @@ router.get("/:username/videos", channelController.getPublicChannelVideos);
 // Query: ?page=1&limit=20 (public only)
 // Response: { playlists[], pagination }
 
-// GET /api/channels/:channelId/subscribers
+// GET /api/channels/me/subscribers
 // Headers: Authorization (channel owner only)
-// Query: ?page=1&limit=20
+// Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscribers[], pagination }
+router.get("/me/subscribers", isAuth, channelController.getChannelSubscribers);
 
 // POST /api/channels/:channelId/subscribe
 // Headers: Authorization

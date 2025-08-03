@@ -103,10 +103,21 @@ export const getPublicChannelVideos = async (req, res) => {
 // Query: ?page=1&limit=20 (public only)
 // Response: { playlists[], pagination }
 
-// GET /api/channels/:channelId/subscribers
+// GET /api/channels/me/subscribers
 // Headers: Authorization (channel owner only)
-// Query: ?page=1&limit=20
+// Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscribers[], pagination }
+export const getChannelSubscribers = async (req, res) => {
+  const user = req.user;
+  const { page, limit, sort } = req.query;
+  const data = await channelServer.getChannelSubscribersService(
+    user,
+    page,
+    limit,
+    sort
+  );
+  res.jsend.success(data);
+};
 
 // POST /api/channels/:channelId/subscribe
 // Headers: Authorization
