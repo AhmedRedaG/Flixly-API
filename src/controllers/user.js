@@ -104,6 +104,12 @@ export const getUserViews = async (req, res) => {
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
+export const getUserLikes = async (req, res) => {
+  const user = req.user;
+  const { page, limit } = req.query;
+  const data = await userServer.getUserLikesService(user, page, limit);
+  res.jsend.success(data);
+};
 
 // GET /api/users/:username
 // Response: { user public profile with channel info }

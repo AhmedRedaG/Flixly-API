@@ -300,6 +300,38 @@ export const getUserViewsService = async (user, inPage, inLimit) => {
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
+export const getUserLikesService = async (user, inPage, inLimit) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+
+  const videos = await user.getVideoReactions({
+    include: {
+      model: Video,
+      as: "video",
+      where: { is_published: true, is_private: false },
+      attributes: publicVideoFields,
+    },
+    where: { is_like: true },
+    order: [["created_at", "DESC"]],
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
 
 // GET /api/users/:username
 // Response: { user public profile with channel info }

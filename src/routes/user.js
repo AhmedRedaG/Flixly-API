@@ -67,6 +67,7 @@ router.get("/me/views", isAuth, userController.getUserViews);
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
+router.get("/me/likes", isAuth, userController.getUserLikes);
 
 // GET /api/users/:username
 // Response: { user public profile with channel info }
