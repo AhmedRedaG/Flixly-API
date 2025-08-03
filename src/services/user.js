@@ -275,6 +275,7 @@ export const getUserViewsService = async (user, inPage, inLimit) => {
       model: Video,
       as: "video",
       attributes: publicVideoFields,
+      where: { is_published: true, is_private: false },
     },
     order: [["watched_at", "DESC"]],
     limit,
