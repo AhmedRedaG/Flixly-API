@@ -1,11 +1,62 @@
+import AppError from "../utilities/appError.js";
+import { db } from "../../database/models/index.js";
+
+const {
+  User,
+  RefreshToken,
+  ResetToken,
+  Channel,
+  Playlist,
+  Video,
+  Subscription,
+  VideoReaction,
+  VideoView,
+  VideoComment,
+  Report,
+} = db;
+
+const publicVideoFields = [
+  "id",
+  "title",
+  "description",
+  "url",
+  "thumbnail",
+  "views_count",
+  "likes_count",
+  "dislikes_count",
+  "comments_count",
+  "duration",
+  "publish_at",
+];
+
 /**
  * VIDEO CRUD
  */
 // POST /api/videos
 // Headers: Authorization
-// Content-Type: multipart/form-data
-// Body: { title, description?, video_file, thumbnail?, tags[], is_private?, publish_at? }
+// Body: { title, description?, tags[] }
 // Response: { video, upload_url? }
+export const createVideoService = async (user, title, description, tags) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const video = await channel.createVideo({
+    title,
+    description,
+    url: "https://www.youtube.com", // temporary url
+  });
+
+  // await video.createTags(tags); // need to implement
+
+  const videoUploadUrl = `https://localhost:3000/upload/video/${video.id}`;
+  const thumbnailUploadUrl = `https://localhost:3000/upload/image/${video.id}?type=thumbnail`;
+
+  return {
+    video,
+    videoUploadUrl,
+    thumbnailUploadUrl,
+  };
+};
 
 // GET /api/videos/:videoId
 // Query: ?include_comments=true&comments_page=1&comments_limit=10
@@ -13,7 +64,7 @@
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
-// Body: { title?, description?, thumbnail?, is_private?, tags[] }
+// Body: { title?, description?, is_private?, tags[] }
 // Response: { video }
 
 // DELETE /api/videos/:videoId

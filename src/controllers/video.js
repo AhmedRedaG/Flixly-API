@@ -1,11 +1,23 @@
+import * as videoServer from "../services/video.js";
+
 /**
  * VIDEO CRUD
  */
 // POST /api/videos
 // Headers: Authorization
-// Content-Type: multipart/form-data
-// Body: { title, description?, video_file, thumbnail?, tags[], is_private?, publish_at? }
+// Body: { title, description?, tags[] }
 // Response: { video, upload_url? }
+export const createVideo = async (req, res) => {
+  const user = req.user;
+  const { title, description, tags } = req.body;
+  const data = await videoServer.createVideoService(
+    user,
+    title,
+    description,
+    tags
+  );
+  res.jsend.success(data, 201);
+};
 
 // GET /api/videos/:videoId
 // Query: ?include_comments=true&comments_page=1&comments_limit=10

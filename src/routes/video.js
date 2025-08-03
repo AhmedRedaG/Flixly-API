@@ -1,11 +1,18 @@
+import { Router } from "express";
+
+import { isAuth } from "../middlewares/isAuth.js";
+import * as videoController from "../controllers/video.js";
+
+const router = Router();
+
 /**
  * VIDEO CRUD
  */
 // POST /api/videos
 // Headers: Authorization
-// Content-Type: multipart/form-data
-// Body: { title, description?, video_file, thumbnail?, tags[], is_private?, publish_at? }
+// Body: { title, description?, tags[] }
 // Response: { video, upload_url? }
+router.post("/me", isAuth, videoController.createVideo);
 
 // GET /api/videos/:videoId
 // Query: ?include_comments=true&comments_page=1&comments_limit=10
@@ -78,3 +85,5 @@
 // Headers: Authorization
 // Body: { content, parent_comment_id? }
 // Response: { comment }
+
+export default router;
