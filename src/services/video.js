@@ -60,7 +60,7 @@ export const createVideoService = async (user, title, description, tags) => {
 
 // GET /api/videos/:videoId
 // Response: { video with channel, tags, comments?, view_count }
-export const getVideoService = async (videoId) => {
+export const getPublicVideoService = async (videoId) => {
   const video = await Video.findOne({
     where: { id: videoId, is_published: true, is_private: false },
     include: [
@@ -97,7 +97,7 @@ export const getVideoService = async (videoId) => {
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
 // Response: { comment }
-export const getVideoCommentsService = async (
+export const getPublicVideoCommentsService = async (
   videoId,
   inPage,
   inLimit,
@@ -136,6 +136,10 @@ export const getVideoCommentsService = async (
     pagination,
   };
 };
+
+// GET /api/videos/:videoId
+// Authorization: Bearer token
+// Response: { video with channel, tags, comments?, view_count }
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)

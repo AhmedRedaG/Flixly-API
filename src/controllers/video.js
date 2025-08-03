@@ -21,19 +21,19 @@ export const createVideo = async (req, res) => {
 
 // GET /api/videos/:videoId
 // Response: { video with channel, tags, comments?, view_count }
-export const getVideo = async (req, res) => {
+export const getPublicVideo = async (req, res) => {
   const { videoId } = req.params;
-  const data = await videoServer.getVideoService(videoId);
+  const data = await videoServer.getPublicVideoService(videoId);
   res.jsend.success(data);
 };
 
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
 // Response: { comment }
-export const getVideoComments = async (req, res) => {
+export const getPublicVideoComments = async (req, res) => {
   const { videoId } = req.params;
   const { page, limit, sort, parent_id } = req.query;
-  const data = await videoServer.getVideoCommentsService(
+  const data = await videoServer.getPublicVideoCommentsService(
     videoId,
     page,
     limit,
@@ -42,8 +42,6 @@ export const getVideoComments = async (req, res) => {
   );
   res.jsend.success(data);
 };
-
-
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
