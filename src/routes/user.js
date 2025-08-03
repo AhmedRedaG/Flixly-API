@@ -61,6 +61,7 @@ router.get(
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
+router.get("/me/views", isAuth, userController.getUserViews);
 
 // GET /api/users/me/likes
 // Headers: Authorization

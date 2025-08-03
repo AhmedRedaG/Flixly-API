@@ -93,6 +93,12 @@ export const getUserSubscriptionsFeed = async (req, res) => {
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
+export const getUserViews = async (req, res) => {
+  const user = req.user;
+  const { page, limit } = req.query;
+  const data = await userServer.getUserViewsService(user, page, limit);
+  res.jsend.success(data);
+};
 
 // GET /api/users/me/likes
 // Headers: Authorization
