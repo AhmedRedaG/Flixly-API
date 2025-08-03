@@ -100,6 +100,17 @@ export const publishVideo = async (req, res) => {
 // GET /api/videos
 // Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
 // Response: { videos[], pagination, filters }
+export const getMainPublicVideos = async (req, res) => {
+  const { page, limit, sort, category, search } = req.query;
+  const data = await videoServer.getMainPublicVideosService(
+    page,
+    limit,
+    sort,
+    category,
+    search
+  );
+  res.jsend.success(data);
+};
 
 // GET /api/videos/trending
 // Query: ?page=1&limit=20&timeframe=day|week|month
@@ -109,6 +120,7 @@ export const publishVideo = async (req, res) => {
 // Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
 // Response: { videos[], pagination, suggestions[] }
 
+// not now
 // GET /api/videos/recommended
 // Headers: Authorization (optional)
 // Query: ?page=1&limit=20

@@ -1,3 +1,5 @@
+import { Op } from "sequelize";
+
 import AppError from "../utilities/appError.js";
 import { db } from "../../database/models/index.js";
 
@@ -235,8 +237,69 @@ export const publishVideoService = async (user, videoId, publish_at) => {
  * VIDEO DISCOVERY & SEARCH
  */
 // GET /api/videos
-// Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
+// Query: ?page=1&limit=20&sort=newest|popular&tags=?&search=?
 // Response: { videos[], pagination, filters }
+export const getMainPublicVideosService = async (
+  inPage,
+  inLimit,
+  sort,
+  tags,
+  search
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest"
+      ? [["created_at", "DESC"]]
+      : sort === "oldest"
+      ? [["created_at", "ASC"]]
+      : [["views_count", "DESC"]];
+
+  let where;
+  if (search) {
+    where = {
+      [Op.and]: [{ is_published: true }, { is_private: false }],
+      [Op.or]: [
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
+      ],
+    };
+  } else {
+    where = {
+      is_published: true,
+      is_private: false,
+    };
+  }
+  // if (tags) where.tags = tags;
+  if (search) where.title = { [Op.like]: `%${search}%` };
+
+  const videos = await Video.findAll({
+    attributes: ["id", "title", "thumbnail", "views_count"],
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: ["username", "name", "avatar"],
+    },
+    where,
+    order,
+    limit,
+    offset,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
 
 // GET /api/videos/trending
 // Query: ?page=1&limit=20&timeframe=day|week|month
@@ -246,6 +309,7 @@ export const publishVideoService = async (user, videoId, publish_at) => {
 // Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
 // Response: { videos[], pagination, suggestions[] }
 
+// not now
 // GET /api/videos/recommended
 // Headers: Authorization (optional)
 // Query: ?page=1&limit=20

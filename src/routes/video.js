@@ -51,6 +51,7 @@ router.patch("/me/:videoId/publish", isAuth, videoController.publishVideo);
 // GET /api/videos
 // Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
 // Response: { videos[], pagination, filters }
+router.get("/", videoController.getMainPublicVideos);
 
 // GET /api/videos/trending
 // Query: ?page=1&limit=20&timeframe=day|week|month
@@ -60,6 +61,7 @@ router.patch("/me/:videoId/publish", isAuth, videoController.publishVideo);
 // Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
 // Response: { videos[], pagination, suggestions[] }
 
+// not now
 // GET /api/videos/recommended
 // Headers: Authorization (optional)
 // Query: ?page=1&limit=20
