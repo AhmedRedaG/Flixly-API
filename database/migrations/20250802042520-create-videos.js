@@ -26,7 +26,6 @@ export default {
       },
       url: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       thumbnail: {
         type: Sequelize.STRING,

@@ -65,7 +65,6 @@ export default (sequelize, DataTypes) => {
       },
       url: {
         type: DataTypes.STRING,
-        allowNull: false,
       },
       thumbnail: {
         type: DataTypes.STRING,
