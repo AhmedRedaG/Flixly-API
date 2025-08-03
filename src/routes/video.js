@@ -18,6 +18,11 @@ router.post("/me", isAuth, videoController.createVideo);
 // Response: { video with channel, tags, comments?, view_count }
 router.get("/:videoId", videoController.getVideo);
 
+// GET /api/videos/:videoId/comments
+// Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
+// Response: { comment }
+router.get("/:videoId/comments", videoController.getVideoComments);
+
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Body: { title?, description?, thumbnail?, is_private?, tags[] }

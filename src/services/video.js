@@ -94,6 +94,49 @@ export const getVideoService = async (videoId) => {
   return video;
 };
 
+// GET /api/videos/:videoId/comments
+// Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
+// Response: { comment }
+export const getVideoCommentsService = async (
+  videoId,
+  inPage,
+  inLimit,
+  sort,
+  parent_id
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
+  const comments = await VideoComment.findAll({
+    where: { video_id: videoId, parent_comment_id: parent_id || null },
+    include: {
+      model: User,
+      as: "user",
+      attributes: ["username", "firstName", "lastName", "avatar"],
+    },
+    order,
+    limit,
+    offset,
+    raw: true,
+  });
+  const total = comments?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    comments,
+    pagination,
+  };
+};
+
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Body: { title?, description?, is_private?, tags[] }
