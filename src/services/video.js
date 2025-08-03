@@ -59,8 +59,40 @@ export const createVideoService = async (user, title, description, tags) => {
 };
 
 // GET /api/videos/:videoId
-// Query: ?include_comments=true&comments_page=1&comments_limit=10
 // Response: { video with channel, tags, comments?, view_count }
+export const getVideoService = async (videoId) => {
+  const video = await Video.findOne({
+    where: { id: videoId, is_published: true, is_private: false },
+    include: [
+      {
+        model: Channel,
+        as: "channel",
+        attributes: ["username", "name", "avatar"],
+      },
+      // {
+      //   model: Tag,
+      //   as: "tags",
+      //   attributes: ["name"],
+      // },
+      {
+        model: VideoComment,
+        as: "comments",
+        include: {
+          model: User,
+          as: "user",
+          attributes: ["username", "firstName", "lastName", "avatar"],
+        },
+        attributes: ["id", "content", "created_at"],
+        limit: 10,
+        raw: true,
+      },
+    ],
+    attributes: publicVideoFields,
+  });
+  if (!video) throw new AppError("Video not found", 404);
+
+  return video;
+};
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)

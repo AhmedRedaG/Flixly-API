@@ -15,8 +15,8 @@ const router = Router();
 router.post("/me", isAuth, videoController.createVideo);
 
 // GET /api/videos/:videoId
-// Query: ?include_comments=true&comments_page=1&comments_limit=10
 // Response: { video with channel, tags, comments?, view_count }
+router.get("/:videoId", videoController.getVideo);
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)

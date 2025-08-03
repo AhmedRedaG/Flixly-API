@@ -20,8 +20,12 @@ export const createVideo = async (req, res) => {
 };
 
 // GET /api/videos/:videoId
-// Query: ?include_comments=true&comments_page=1&comments_limit=10
 // Response: { video with channel, tags, comments?, view_count }
+export const getVideo = async (req, res) => {
+  const { videoId } = req.params;
+  const data = await videoServer.getVideoService(videoId);
+  res.jsend.success(data);
+};
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
