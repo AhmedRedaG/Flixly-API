@@ -140,6 +140,24 @@ export const getPublicVideoCommentsService = async (
 // GET /api/videos/:videoId
 // Authorization: Bearer token
 // Response: { video with channel, tags, comments?, view_count }
+export const getVideoService = async (user, videoId) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const video = await channel.getVideos({
+    where: { id: videoId },
+    // include: [
+    //   {
+    //     model: Tag,
+    //     as: "tags",
+    //     attributes: ["name"],
+    //   },
+    // ],
+  });
+  if (!video) throw new AppError("Video not found", 404);
+
+  return video;
+};
 
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)

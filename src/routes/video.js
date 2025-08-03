@@ -23,6 +23,11 @@ router.get("/:videoId", videoController.getPublicVideo);
 // Response: { comment }
 router.get("/:videoId/comments", videoController.getPublicVideoComments);
 
+// GET /api/videos/:videoId
+// Authorization: Bearer token
+// Response: { video with channel, tags, comments?, view_count }
+router.get("/me/:videoId", isAuth, videoController.getVideo);
+
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Body: { title?, description?, thumbnail?, is_private?, tags[] }

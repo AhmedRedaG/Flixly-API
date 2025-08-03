@@ -43,6 +43,16 @@ export const getPublicVideoComments = async (req, res) => {
   res.jsend.success(data);
 };
 
+// GET /api/videos/:videoId
+// Authorization: Bearer token
+// Response: { video with channel, tags, comments?, view_count }
+export const getVideo = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const data = await videoServer.getVideoService(user, videoId);
+  res.jsend.success(data);
+};
+
 // PUT /api/videos/:videoId
 // Headers: Authorization (video owner)
 // Body: { title?, description?, thumbnail?, is_private?, tags[] }
