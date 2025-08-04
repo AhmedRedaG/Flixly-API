@@ -1,6 +1,47 @@
 import * as videoServer from "../services/video.js";
 
 /**
+ * VIDEO DISCOVERY & SEARCH
+ */
+// GET /api/videos
+// Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
+// Response: { videos[], pagination, filters }
+export const getMainPublicVideos = async (req, res) => {
+  const { page, limit, sort, category, search } = req.query;
+  const data = await videoServer.getMainPublicVideosService(
+    page,
+    limit,
+    sort,
+    category,
+    search
+  );
+  res.jsend.success(data);
+};
+
+// GET /api/videos/trending
+// Query: ?page=1&limit=20&timeframe=day|week|month
+// Response: { videos[], pagination }
+export const getTrendingPublicVideos = async (req, res) => {
+  const { page, limit, timeframe } = req.query;
+  const data = await videoServer.getTrendingPublicVideosService(
+    page,
+    limit,
+    timeframe
+  );
+  res.jsend.success(data);
+};
+
+// GET /api/videos/search
+// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
+// Response: { videos[], pagination, suggestions[] }
+
+// not now
+// GET /api/videos/recommended
+// Headers: Authorization (optional)
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+/**
  * VIDEO CRUD
  */
 // POST /api/videos
@@ -93,38 +134,6 @@ export const publishVideo = async (req, res) => {
   const data = await videoServer.publishVideoService(user, videoId, publish_at);
   res.jsend.success(data);
 };
-
-/**
- * VIDEO DISCOVERY & SEARCH
- */
-// GET /api/videos
-// Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
-// Response: { videos[], pagination, filters }
-export const getMainPublicVideos = async (req, res) => {
-  const { page, limit, sort, category, search } = req.query;
-  const data = await videoServer.getMainPublicVideosService(
-    page,
-    limit,
-    sort,
-    category,
-    search
-  );
-  res.jsend.success(data);
-};
-
-// GET /api/videos/trending
-// Query: ?page=1&limit=20&timeframe=day|week|month
-// Response: { videos[], pagination }
-
-// GET /api/videos/search
-// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
-// Response: { videos[], pagination, suggestions[] }
-
-// not now
-// GET /api/videos/recommended
-// Headers: Authorization (optional)
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
 
 /**
  * VIDEO INTERACTIONS

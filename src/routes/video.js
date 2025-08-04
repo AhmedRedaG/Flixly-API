@@ -6,6 +6,29 @@ import * as videoController from "../controllers/video.js";
 const router = Router();
 
 /**
+ * VIDEO DISCOVERY & SEARCH
+ */
+// GET /api/videos
+// Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
+// Response: { videos[], pagination, filters }
+router.get("/", videoController.getMainPublicVideos);
+
+// GET /api/videos/trending
+// Query: ?page=1&limit=20&timeframe=day|week|month
+// Response: { videos[], pagination }
+router.get("/trending", videoController.getTrendingPublicVideos);
+
+// GET /api/videos/search
+// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
+// Response: { videos[], pagination, suggestions[] }
+
+// not now
+// GET /api/videos/recommended
+// Headers: Authorization (optional)
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
+
+/**
  * VIDEO CRUD
  */
 // POST /api/videos
@@ -44,28 +67,6 @@ router.delete("/me/:videoId", isAuth, videoController.deleteVideo);
 // Body: { publish_at? } // null = publish now
 // Response: { video }
 router.patch("/me/:videoId/publish", isAuth, videoController.publishVideo);
-
-/**
- * VIDEO DISCOVERY & SEARCH
- */
-// GET /api/videos
-// Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
-// Response: { videos[], pagination, filters }
-router.get("/", videoController.getMainPublicVideos);
-
-// GET /api/videos/trending
-// Query: ?page=1&limit=20&timeframe=day|week|month
-// Response: { videos[], pagination }
-
-// GET /api/videos/search
-// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
-// Response: { videos[], pagination, suggestions[] }
-
-// not now
-// GET /api/videos/recommended
-// Headers: Authorization (optional)
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
 
 /**
  * VIDEO INTERACTIONS

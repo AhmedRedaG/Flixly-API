@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 
 import AppError from "../utilities/appError.js";
 import { db } from "../../database/models/index.js";
@@ -30,6 +30,184 @@ const publicVideoFields = [
   "duration",
   "publish_at",
 ];
+
+/**
+ * VIDEO DISCOVERY & SEARCH
+ */
+// GET /api/videos
+// Query: ?page=1&limit=20&sort=newest|popular&tags=?&search=?
+// Response: { videos[], pagination, filters }
+export const getMainPublicVideosService = async (
+  inPage,
+  inLimit,
+  sort,
+  tags,
+  search
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest"
+      ? [["created_at", "DESC"]]
+      : sort === "oldest"
+      ? [["created_at", "ASC"]]
+      : [["views_count", "DESC"]];
+
+  let where;
+  if (search) {
+    where = {
+      [Op.and]: [{ is_published: true }, { is_private: false }],
+      [Op.or]: [
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
+      ],
+    };
+  } else {
+    where = {
+      is_published: true,
+      is_private: false,
+    };
+  }
+  // if (tags) where.tags = tags;
+  if (search) where.title = { [Op.like]: `%${search}%` };
+
+  const videos = await Video.findAll({
+    attributes: ["id", "title", "thumbnail", "views_count"],
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: ["username", "name", "avatar"],
+    },
+    where,
+    order,
+    limit,
+    offset,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
+
+// ================ not working yet ================
+// GET /api/videos/trending
+// Query: ?page=1&limit=20&timeframe=day|week|month
+// Response: { videos[], pagination }
+export const getTrendingPublicVideosService = async (
+  inPage,
+  inLimit,
+  timeframe
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+
+  const X_HOURS =
+    timeframe === "day"
+      ? 24
+      : timeframe === "week"
+      ? 24 * 7
+      : timeframe === "month"
+      ? 24 * 30
+      : 24;
+
+  /* 
+  Formula that i use is:
+  Trending Score = 
+  (Views in last X hours) / (Age of video in hours)
+  + Engagement Factor (likes*2 + dislikes*0.5 + comments*1.5)
+  */
+  const videos = await Video.findAll({
+    attributes: {
+      include: [
+        // Recent Views in X Hours
+        [
+          Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM video_views AS vv
+              WHERE vv.video_id = "Video".id 
+              AND vv.created_at >= NOW() - INTERVAL ? HOUR
+          )`),
+          "recent_views",
+        ],
+        // Video Age in Hours
+        [
+          Sequelize.literal(
+            `GREATEST(EXTRACT(EPOCH FROM (NOW() - "Video"."created_at")) / 3600, 0.1)`
+          ),
+          "video_age_hours",
+        ],
+        // Calculate trending score
+        [
+          Sequelize.literal(`(
+              (
+                SELECT COUNT(*)
+                FROM video_views AS vv
+                WHERE vv.video_id = "Video".id 
+                AND vv.created_at >= NOW() - INTERVAL ? HOUR
+              ) / GREATEST(EXTRACT(EPOCH FROM (NOW() - "Video"."created_at")) / 3600, 0.1)
+            ) + ("Video"."likes_count" * 2)
+              + ("Video"."dislikes_count" * 0.5)
+              + ("Video"."comments_count" * 1.5)
+          `),
+          "trending_score",
+        ],
+      ],
+    },
+    include: [
+      {
+        model: Channel,
+        as: "channel",
+        attributes: ["username", "name", "avatar"],
+      },
+    ],
+    where: {
+      is_published: true,
+      is_private: false,
+      // Only videos from last month
+      created_at: {
+        [Sequelize.Op.gte]: Sequelize.literal(`NOW() - INTERVAL '30 DAY'`),
+      },
+    },
+    order: [["trending_score", "DESC"]],
+    limit,
+    offset,
+    bind: [X_HOURS, X_HOURS],
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
+
+// GET /api/videos/search
+// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
+// Response: { videos[], pagination, suggestions[] }
+
+// not now
+// GET /api/videos/recommended
+// Headers: Authorization (optional)
+// Query: ?page=1&limit=20
+// Response: { videos[], pagination }
 
 /**
  * VIDEO CRUD
@@ -232,88 +410,6 @@ export const publishVideoService = async (user, videoId, publish_at) => {
 
   return video;
 };
-
-/**
- * VIDEO DISCOVERY & SEARCH
- */
-// GET /api/videos
-// Query: ?page=1&limit=20&sort=newest|popular&tags=?&search=?
-// Response: { videos[], pagination, filters }
-export const getMainPublicVideosService = async (
-  inPage,
-  inLimit,
-  sort,
-  tags,
-  search
-) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
-  const order =
-    sort === "newest"
-      ? [["created_at", "DESC"]]
-      : sort === "oldest"
-      ? [["created_at", "ASC"]]
-      : [["views_count", "DESC"]];
-
-  let where;
-  if (search) {
-    where = {
-      [Op.and]: [{ is_published: true }, { is_private: false }],
-      [Op.or]: [
-        { title: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } },
-      ],
-    };
-  } else {
-    where = {
-      is_published: true,
-      is_private: false,
-    };
-  }
-  // if (tags) where.tags = tags;
-  if (search) where.title = { [Op.like]: `%${search}%` };
-
-  const videos = await Video.findAll({
-    attributes: ["id", "title", "thumbnail", "views_count"],
-    include: {
-      model: Channel,
-      as: "channel",
-      attributes: ["username", "name", "avatar"],
-    },
-    where,
-    order,
-    limit,
-    offset,
-  });
-  const total = videos?.length || 0;
-
-  const pagination = {
-    page,
-    limit,
-    total,
-    pages: Math.ceil(total / limit),
-  };
-
-  return {
-    videos,
-    pagination,
-  };
-};
-
-// GET /api/videos/trending
-// Query: ?page=1&limit=20&timeframe=day|week|month
-// Response: { videos[], pagination }
-
-// GET /api/videos/search
-// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
-// Response: { videos[], pagination, suggestions[] }
-
-// not now
-// GET /api/videos/recommended
-// Headers: Authorization (optional)
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
 
 /**
  * VIDEO INTERACTIONS
