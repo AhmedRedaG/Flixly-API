@@ -73,9 +73,10 @@ router.patch("/me/:videoId/publish", isAuth, videoController.publishVideo);
  * VIDEO INTERACTIONS
  */
 // POST /api/videos/:videoId/view
-// Headers: Authorization (optional)
+// Headers: Authorization
 // Body: { watch_time } // seconds watched
 // Response: { message: "View recorded" }
+router.post("/:videoId/view", isAuth, videoController.recordVideoView);
 
 // POST /api/videos/:videoId/like
 // Headers: Authorization

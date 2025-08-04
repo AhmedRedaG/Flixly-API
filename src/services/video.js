@@ -455,9 +455,22 @@ export const publishVideoService = async (user, videoId, publish_at) => {
  * VIDEO INTERACTIONS
  */
 // POST /api/videos/:videoId/view
-// Headers: Authorization (optional)
+// Headers: Authorization
 // Body: { watch_time } // seconds watched
 // Response: { message: "View recorded" }
+export const recordVideoViewService = async (user, videoId, watchTime) => {
+  const [view, created] = await VideoView.findOrCreate({
+    where: { user_id: user.id, video_id: videoId },
+    defaults: { watch_time: watchTime },
+  });
+  if (!created && watchTime > view.watch_time)
+    await view.update({ watch_time: watchTime });
+
+  return {
+    watched_at: view.watched_at,
+    watch_time: view.watch_time,
+  };
+};
 
 // POST /api/videos/:videoId/like
 // Headers: Authorization

@@ -10,7 +10,7 @@ export const dbConfig = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "postgres",
-    logging: console.log,
+    logging: false,
   },
   test: {
     username: process.env.DB_USER,

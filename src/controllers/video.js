@@ -152,6 +152,17 @@ export const publishVideo = async (req, res) => {
 // Headers: Authorization (optional)
 // Body: { watch_time } // seconds watched
 // Response: { message: "View recorded" }
+export const recordVideoView = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const { watchTime } = req.body;
+  const data = await videoServer.recordVideoViewService(
+    user,
+    videoId,
+    watchTime
+  );
+  res.jsend.success(data);
+};
 
 // POST /api/videos/:videoId/like
 // Headers: Authorization
