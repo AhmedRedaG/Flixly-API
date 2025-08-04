@@ -9,6 +9,7 @@ export default {
       },
       user_id: {
         type: Sequelize.UUID,
+        allowNull: false,
         references: {
           model: "users",
           key: "id",

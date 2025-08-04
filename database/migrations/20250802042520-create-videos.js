@@ -50,16 +50,12 @@ export default {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },
-      trending_score: {
-        type: Sequelize.FLOAT,
-        defaultValue: 0,
-      },
       processing_status: {
         type: Sequelize.ENUM("pending", "processing", "completed", "failed"),
         defaultValue: "pending",
       },
-      processing_error: {
-        type: Sequelize.TEXT,
+      processing_message: {
+        type: Sequelize.STRING,
       },
       duration: {
         type: Sequelize.INTEGER,

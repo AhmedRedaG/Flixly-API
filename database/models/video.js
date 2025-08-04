@@ -89,16 +89,12 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         defaultValue: 0,
       },
-      trending_score: {
-        type: DataTypes.FLOAT,
-        defaultValue: 0,
-      },
       processing_status: {
         type: DataTypes.ENUM("pending", "processing", "completed", "failed"),
         defaultValue: "pending",
       },
-      processing_error: {
-        type: DataTypes.TEXT,
+      processing_message: {
+        type: DataTypes.STRING,
       },
       duration: {
         type: DataTypes.INTEGER,

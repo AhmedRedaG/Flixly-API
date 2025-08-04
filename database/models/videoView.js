@@ -24,6 +24,7 @@ export default (sequelize, DataTypes) => {
       },
       user_id: {
         type: DataTypes.UUID,
+        allowNull: false,
       },
       video_id: {
         type: DataTypes.UUID,
