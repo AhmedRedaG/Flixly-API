@@ -12,8 +12,7 @@ export const getMainPublicVideos = async (req, res) => {
     page,
     limit,
     sort,
-    category,
-    search
+    tags
   );
   res.jsend.success(data);
 };

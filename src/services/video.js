@@ -41,8 +41,7 @@ export const getMainPublicVideosService = async (
   inPage,
   inLimit,
   sort,
-  tags,
-  search
+  tags
 ) => {
   const limit = inLimit || 20;
   const page = inPage || 1;
@@ -53,24 +52,7 @@ export const getMainPublicVideosService = async (
       : sort === "oldest"
       ? [["created_at", "ASC"]]
       : [["views_count", "DESC"]];
-
-  let where;
-  if (search) {
-    where = {
-      [Op.and]: [{ is_published: true }, { is_private: false }],
-      [Op.or]: [
-        { title: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } },
-      ],
-    };
-  } else {
-    where = {
-      is_published: true,
-      is_private: false,
-    };
-  }
   // if (tags) where.tags = tags;
-  if (search) where.title = { [Op.like]: `%${search}%` };
 
   const videos = await Video.findAll({
     attributes: ["id", "title", "thumbnail", "views_count"],
@@ -79,7 +61,6 @@ export const getMainPublicVideosService = async (
       as: "channel",
       attributes: ["username", "name", "avatar"],
     },
-    where,
     order,
     limit,
     offset,
@@ -221,29 +202,19 @@ export const searchPublicVideosService = async (
       ? [["views_count", "DESC"]]
       : []; // relevance
 
-  // need fix with description search
-  let where;
-  if (search) {
-    where = {
-      [Op.and]: [
-        { is_published: true },
-        { is_private: false },
-        {
-          [Op.or]: [
-            { title: { [Op.iLike]: `%${search}%` } },
-            { description: { [Op.iLike]: `%${search}%` } },
-          ],
-        },
-      ],
-    };
-  } else {
-    where = {
-      is_published: true,
-      is_private: false,
-    };
-  }
+  where = {
+    [Op.and]: [
+      { is_published: true },
+      { is_private: false },
+      {
+        [Op.or]: [
+          { title: { [Op.iLike]: `%${search}%` } },
+          { description: { [Op.iLike]: `%${search}%` } },
+        ],
+      },
+    ],
+  };
   // if (tags) where.tags = tags;
-  if (search) where.title = { [Op.like]: `%${search}%` };
 
   const videos = await Video.findAll({
     attributes: ["id", "title", "description", "thumbnail", "views_count"],
