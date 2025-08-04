@@ -21,6 +21,7 @@ router.get("/trending", videoController.getTrendingPublicVideos);
 // GET /api/videos/search
 // Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
 // Response: { videos[], pagination, suggestions[] }
+router.get("/search", videoController.searchPublicVideos);
 
 // not now
 // GET /api/videos/recommended

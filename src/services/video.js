@@ -200,8 +200,77 @@ export const getTrendingPublicVideosService = async (
 };
 
 // GET /api/videos/search
-// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
-// Response: { videos[], pagination, suggestions[] }
+// Query: ?q=search_term&page=1&limit=20&sort=relevance|newest|oldest/popular
+// Response: { videos[], pagination }
+export const searchPublicVideosService = async (
+  search,
+  inPage,
+  inLimit,
+  sort,
+  tags
+) => {
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest"
+      ? [["created_at", "DESC"]]
+      : sort === "oldest"
+      ? [["created_at", "ASC"]]
+      : sort === "popular"
+      ? [["views_count", "DESC"]]
+      : []; // relevance
+
+  // need fix with description search
+  let where;
+  if (search) {
+    where = {
+      [Op.and]: [
+        { is_published: true },
+        { is_private: false },
+        {
+          [Op.or]: [
+            { title: { [Op.iLike]: `%${search}%` } },
+            { description: { [Op.iLike]: `%${search}%` } },
+          ],
+        },
+      ],
+    };
+  } else {
+    where = {
+      is_published: true,
+      is_private: false,
+    };
+  }
+  // if (tags) where.tags = tags;
+  if (search) where.title = { [Op.like]: `%${search}%` };
+
+  const videos = await Video.findAll({
+    attributes: ["id", "title", "description", "thumbnail", "views_count"],
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: ["username", "name", "avatar"],
+    },
+    where,
+    order,
+    limit,
+    offset,
+  });
+  const total = videos?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    videos,
+    pagination,
+  };
+};
 
 // not now
 // GET /api/videos/recommended

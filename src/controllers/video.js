@@ -34,6 +34,17 @@ export const getTrendingPublicVideos = async (req, res) => {
 // GET /api/videos/search
 // Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
 // Response: { videos[], pagination, suggestions[] }
+export const searchPublicVideos = async (req, res) => {
+  const { search, page, limit, sort, tags } = req.query;
+  const data = await videoServer.searchPublicVideosService(
+    search,
+    page,
+    limit,
+    sort,
+    tags
+  );
+  res.jsend.success(data);
+};
 
 // not now
 // GET /api/videos/recommended
