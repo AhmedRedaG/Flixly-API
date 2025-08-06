@@ -479,10 +479,53 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
 // POST /api/videos/:videoId/like
 // Headers: Authorization
 // Response: { is_liked: true, likes_count, dislikes_count }
+export const likeVideoService = async (user, videoId) => {
+  const video = await Video.findByPk(videoId);
+  const [reaction, created] = await VideoReaction.findOrCreate({
+    where: { user_id: user.id, video_id: videoId },
+    defaults: { is_like: true },
+  });
+  if (!created && reaction.is_like) throw new AppError("Already liked", 409);
+  if (!created && !reaction.is_like) {
+    await reaction.update({ is_like: true });
+    video.dislikes_count--;
+  }
+
+  video.likes_count++;
+  await video.save();
+
+  return {
+    is_liked: true,
+    likes_count: video.likes_count,
+    dislikes_count: video.dislikes_count,
+  };
+};
 
 // POST /api/videos/:videoId/dislike
 // Headers: Authorization
 // Response: { is_liked: false, likes_count, dislikes_count }
+export const dislikeVideoService = async (user, videoId) => {
+  const video = await Video.findByPk(videoId);
+  const [reaction, created] = await VideoReaction.findOrCreate({
+    where: { user_id: user.id, video_id: videoId },
+    defaults: { is_like: false },
+  });
+  if (!created && !reaction.is_like)
+    throw new AppError("Already disliked", 409);
+  if (!created && reaction.is_like) {
+    await reaction.update({ is_like: false });
+    video.likes_count--;
+  }
+
+  video.dislikes_count++;
+  await video.save();
+
+  return {
+    is_liked: false,
+    likes_count: video.likes_count,
+    dislikes_count: video.dislikes_count,
+  };
+};
 
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization

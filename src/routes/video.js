@@ -81,10 +81,12 @@ router.post("/:videoId/view", isAuth, videoController.recordVideoView);
 // POST /api/videos/:videoId/like
 // Headers: Authorization
 // Response: { is_liked: true, likes_count, dislikes_count }
+router.post("/:videoId/like", isAuth, videoController.likeVideo);
 
 // POST /api/videos/:videoId/dislike
 // Headers: Authorization
 // Response: { is_liked: false, likes_count, dislikes_count }
+router.post("/:videoId/dislike", isAuth, videoController.dislikeVideo);
 
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization

@@ -167,10 +167,22 @@ export const recordVideoView = async (req, res) => {
 // POST /api/videos/:videoId/like
 // Headers: Authorization
 // Response: { is_liked: true, likes_count, dislikes_count }
+export const likeVideo = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const data = await videoServer.likeVideoService(user, videoId);
+  res.jsend.success(data);
+};
 
 // POST /api/videos/:videoId/dislike
 // Headers: Authorization
 // Response: { is_liked: false, likes_count, dislikes_count }
+export const dislikeVideo = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const data = await videoServer.dislikeVideoService(user, videoId);
+  res.jsend.success(data);
+};
 
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization
