@@ -106,6 +106,7 @@ router.get("/:videoId/reactions", isAuth, videoController.getVideoReactions);
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
 // Response: { comments[], pagination }
+router.get("/:videoId/comments", videoController.getVideoComments);
 
 // POST /api/videos/:videoId/comments
 // Headers: Authorization

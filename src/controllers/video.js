@@ -216,6 +216,18 @@ export const getVideoReactions = async (req, res) => {
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
 // Response: { comments[], pagination }
+export const getVideoComments = async (req, res) => {
+  const { videoId } = req.params;
+  const { page, limit, sort, parent_id } = req.query;
+  const data = await videoServer.getVideoCommentsService(
+    videoId,
+    page,
+    limit,
+    sort,
+    parent_id
+  );
+  res.jsend.success(data);
+};
 
 // POST /api/videos/:videoId/comments
 // Headers: Authorization
