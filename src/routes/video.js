@@ -91,6 +91,7 @@ router.post("/:videoId/dislike", isAuth, videoController.dislikeVideo);
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization
 // Response: { likes_count, dislikes_count }
+router.delete("/:videoId/reaction", isAuth, videoController.removeVideoReaction);
 
 // GET /api/videos/:videoId/reactions
 // Headers: Authorization (video owner only)

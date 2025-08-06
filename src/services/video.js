@@ -530,6 +530,25 @@ export const dislikeVideoService = async (user, videoId) => {
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization
 // Response: { likes_count, dislikes_count }
+export const removeVideoReactionService = async (user, videoId) => {
+  const video = await Video.findByPk(videoId);
+  const reaction = await video.getVideoReaction({
+    where: { user_id: user.id },
+  });
+  if (!reaction) throw new AppError("No reaction found", 404);
+
+  if (reaction.is_like) video.likes_count--;
+  else video.dislikes_count--;
+
+  await video.save();
+  await reaction.destroy();
+
+  return {
+    is_liked: null,
+    likes_count: video.likes_count,
+    dislikes_count: video.dislikes_count,
+  };
+};
 
 // GET /api/videos/:videoId/reactions
 // Headers: Authorization (video owner only)

@@ -187,6 +187,12 @@ export const dislikeVideo = async (req, res) => {
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization
 // Response: { likes_count, dislikes_count }
+export const removeVideoReaction = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const data = await videoServer.removeVideoReactionService(user, videoId);
+  res.jsend.success(data);
+};
 
 // GET /api/videos/:videoId/reactions
 // Headers: Authorization (video owner only)
