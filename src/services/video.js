@@ -466,9 +466,13 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
   if (!created && watchTime > view.watch_time)
     await view.update({ watch_time: watchTime });
 
+  const video = await Video.findByPk(videoId);
+  await video.increment("views_count");
+
   return {
-    watched_at: view.watched_at,
-    watch_time: view.watch_time,
+    watchedAt: view.watched_at,
+    watchTime: view.watch_time,
+    viewsCount: video.views_count,
   };
 };
 
