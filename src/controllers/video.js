@@ -198,6 +198,20 @@ export const removeVideoReaction = async (req, res) => {
 // Headers: Authorization (video owner only)
 // Query: ?page=1&limit=20&type=like|dislike
 // Response: { reactions[], pagination }
+export const getVideoReactions = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const { page, limit, sort, type } = req.query;
+  const data = await videoServer.getVideoReactionsService(
+    user,
+    videoId,
+    page,
+    limit,
+    sort,
+    type
+  );
+  res.jsend.success(data);
+};
 
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?

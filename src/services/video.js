@@ -327,8 +327,6 @@ export const getPublicVideoCommentsService = async (
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
-  const order =
-    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
   const comments = await VideoComment.findAll({
     where: { video_id: videoId, parent_comment_id: parent_id || null },
@@ -554,9 +552,55 @@ export const removeVideoReactionService = async (user, videoId) => {
 // Headers: Authorization (video owner only)
 // Query: ?page=1&limit=20&type=like|dislike
 // Response: { reactions[], pagination }
+export const getVideoReactionsService = async (
+  user,
+  videoId,
+  inPage,
+  inLimit,
+  sort,
+  type
+) => {
+  const video = await Video.findByPk(videoId);
+  const channel = await user.getChannel();
+  if (video.channel_id !== channel.id)
+    throw new AppError("Unauthorized to view reactions", 401);
+
+  const limit = inLimit || 20;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
+  const where = type ? { is_like: type === "like" } : {};
+
+  const reactions = await video.getVideoReactions({
+    where,
+    include: {
+      model: User,
+      as: "user",
+      attributes: ["username", "firstName", "lastName", "avatar"],
+    },
+    order,
+    limit,
+    offset,
+  });
+  const total = reactions?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    reactions,
+    pagination,
+  };
+};
 
 // GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
+// Query: ?page=1&limit=20&sort=newest|oldest&parent_id=?
 // Response: { comments[], pagination }
 
 // POST /api/videos/:videoId/comments

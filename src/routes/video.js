@@ -91,12 +91,17 @@ router.post("/:videoId/dislike", isAuth, videoController.dislikeVideo);
 // DELETE /api/videos/:videoId/reaction
 // Headers: Authorization
 // Response: { likes_count, dislikes_count }
-router.delete("/:videoId/reaction", isAuth, videoController.removeVideoReaction);
+router.delete(
+  "/:videoId/reaction",
+  isAuth,
+  videoController.removeVideoReaction
+);
 
 // GET /api/videos/:videoId/reactions
 // Headers: Authorization (video owner only)
 // Query: ?page=1&limit=20&type=like|dislike
 // Response: { reactions[], pagination }
+router.get("/:videoId/reactions", isAuth, videoController.getVideoReactions);
 
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
