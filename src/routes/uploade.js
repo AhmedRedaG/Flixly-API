@@ -30,8 +30,9 @@ router.post(
   uploadController.uploadImage
 );
 
-// GET /api/upload/status/:processingId
+// GET /api/upload/status/:videoId
 // Headers: Authorization
 // Response: { status, progress?, error?, video_url? }
+router.get("/status/:videoId", isAuth, uploadController.getUploadStatus);
 
 export default router;

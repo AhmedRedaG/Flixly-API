@@ -90,3 +90,18 @@ export const uploadImageService = async (user, processId, file, type) => {
 // GET /api/upload/status/:videoId
 // Headers: Authorization
 // Response: { status, progress?, error?, video_url? }
+export const getUploadStatusService = async (user, videoId) => {
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
+
+  const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
+  if (!video) throw new AppError("Video not found", 404);
+
+  const videoStatus = {
+    status: video.processing_status,
+    progress: video.processing_message,
+    videoUrl: video.url,
+  };
+
+  return videoStatus;
+};

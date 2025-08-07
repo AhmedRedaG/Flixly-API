@@ -35,3 +35,9 @@ export const uploadImage = async (req, res) => {
 // GET /api/upload/status/:processingId
 // Headers: Authorization
 // Response: { status, progress?, error?, video_url? }
+export const getUploadStatus = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const data = await uploadServer.getUploadStatusService(user, videoId);
+  res.jsend.success(data);
+};
