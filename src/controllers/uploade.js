@@ -18,6 +18,19 @@ export const uploadVideo = async (req, res) => {
 // Content-Type: multipart/form-data
 // Body: { image_file, type: 'avatar'|'banner'|'thumbnail' }
 // Response: { image_url }
+export const uploadImage = async (req, res) => {
+  const user = req.user;
+  const { processId } = req.params;
+  const file = req.file;
+  const { type } = req.query;
+  const data = await uploadServer.uploadImageService(
+    user,
+    processId,
+    file,
+    type
+  );
+  res.jsend.success(data);
+};
 
 // GET /api/upload/status/:processingId
 // Headers: Authorization

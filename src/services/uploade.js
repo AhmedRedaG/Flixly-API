@@ -48,11 +48,44 @@ export const uploadVideoService = async (user, videoId, file) => {
   };
 };
 
-// POST /api/upload/image/:processId?type=avatar|banner|thumbnail
+// POST /api/upload/image/:processId?type=userAvatar|channelAvatar|channelBanner|thumbnail
 // Headers: Authorization
 // Content-Type: multipart/form-data
 // Body: { image_file, type: 'avatar'|'banner'|'thumbnail' }
 // Response: { image_url }
+export const uploadImageService = async (user, processId, file, type) => {
+  let result;
+  try {
+    result = await cloudinary.uploader.upload(file.path, {
+      resource_type: "image",
+    });
+  } catch (err) {
+    throw err;
+  }
+
+  if (type === "userAvatar") {
+    await user.update({
+      avatar: result.secure_url,
+    });
+  } else if (type === "channelAvatar") {
+    await user.getChannel().update({
+      avatar: result.secure_url,
+    });
+  } else if (type === "channelBanner") {
+    await user.getChannel().update({
+      banner: result.secure_url,
+    });
+  } else if (type === "thumbnail") {
+    await Video.update(
+      { thumbnail: result.secure_url },
+      { where: { id: processId } }
+    );
+  }
+
+  return {
+    imageUrl: result.secure_url,
+  };
+};
 
 // GET /api/upload/status/:videoId
 // Headers: Authorization

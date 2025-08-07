@@ -23,6 +23,12 @@ router.post(
 // Content-Type: multipart/form-data
 // Body: { image_file, type: 'avatar'|'banner'|'thumbnail' }
 // Response: { image_url }
+router.post(
+  "/image/:processId",
+  isAuth,
+  upload.single("image_file"),
+  uploadController.uploadImage
+);
 
 // GET /api/upload/status/:processingId
 // Headers: Authorization
