@@ -45,12 +45,6 @@ export const searchPublicVideos = async (req, res) => {
   res.jsend.success(data);
 };
 
-// not now
-// GET /api/videos/recommended
-// Headers: Authorization (optional)
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
-
 /**
  * VIDEO CRUD
  */

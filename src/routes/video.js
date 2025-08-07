@@ -23,12 +23,6 @@ router.get("/trending", videoController.getTrendingPublicVideos);
 // Response: { videos[], pagination, suggestions[] }
 router.get("/search", videoController.searchPublicVideos);
 
-// not now
-// GET /api/videos/recommended
-// Headers: Authorization (optional)
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
-
 /**
  * VIDEO CRUD
  */

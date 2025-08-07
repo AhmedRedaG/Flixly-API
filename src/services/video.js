@@ -243,12 +243,6 @@ export const searchPublicVideosService = async (
   };
 };
 
-// not now
-// GET /api/videos/recommended
-// Headers: Authorization (optional)
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
-
 /**
  * VIDEO CRUD
  */
