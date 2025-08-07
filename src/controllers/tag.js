@@ -12,6 +12,12 @@ export const getTags = async (req, res) => {
 // GET /api/tags/:tagId/videos
 // Query: ?page=1&limit=20&sort=newest|popular
 // Response: { videos[], pagination }
+export const getTagVideos = async (req, res) => {
+  const { tagId } = req.params;
+  const { page, limit, sort } = req.query;
+  const data = await tagServer.getTagVideosService(tagId, page, limit, sort);
+  res.jsend.success(data);
+};
 
 // POST /api/tags
 // Headers: Authorization (admin only)

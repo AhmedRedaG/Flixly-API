@@ -12,6 +12,7 @@ router.get("/", tagController.getTags);
 // GET /api/tags/:tagId/videos
 // Query: ?page=1&limit=20&sort=newest|popular
 // Response: { videos[], pagination }
+router.get("/:tagId/videos", tagController.getTagVideos);
 
 // POST /api/tags
 // Headers: Authorization (admin only)
