@@ -19,5 +19,6 @@ router.delete("/:commentId", isAuth, commentController.deleteComment);
 // GET /api/comments/:commentId/replies
 // Query: ?page=1&limit=10
 // Response: { replies[], pagination }
+router.get("/:commentId/replies", commentController.getCommentReplies);
 
 export default router;

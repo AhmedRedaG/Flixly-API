@@ -29,3 +29,13 @@ export const deleteComment = async (req, res) => {
 // GET /api/comments/:commentId/replies
 // Query: ?page=1&limit=10
 // Response: { replies[], pagination }
+export const getCommentReplies = async (req, res) => {
+  const { commentId } = req.params;
+  const { page, limit } = req.query;
+  const data = await commentServer.getCommentRepliesService(
+    commentId,
+    page,
+    limit
+  );
+  res.jsend.success(data);
+};

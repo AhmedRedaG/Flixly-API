@@ -45,3 +45,32 @@ export const deleteCommentService = async (user, commentId) => {
 // GET /api/comments/:commentId/replies
 // Query: ?page=1&limit=10
 // Response: { replies[], pagination }
+export const getCommentRepliesService = async (commentId, inPage, inLimit) => {
+  const limit = inLimit || 10;
+  const page = inPage || 1;
+  const offset = (page - 1) * limit;
+
+  const replies = await VideoComment.findAll({
+    where: { parent_comment_id: commentId },
+    include: {
+      model: User,
+      as: "user",
+      attributes: ["username", "firstName", "lastName", "avatar"],
+    },
+    limit,
+    offset,
+  });
+  const total = replies?.length || 0;
+
+  const pagination = {
+    page,
+    limit,
+    total,
+    pages: Math.ceil(total / limit),
+  };
+
+  return {
+    replies,
+    pagination,
+  };
+};
