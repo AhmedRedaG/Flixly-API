@@ -112,5 +112,6 @@ router.get("/:videoId/comments", videoController.getVideoComments);
 // Headers: Authorization
 // Body: { content, parent_comment_id? }
 // Response: { comment }
+router.post("/:videoId/comments", isAuth, videoController.createVideoComment);
 
 export default router;

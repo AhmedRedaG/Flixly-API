@@ -645,3 +645,25 @@ export const getVideoCommentsService = async (
 // Headers: Authorization
 // Body: { content, parent_comment_id? }
 // Response: { comment }
+export const createVideoCommentService = async (
+  user,
+  videoId,
+  content,
+  parentCommentId
+) => {
+  const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
+  if (parentCommentId) {
+    const parentComment = await VideoComment.findByPk(parentCommentId);
+    if (!parentComment) throw new AppError("Parent comment not found", 404);
+  }
+
+  const comment = await user.createVideoComment({
+    video_id: videoId,
+    parent_comment_id: parentCommentId || null,
+    content,
+  });
+
+  return comment;
+};

@@ -233,3 +233,15 @@ export const getVideoComments = async (req, res) => {
 // Headers: Authorization
 // Body: { content, parent_comment_id? }
 // Response: { comment }
+export const createVideoComment = async (req, res) => {
+  const user = req.user;
+  const { videoId } = req.params;
+  const { content, parentCommentId } = req.body;
+  const data = await videoServer.createVideoCommentService(
+    user,
+    videoId,
+    content,
+    parentCommentId
+  );
+  res.jsend.success(data, 201);
+};
