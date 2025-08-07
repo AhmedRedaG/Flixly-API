@@ -19,6 +19,12 @@ export const updateComment = async (req, res) => {
 // DELETE /api/comments/:commentId
 // Headers: Authorization (comment owner or video owner)
 // Response: { message: "Comment deleted" }
+export const deleteComment = async (req, res) => {
+  const user = req.user;
+  const { commentId } = req.params;
+  const data = await commentServer.deleteCommentService(user, commentId);
+  res.jsend.success(data);
+};
 
 // GET /api/comments/:commentId/replies
 // Query: ?page=1&limit=10

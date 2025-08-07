@@ -22,6 +22,25 @@ export const updateCommentService = async (user, commentId, content) => {
 // DELETE /api/comments/:commentId
 // Headers: Authorization (comment owner or video owner)
 // Response: { message: "Comment deleted" }
+export const deleteCommentService = async (user, commentId) => {
+  const comment = await VideoComment.findByPk(commentId);
+  if (!comment) throw new AppError("Comment not found", 404);
+
+  if (comment.user_id !== user.id) {
+    const [video, channel] = await Promise.all([
+      comment.getVideo(),
+      user.getChannel(),
+    ]);
+    if (video.channel_id !== channel.id)
+      throw new AppError("Unauthorized to delete comment", 401);
+  }
+
+  await comment.destroy();
+
+  return {
+    message: "Comment deleted successfully",
+  };
+};
 
 // GET /api/comments/:commentId/replies
 // Query: ?page=1&limit=10
