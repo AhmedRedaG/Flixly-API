@@ -607,7 +607,7 @@ export const getVideoCommentsService = async (
   inPage,
   inLimit,
   sort,
-  parent_id
+  parentCommentId
 ) => {
   const limit = inLimit || 20;
   const page = inPage || 1;
@@ -616,7 +616,7 @@ export const getVideoCommentsService = async (
     sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
   const comments = await VideoComment.findAll({
-    where: { video_id: videoId, parent_comment_id: parent_id || null },
+    where: { video_id: videoId, parent_comment_id: parentCommentId || null },
     include: {
       model: User,
       as: "user",

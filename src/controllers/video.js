@@ -218,13 +218,13 @@ export const getVideoReactions = async (req, res) => {
 // Response: { comments[], pagination }
 export const getVideoComments = async (req, res) => {
   const { videoId } = req.params;
-  const { page, limit, sort, parent_id } = req.query;
+  const { page, limit, sort, parentCommentId } = req.query;
   const data = await videoServer.getVideoCommentsService(
     videoId,
     page,
     limit,
     sort,
-    parent_id
+    parentCommentId
   );
   res.jsend.success(data);
 };
