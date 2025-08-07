@@ -83,7 +83,18 @@ export const getTagVideosService = async (tagId, inPage, inLimit, sort) => {
   };
 };
 
-// POST /api/tags
+// DELETE /api/tags/:tagId
 // Headers: Authorization (admin only)
-// Body: { name }
-// Response: { tag }
+// Response: { message: "Tag deleted" }
+export const deleteTagService = async (user, tagId) => {
+  if (user.role !== "admin") throw new AppError("Cannot delete tag", 403);
+
+  const tag = await Tag.findByPk(tagId);
+  if (!tag) throw new AppError("Tag not found", 404);
+
+  await tag.destroy();
+
+  return {
+    message: "Tag deleted successfully",
+  };
+};

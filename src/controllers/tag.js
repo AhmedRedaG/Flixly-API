@@ -19,7 +19,12 @@ export const getTagVideos = async (req, res) => {
   res.jsend.success(data);
 };
 
-// POST /api/tags
+// DELETE /api/tags/:tagId
 // Headers: Authorization (admin only)
-// Body: { name }
-// Response: { tag }
+// Response: { message: "Tag deleted" }
+export const deleteTag = async (req, res) => {
+  const user = req.user;
+  const { tagId } = req.params;
+  const data = await tagServer.deleteTagService(user, tagId);
+  res.jsend.success(data);
+};

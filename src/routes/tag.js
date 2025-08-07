@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import * as tagController from "../controllers/tag.js";
+import { isAuth } from "../middlewares/isAuth.js";
 
 const router = Router();
 
@@ -14,9 +15,9 @@ router.get("/", tagController.getTags);
 // Response: { videos[], pagination }
 router.get("/:tagId/videos", tagController.getTagVideos);
 
-// POST /api/tags
+// DELETE /api/tags/:tagId
 // Headers: Authorization (admin only)
-// Body: { name }
-// Response: { tag }
+// Response: { message: "Tag deleted" }
+router.delete("/:tagId", isAuth, tagController.deleteTag);
 
 export default router;
