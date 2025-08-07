@@ -52,15 +52,26 @@ export const getMainPublicVideosService = async (
       : sort === "oldest"
       ? [["created_at", "ASC"]]
       : [["views_count", "DESC"]];
-  // if (tags) where.tags = tags;
+  const where = { is_published: true, is_private: false };
+
+  const tagCondition = tags ? { name: { [Op.in]: tags } } : {};
 
   const videos = await Video.findAll({
     attributes: ["id", "title", "thumbnail", "views_count"],
-    include: {
-      model: Channel,
-      as: "channel",
-      attributes: ["username", "name", "avatar"],
-    },
+    include: [
+      {
+        model: Channel,
+        as: "channel",
+        attributes: ["username", "name", "avatar"],
+      },
+      {
+        model: Tag,
+        as: "tags",
+        attributes: ["name"],
+        where: tagCondition,
+      },
+    ],
+    where,
     order,
     limit,
     offset,
@@ -214,15 +225,24 @@ export const searchPublicVideosService = async (
       },
     ],
   };
-  // if (tags) where.tags = tags;
+
+  const tagCondition = tags ? { name: { [Op.in]: tags } } : {};
 
   const videos = await Video.findAll({
     attributes: ["id", "title", "description", "thumbnail", "views_count"],
-    include: {
-      model: Channel,
-      as: "channel",
-      attributes: ["username", "name", "avatar"],
-    },
+    include: [
+      {
+        model: Channel,
+        as: "channel",
+        attributes: ["username", "name", "avatar"],
+      },
+      {
+        model: Tag,
+        as: "tags",
+        attributes: ["name"],
+        where: tagCondition,
+      },
+    ],
     where,
     order,
     limit,
@@ -260,6 +280,12 @@ export const createVideoService = async (user, title, description, tags) => {
     url: "https://www.youtube.com", // temporary url
   });
 
+  for (const tagName of tags) {
+    const [tag] = await Tag.findOrCreate({ where: { name: tagName } });
+    await tag.increment("use_count");
+    await video.addTag(tag);
+  }
+  // await promise.all(tags.map((tag) => {}));
   // await video.createTags(tags); // need to implement
 
   const videoUploadUrl = `https://localhost:3000/upload/video/${video.id}`;
@@ -283,11 +309,11 @@ export const getPublicVideoService = async (videoId) => {
         as: "channel",
         attributes: ["username", "name", "avatar"],
       },
-      // {
-      //   model: Tag,
-      //   as: "tags",
-      //   attributes: ["name"],
-      // },
+      {
+        model: Tag,
+        as: "tags",
+        attributes: ["name"],
+      },
       {
         model: VideoComment,
         as: "comments",
@@ -358,13 +384,13 @@ export const getVideoService = async (user, videoId) => {
 
   const video = await channel.getVideos({
     where: { id: videoId },
-    // include: [
-    //   {
-    //     model: Tag,
-    //     as: "tags",
-    //     attributes: ["name"],
-    //   },
-    // ],
+    include: [
+      {
+        model: Tag,
+        as: "tags",
+        attributes: ["name"],
+      },
+    ],
   });
   if (!video) throw new AppError("Video not found", 404);
 
@@ -381,7 +407,6 @@ export const updateVideoService = async (
   title,
   description,
   is_private,
-  tags
 ) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
@@ -392,7 +417,6 @@ export const updateVideoService = async (
   if (title) video.title = title;
   if (description) video.description = description;
   if (is_private !== undefined) video.is_private = is_private;
-  // if (tags) await video.setTags(tags); // need to implement
 
   await video.save();
 

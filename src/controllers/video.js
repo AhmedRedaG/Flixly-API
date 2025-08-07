@@ -105,14 +105,13 @@ export const getVideo = async (req, res) => {
 export const updateVideo = async (req, res) => {
   const user = req.user;
   const { videoId } = req.params;
-  const { title, description, is_private, tags } = req.body;
+  const { title, description, is_private } = req.body;
   const data = await videoServer.updateVideoService(
     user,
     videoId,
     title,
     description,
-    is_private,
-    tags
+    is_private
   );
   res.jsend.success(data);
 };
