@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { isAuth } from "../middlewares/isAuth.js";
 import * as uploadController from "../controllers/upload.js";
-import upload from "../../config/multer.js";
+import { videoUploader, imageUploader } from "../middlewares/localUploader.js";
 
 const router = Router();
 
@@ -14,7 +14,7 @@ const router = Router();
 router.post(
   "/video/:videoId",
   isAuth,
-  upload.single("video_file"),
+  videoUploader,
   uploadController.uploadVideo
 );
 
@@ -26,7 +26,7 @@ router.post(
 router.post(
   "/image/:processId",
   isAuth,
-  upload.single("image_file"),
+  imageUploader,
   uploadController.uploadImage
 );
 
