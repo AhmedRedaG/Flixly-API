@@ -573,9 +573,10 @@ export const removeVideoReactionService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
-  const reaction = await video.getVideoReaction({
+  const [reaction] = await video.getReactions({
     where: { user_id: user.id },
   });
+
   if (!reaction) throw new AppError("No reaction found", 404);
 
   if (reaction.is_like) video.likes_count--;
@@ -618,7 +619,7 @@ export const getVideoReactionsService = async (
 
   const where = type ? { is_like: type === "like" } : {};
 
-  const reactions = await video.getVideoReactions({
+  const [reactions] = await video.getReactions({
     where,
     include: {
       model: User,
@@ -629,7 +630,7 @@ export const getVideoReactionsService = async (
     limit,
     offset,
   });
-  const total = reactions?.length || 0;
+  const total = video.likes_count + video.dislikes_count;
 
   const pagination = {
     page,
@@ -710,5 +711,5 @@ export const createVideoCommentService = async (
     content,
   });
 
-  return comment;
+  return { comment };
 };
