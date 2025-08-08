@@ -1,3 +1,5 @@
+import fs from "fs/promises";
+
 import AppError from "../utilities/appError.js";
 import { db } from "../../database/models/index.js";
 import cloudinary from "../../config/cloudinary.js";
@@ -38,11 +40,19 @@ export const uploadVideoService = async (user, videoId, file) => {
       fetch_format: "auto",
       use_filename: true,
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
+      timeout: 6000000, // 10 minutes
+      eager: [
+        { width: 1280, height: 720, crop: "limit", quality: "auto" },
+        { width: 640, height: 360, crop: "limit", quality: "auto" },
+      ],
+      eager_async: true,
     });
 
     await video.update({
       processing_status: "completed",
+      processing_message: "Upload completed successfully",
       url: result.secure_url,
+      duration: result.duration,
     });
   } catch (err) {
     await video.update({
@@ -51,6 +61,8 @@ export const uploadVideoService = async (user, videoId, file) => {
     });
     throw err;
   }
+
+  await fs.unlink(file.path);
 
   return {
     uploadUrl: result.secure_url,
@@ -69,11 +81,15 @@ export const uploadImageService = async (user, processId, file, type) => {
   try {
     result = await cloudinary.uploader.upload(file.path, {
       resource_type: "image",
-      folder: "flixly/images",
+      folder: `flixly/images/${type}`,
       quality: "auto",
       fetch_format: "auto",
       use_filename: true,
+      unique_filename: true,
       allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+      timeout: 6000000, // 10 minutes
+      overwrite: true,
+      invalidate: true,
     });
   } catch (err) {
     throw err;
@@ -97,6 +113,8 @@ export const uploadImageService = async (user, processId, file, type) => {
       { where: { id: processId } }
     );
   }
+
+  await fs.unlink(file.path);
 
   return {
     imageUrl: result.secure_url,
