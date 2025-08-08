@@ -663,6 +663,9 @@ export const createVideoCommentService = async (
   if (parentCommentId) {
     const parentComment = await VideoComment.findByPk(parentCommentId);
     if (!parentComment) throw new AppError("Parent comment not found", 404);
+    if (parentComment.video_id !== videoId)
+      throw new AppError("Parent comment not found", 404);
+    await parentComment.increment("child_comments_count");
   }
 
   const comment = await user.createVideoComment({
