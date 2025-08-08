@@ -36,11 +36,6 @@ router.post("/me", isAuth, videoController.createVideo);
 // Response: { video with channel, tags, comments?, view_count }
 router.get("/:videoId", videoController.getPublicVideo);
 
-// GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
-// Response: { comment }
-router.get("/:videoId/comments", videoController.getPublicVideoComments);
-
 // GET /api/videos/:videoId
 // Authorization: Bearer token
 // Response: { video with channel, tags, comments?, view_count }
@@ -100,7 +95,7 @@ router.get("/:videoId/reactions", isAuth, videoController.getVideoReactions);
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
 // Response: { comments[], pagination }
-router.get("/:videoId/comments", videoController.getVideoComments);
+router.get("/:videoId/comments", videoController.getPublicVideoComments);
 
 // POST /api/videos/:videoId/comments
 // Headers: Authorization

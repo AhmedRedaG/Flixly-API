@@ -339,52 +339,6 @@ export const getPublicVideoService = async (videoId) => {
   return video;
 };
 
-// GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
-// Response: { comment }
-export const getPublicVideoCommentsService = async (
-  videoId,
-  inPage,
-  inLimit,
-  sort,
-  parent_id
-) => {
-  const video = await Video.findByPk(videoId);
-  if (!video) throw new AppError("Video not found", 404);
-
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
-  const order =
-    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
-
-  const comments = await VideoComment.findAll({
-    where: { video_id: videoId, parent_comment_id: parent_id || null },
-    include: {
-      model: User,
-      as: "user",
-      attributes: ["username", "firstName", "lastName", "avatar"],
-    },
-    order,
-    limit,
-    offset,
-    raw: true,
-  });
-  const total = video.comments_count;
-
-  const pagination = {
-    page,
-    limit,
-    total,
-    pages: Math.ceil(total / limit),
-  };
-
-  return {
-    comments,
-    pagination,
-  };
-};
-
 // GET /api/videos/:videoId
 // Authorization: Bearer token
 // Response: { video with channel, tags, comments?, view_count }
@@ -651,7 +605,7 @@ export const getVideoReactionsService = async (
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest&parent_id=?
 // Response: { comments[], pagination }
-export const getVideoCommentsService = async (
+export const getPublicVideoCommentsService = async (
   videoId,
   inPage,
   inLimit,
@@ -679,7 +633,6 @@ export const getVideoCommentsService = async (
     offset,
   });
   const total = video.total_comments;
-  console.log(total);
 
   const pagination = {
     page,

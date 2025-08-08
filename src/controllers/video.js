@@ -72,22 +72,6 @@ export const getPublicVideo = async (req, res) => {
   res.jsend.success(data);
 };
 
-// GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest|&parent_id=?
-// Response: { comment }
-export const getPublicVideoComments = async (req, res) => {
-  const { videoId } = req.params;
-  const { page, limit, sort, parent_id } = req.query;
-  const data = await videoServer.getPublicVideoCommentsService(
-    videoId,
-    page,
-    limit,
-    sort,
-    parent_id
-  );
-  res.jsend.success(data);
-};
-
 // GET /api/videos/:videoId
 // Authorization: Bearer token
 // Response: { video with channel, tags, comments?, view_count }
@@ -209,10 +193,10 @@ export const getVideoReactions = async (req, res) => {
 // GET /api/videos/:videoId/comments
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
 // Response: { comments[], pagination }
-export const getVideoComments = async (req, res) => {
+export const getPublicVideoComments = async (req, res) => {
   const { videoId } = req.params;
   const { page, limit, sort, parentCommentId } = req.query;
-  const data = await videoServer.getVideoCommentsService(
+  const data = await videoServer.getPublicVideoCommentsService(
     videoId,
     page,
     limit,
