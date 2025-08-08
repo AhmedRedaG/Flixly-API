@@ -39,6 +39,7 @@ export const uploadVideoService = async (user, videoId, file) => {
       quality: "auto",
       fetch_format: "auto",
       use_filename: true,
+      unique_filename: false,
       allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
       timeout: 6000000, // 10 minutes
       eager: [
@@ -85,7 +86,7 @@ export const uploadImageService = async (user, processId, file, type) => {
       quality: "auto",
       fetch_format: "auto",
       use_filename: true,
-      unique_filename: true,
+      unique_filename: false,
       allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
       timeout: 6000000, // 10 minutes
       overwrite: true,
