@@ -12,8 +12,6 @@ const { Video, Channel, User } = db;
 // Body: { video_file }
 // Response: { upload_url, processing_id }
 export const uploadVideoService = async (user, videoId, file) => {
-  if (!file) throw new AppError("Invalid file");
-
   const maxSize = 10 * 1024 * 1024; // 10MB
   if (file.size > maxSize) throw new AppError("File too large");
 
@@ -76,7 +74,8 @@ export const uploadVideoService = async (user, videoId, file) => {
 // Body: { image_file, type: 'avatar'|'banner'|'thumbnail' }
 // Response: { image_url }
 export const uploadImageService = async (user, processId, file, type) => {
-  if (!file) throw new AppError("Invalid file");
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) throw new AppError("File too large");
 
   let result;
   try {
