@@ -278,6 +278,7 @@ export const createVideoService = async (user, title, description, tags) => {
   const video = await channel.createVideo({
     title,
     description,
+    processing_message: "upload your video",
   });
 
   for (const tagName of tags) {
