@@ -7,7 +7,7 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix =
-      req.query.type +
+      req.uploadType +
       "_" +
       Date.now() +
       "_" +

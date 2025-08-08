@@ -2,8 +2,13 @@ import { uploadImage, uploadVideo } from "../../config/multer.js";
 
 // to conform to my multer's expected file structure
 const videoType = (req, res, next) => {
-  req.query.type = "video";
+  req.uploadType = "video";
   req.params.processId = req.params.videoId;
+  next();
+};
+
+const imageType = (req, res, next) => {
+  req.uploadType = req.query.type;
   next();
 };
 
