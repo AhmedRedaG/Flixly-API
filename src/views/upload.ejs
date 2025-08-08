@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/upload.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <h1>Flixly Uploader</h1>
+      </div>
+    </header>
+    <main class="container">
+      <section class="card">
+        <h2>Upload Image</h2>
+        <form id="imageForm" class="form" enctype="multipart/form-data">
+          <div class="row">
+            <label for="imageType">Type</label>
+            <select id="imageType" name="type" required>
+              <option value="userAvatar">User Avatar</option>
+              <option value="channelAvatar">Channel Avatar</option>
+              <option value="channelBanner">Channel Banner</option>
+              <option value="thumbnail">Video Thumbnail</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="imageProcessId">Process Id</label>
+            <input
+              id="imageProcessId"
+              name="processId"
+              placeholder="Video id for thumbnail or Channel id for channel avatar and banner or User id for user avatar"
+            />
+          </div>
+          <div class="row">
+            <label class="file">
+              <input
+                type="file"
+                id="imageFile"
+                name="image_file"
+                accept="image/*"
+                required
+              />
+            </label>
+          </div>
+          <div class="row">
+            <label for="accessTokenImg">Authorization (Bearer ...)</label>
+            <input id="accessTokenImg" placeholder="Paste Bearer token" />
+          </div>
+          <button type="submit" class="btn">Upload Image</button>
+          <div id="imageResult" class="result" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Upload Video</h2>
+        <form id="videoForm" class="form" enctype="multipart/form-data">
+          <div class="row">
+            <label for="videoId">Video Id</label>
+            <input
+              id="videoId"
+              name="videoId"
+              required
+              placeholder="e.g. abc32d-33cj..."
+            />
+          </div>
+          <div class="row">
+            <label class="file">
+              <input
+                type="file"
+                id="videoFile"
+                name="video_file"
+                accept="video/*"
+                required
+              />
+            </label>
+          </div>
+          <div class="row">
+            <label for="accessTokenVid">Authorization (Bearer ...)</label>
+            <input id="accessTokenVid" placeholder="Paste Bearer token" />
+          </div>
+          <button type="submit" class="btn">Upload Video</button>
+          <div id="videoResult" class="result" aria-live="polite"></div>
+        </form>
+      </section>
+    </main>
+
+    <script src="/js/upload.js"></script>
+  </body>
+</html>
