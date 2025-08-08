@@ -1,6 +1,14 @@
 import multer from "multer";
 import AppError from "../src/utilities/appError.js";
 
+try {
+  fs.mkdirSync(path.join(process.cwd(), "uploads", "temp"), {
+    recursive: true,
+  });
+} catch (err) {
+  throw err;
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = `uploads/temp`;
