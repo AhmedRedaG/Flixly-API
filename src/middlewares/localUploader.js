@@ -13,4 +13,4 @@ const imageType = (req, res, next) => {
 };
 
 export const videoUploader = [videoType, uploadVideo.single("video_file")];
-export const imageUploader = uploadImage.single("image_file");
+export const imageUploader = [imageType, uploadImage.single("image_file")];
