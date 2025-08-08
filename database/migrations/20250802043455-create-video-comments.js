@@ -40,6 +40,10 @@ export default {
         type: Sequelize.TEXT,
         allowNull: false,
       },
+      child_comments_count: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
