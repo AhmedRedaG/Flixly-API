@@ -1,7 +1,7 @@
 import AppError from "../utilities/appError.js";
 import { db } from "../../database/models/index.js";
 
-const { VideoComment } = db;
+const { VideoComment, User } = db;
 
 // PUT /api/comments/:commentId
 // Headers: Authorization (comment owner)
@@ -35,6 +35,8 @@ export const deleteCommentService = async (user, commentId) => {
       throw new AppError("Unauthorized to delete comment", 401);
   }
 
+  const childComments = await comment.child_comments_count;
+  await video.decrement("comments_count", { by: childComments + 1 });
   await comment.destroy();
 
   return {
