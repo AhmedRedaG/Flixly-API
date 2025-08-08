@@ -1,4 +1,4 @@
-import * as uploadServer from "../services/uploade.js";
+import * as uploadServer from "../services/upload.js";
 
 // POST /api/upload/video
 // Headers: Authorization
