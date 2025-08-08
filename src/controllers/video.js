@@ -7,7 +7,7 @@ import * as videoServer from "../services/video.js";
 // Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
 // Response: { videos[], pagination, filters }
 export const getMainPublicVideos = async (req, res) => {
-  const { page, limit, sort, category, search } = req.query;
+  const { page, limit, sort, tags } = req.query;
   const data = await videoServer.getMainPublicVideosService(
     page,
     limit,

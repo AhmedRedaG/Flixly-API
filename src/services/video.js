@@ -214,7 +214,7 @@ export const searchPublicVideosService = async (
       ? [["views_count", "DESC"]]
       : []; // relevance
 
-  where = {
+  const where = {
     [Op.and]: [
       { is_published: true },
       { is_private: false },
@@ -352,6 +352,8 @@ export const getPublicVideoCommentsService = async (
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
   const comments = await VideoComment.findAll({
     where: { video_id: videoId, parent_comment_id: parent_id || null },
@@ -490,6 +492,9 @@ export const publishVideoService = async (user, videoId, publishAt) => {
 // Body: { watch_time } // seconds watched
 // Response: { message: "View recorded" }
 export const recordVideoViewService = async (user, videoId, watchTime) => {
+  const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const [view, created] = await VideoView.findOrCreate({
     where: { user_id: user.id, video_id: videoId },
     defaults: { watch_time: watchTime },
@@ -497,8 +502,7 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
   if (!created && watchTime > view.watch_time)
     await view.update({ watch_time: watchTime });
 
-  const video = await Video.findByPk(videoId);
-  await video.increment("views_count");
+  if (created) await video.increment("views_count");
 
   return {
     watchedAt: view.watched_at,
@@ -512,6 +516,8 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
 // Response: { is_liked: true, likes_count, dislikes_count }
 export const likeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const [reaction, created] = await VideoReaction.findOrCreate({
     where: { user_id: user.id, video_id: videoId },
     defaults: { is_like: true },
@@ -537,6 +543,8 @@ export const likeVideoService = async (user, videoId) => {
 // Response: { is_liked: false, likes_count, dislikes_count }
 export const dislikeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const [reaction, created] = await VideoReaction.findOrCreate({
     where: { user_id: user.id, video_id: videoId },
     defaults: { is_like: false },
@@ -563,6 +571,8 @@ export const dislikeVideoService = async (user, videoId) => {
 // Response: { likes_count, dislikes_count }
 export const removeVideoReactionService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const reaction = await video.getVideoReaction({
     where: { user_id: user.id },
   });
@@ -594,6 +604,8 @@ export const getVideoReactionsService = async (
   type
 ) => {
   const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const channel = await user.getChannel();
   if (video.channel_id !== channel.id)
     throw new AppError("Unauthorized to view reactions", 401);
