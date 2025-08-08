@@ -34,7 +34,7 @@ app.use("/api/v1/channels", channelRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/tags", tagRouter);
-app.use("api/v1/upload", uploadRouter);
+app.use("/api/v1/upload", uploadRouter);
 app.use(errorHandler);
 
 export default app;
