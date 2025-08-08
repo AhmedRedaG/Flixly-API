@@ -452,7 +452,7 @@ export const deleteVideoService = async (user, videoId) => {
 // Headers: Authorization (video owner)
 // Body: { publish_at? } // null = publish now
 // Response: { video }
-export const publishVideoService = async (user, videoId, publish_at) => {
+export const publishVideoService = async (user, videoId, publishAt) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
@@ -470,8 +470,8 @@ export const publishVideoService = async (user, videoId, publish_at) => {
     );
   }
 
-  // need to fix
-  if (publish_at && publish_at > new Date()) video.publish_at = publish_at;
+  if (publishAt && new Date(publishAt) > new Date())
+    video.publish_at = publishAt;
   else {
     video.publish_at = new Date();
     video.is_published = true;

@@ -133,8 +133,8 @@ export const deleteVideo = async (req, res) => {
 export const publishVideo = async (req, res) => {
   const user = req.user;
   const { videoId } = req.params;
-  const { publish_at } = req.body;
-  const data = await videoServer.publishVideoService(user, videoId, publish_at);
+  const { publishAt } = req.body;
+  const data = await videoServer.publishVideoService(user, videoId, publishAt);
   res.jsend.success(data);
 };
 
