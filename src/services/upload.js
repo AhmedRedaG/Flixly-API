@@ -1,6 +1,5 @@
 import AppError from "../utilities/appError.js";
 import { db } from "../../database/models/index.js";
-import upload from "../../config/multer.js";
 import cloudinary from "../../config/cloudinary.js";
 
 const { Video, Channel, User } = db;
@@ -29,6 +28,11 @@ export const uploadVideoService = async (user, videoId, file) => {
   try {
     result = await cloudinary.uploader.upload(file.path, {
       resource_type: "video",
+      folder: "flixly/videos",
+      quality: "auto",
+      fetch_format: "auto",
+      use_filename: true,
+      allowed_formats: ["mp4", "mov", "avi", "mkv", "webm"],
     });
 
     await video.update({
@@ -58,6 +62,11 @@ export const uploadImageService = async (user, processId, file, type) => {
   try {
     result = await cloudinary.uploader.upload(file.path, {
       resource_type: "image",
+      folder: "flixly/images",
+      quality: "auto",
+      fetch_format: "auto",
+      use_filename: true,
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
     });
   } catch (err) {
     throw err;
