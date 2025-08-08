@@ -1,8 +1,9 @@
 import { Op } from "sequelize";
 
 import { db } from "../../database/models/index.js";
+import AppError from "../utilities/appError.js";
 
-const { Tag } = db;
+const { Tag, User } = db;
 
 const publicVideoFields = [
   "id",
