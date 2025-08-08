@@ -349,6 +349,9 @@ export const getPublicVideoCommentsService = async (
   sort,
   parent_id
 ) => {
+  const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
@@ -367,7 +370,7 @@ export const getPublicVideoCommentsService = async (
     offset,
     raw: true,
   });
-  const total = comments?.length || 0;
+  const total = video.comments_count;
 
   const pagination = {
     page,
@@ -655,6 +658,9 @@ export const getVideoCommentsService = async (
   sort,
   parentCommentId
 ) => {
+  const video = await Video.findByPk(videoId);
+  if (!video) throw new AppError("Video not found", 404);
+
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
@@ -672,7 +678,8 @@ export const getVideoCommentsService = async (
     limit,
     offset,
   });
-  const total = comments?.length || 0;
+  const total = video.total_comments;
+  console.log(total);
 
   const pagination = {
     page,
@@ -710,6 +717,7 @@ export const createVideoCommentService = async (
     parent_comment_id: parentCommentId || null,
     content,
   });
+  await video.increment("comments_count");
 
   return { comment };
 };
