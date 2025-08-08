@@ -1,4 +1,5 @@
 import multer from "multer";
+import AppError from "../src/utilities/appError.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -37,7 +38,7 @@ const uploadImage = multer({
 const uploadVideo = multer({
   storage,
   fileFilter: videoFileFilter,
-  limits: { fileSize: 1024 * 1024 * 500 },
+  limits: { fileSize: 1024 * 1024 * 10 },
 });
 
 export { uploadImage, uploadVideo };
