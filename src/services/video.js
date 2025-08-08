@@ -336,7 +336,7 @@ export const getPublicVideoService = async (videoId) => {
   });
   if (!video) throw new AppError("Video not found", 404);
 
-  return video;
+  return { video };
 };
 
 // GET /api/videos/:videoId
