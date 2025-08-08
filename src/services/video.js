@@ -15,6 +15,7 @@ const {
   VideoView,
   VideoComment,
   Report,
+  Tag,
 } = db;
 
 const publicVideoFields = [
@@ -277,7 +278,6 @@ export const createVideoService = async (user, title, description, tags) => {
   const video = await channel.createVideo({
     title,
     description,
-    url: "https://www.youtube.com", // temporary url
   });
 
   for (const tagName of tags) {
@@ -285,6 +285,7 @@ export const createVideoService = async (user, title, description, tags) => {
     await tag.increment("use_count");
     await video.addTag(tag);
   }
+  video.dataValues.tags = tags;
   // await promise.all(tags.map((tag) => {}));
   // await video.createTags(tags); // need to implement
 
@@ -292,6 +293,10 @@ export const createVideoService = async (user, title, description, tags) => {
   const thumbnailUploadUrl = `https://localhost:3000/upload/image/${video.id}?type=thumbnail`;
 
   return {
+    // video: {
+    //   ...video.dataValues,
+    //   tags,
+    // },
     video,
     videoUploadUrl,
     thumbnailUploadUrl,
@@ -394,7 +399,7 @@ export const getVideoService = async (user, videoId) => {
   });
   if (!video) throw new AppError("Video not found", 404);
 
-  return video;
+  return { video };
 };
 
 // PUT /api/videos/:videoId
@@ -406,7 +411,7 @@ export const updateVideoService = async (
   videoId,
   title,
   description,
-  is_private,
+  is_private
 ) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
@@ -433,6 +438,9 @@ export const deleteVideoService = async (user, videoId) => {
   const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
   if (!video) throw new AppError("Video not found", 404);
 
+  const tags = await video.getTags();
+  await Promise.all(tags.map((tag) => tag.decrement("use_count")));
+
   await video.destroy();
 
   return {
@@ -453,14 +461,21 @@ export const publishVideoService = async (user, videoId, publish_at) => {
 
   if (video.is_published) throw new AppError("Video already published", 409);
 
-  if (video.processing_status !== "completed")
-    throw new AppError("Video process not completed yet", 409);
+  if (video.processing_status !== "completed") {
+    const processingStatus = video.processing_status;
+    const processingMessage = video.processing_message;
+    throw new AppError(
+      `Video processing not completed yet. Status: ${processingStatus}. Message: ${processingMessage}`,
+      409
+    );
+  }
 
   // need to fix
   if (publish_at && publish_at > new Date()) video.publish_at = publish_at;
-  else video.publish_at = new Date();
-
-  video.is_published = true;
+  else {
+    video.publish_at = new Date();
+    video.is_published = true;
+  }
 
   await video.save();
 
