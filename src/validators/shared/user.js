@@ -18,4 +18,4 @@ export const usernamePath = [...usernameParam];
 
 export const pagingOnly = [...pagination];
 
-export const pagingWithSort = [...pagination, sortBy];
+export const pagingWithSort = [...pagination, ...sortBy(["newest", "oldest"])];

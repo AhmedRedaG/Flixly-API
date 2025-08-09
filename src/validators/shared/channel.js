@@ -6,31 +6,19 @@ import {
   usernameParam,
   optionalStringBody,
   requiredStringBody,
-  optionalUrl,
+  requiredUsernameBody,
   optionalUsernameBody,
 } from "../common.js";
 
 export const create = [
-  optionalUsernameBody,
-  requiredStringBody("name", { min: 3, max: 256 }),
-  optionalStringBody("description", { min: 1, max: 1000 }),
-  ...optionalUrl("avatar"),
-  ...optionalUrl("banner"),
+  ...requiredUsernameBody,
+  ...requiredStringBody("name", { min: 3, max: 256 }),
+  ...requiredStringBody("description", { min: 1, max: 1000 }),
 ];
 
 export const update = [
-  body("username")
-    .optional()
-    .isString()
-    .matches(/^[a-zA-Z0-9_]{3,16}$/)
-    .withMessage(
-      "username must be minimum 3 characters, start with a-z and can contain a number"
-    )
-    .trim(),
-  optionalStringBody("name", { min: 3, max: 256 }),
-  optionalStringBody("description", { min: 1, max: 1000 }),
-  ...optionalUrl("avatar"),
-  ...optionalUrl("banner"),
+  ...optionalStringBody("name", { min: 3, max: 256 }),
+  ...optionalStringBody("description", { min: 1, max: 1000 }),
 ];
 
 export const usernamePath = [...usernameParam];
