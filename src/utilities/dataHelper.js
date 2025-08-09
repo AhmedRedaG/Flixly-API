@@ -15,7 +15,11 @@ export const getSafeData = (user, options = { public: false }) => {
 };
 
 export const getUserByIdOrFail = async (userId) => {
-  const user = await User.findByPk(userId);
+  const user = await User.findByPk(userId, {
+    attributes: {
+      exclude: ["password"],
+    },
+  });
   if (!user) throw new AppError("User not found with the provided ID", 404);
 
   return user;

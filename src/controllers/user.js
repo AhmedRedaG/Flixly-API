@@ -9,14 +9,13 @@ export const getUserInfo = async (req, res) => {
 
 export const updateUserInfo = async (req, res) => {
   const user = req.user;
-  const { firstName, lastName, username, bio, avatar } = req.body;
+  const { firstName, lastName, username, bio } = req.body;
   const data = await userServer.updateUserInfoService(
     user,
     firstName,
     lastName,
     username,
-    bio,
-    avatar
+    bio
   );
   res.jsend.success(data);
 };

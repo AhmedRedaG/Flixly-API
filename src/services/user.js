@@ -1,110 +1,67 @@
 import bcrypt from "bcrypt";
+import { Op } from "sequelize";
 
 import AppError from "../utilities/appError.js";
-import { getSafeData } from "../utilities/dataHelper.js";
 import { db } from "../../database/models/index.js";
 import { constants } from "../../config/constants.js";
 
 const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
-const { PRIVATE_VIDEO_FIELDS } = constants.video;
+const { PRIVATE_VIDEO_FIELDS, SHORT_VIDEO_FIELDS } = constants.video;
 const { SHORT_CHANNEL_FIELDS } = constants.channel;
 const { PRIVATE_USER_FIELDS } = constants.user;
 const { User, RefreshToken, Channel, Video, Subscription } = db;
 
-export const getPublicUserInfoService = async (username) => {
-  const user = await User.findOne({
-    attributes: {
-      exclude: PRIVATE_USER_FIELDS,
-    },
-    where: { username },
-    include: {
-      model: Channel,
-      as: "channel",
-      attributes: SHORT_CHANNEL_FIELDS,
-    },
-  });
-  if (!user)
-    throw new AppError("User not found with the provided username", 404);
-
-  return {
-    user,
-  };
-};
-
-// GET users/me
-// Headers: Authorization
-// Response: { user with channel info }
 export const getUserInfoService = async (user) => {
-  const userData = getSafeData(user);
-  const [
-    channel,
-    viewCount,
-    reactionCount,
-    commentCount,
-    subscriptionsCount,
-    playlistsCount,
-    reportsCount,
-  ] = await Promise.all([
-    user.getChannel({
-      attributes: { exclude: ["id", "user_id"] },
-    }),
-    user.countVideoViews(),
-    user.countVideoReactions(),
-    user.countVideoComments(),
-    user.countSubscriptions(),
-    user.countPlaylists(),
-    user.countReports(),
-  ]);
+  const [channel, viewCount, reactionCount, commentCount, subscriptionsCount] =
+    await Promise.all([
+      user.getChannel(),
+      user.countVideoViews(),
+      user.countVideoReactions(),
+      user.countVideoComments(),
+      user.countSubscriptions(),
+    ]);
 
   const stats = {
     totalViews: viewCount,
     totalReactions: reactionCount,
     totalComments: commentCount,
     totalSubscriptions: subscriptionsCount,
-    totalPlaylists: playlistsCount,
-    totalReports: reportsCount,
   };
 
   return {
     user: {
-      ...userData,
+      ...user.dataValues,
       channel,
       stats,
     },
   };
 };
 
-// PUT /api/users/me
-// Headers: Authorization
-// Body: { first_name?, last_name?, username?, bio?, avatar? }
-// Response: { user }
 export const updateUserInfoService = async (
   user,
   firstName,
   lastName,
   username,
-  bio,
-  avatar
+  bio
 ) => {
   if (firstName) user.firstName = firstName;
   if (lastName) user.lastName = lastName;
-  if (username) user.username = username;
   if (bio) user.bio = bio;
-  if (avatar) user.avatar = avatar;
+
+  if (username) {
+    const userExisted = await User.findOne({ where: { username } });
+    if (userExisted) throw new AppError("Username already in use", 409);
+
+    user.username = username;
+  }
 
   await user.save();
 
-  const userData = getSafeData(user);
-
   return {
-    user: userData,
+    user,
   };
 };
 
-// PUT /api/users/me/password
-// Headers: Authorization
-// Body: { current_password, new_password }
-// Response: { message: "Password updated" }
 export const changePasswordService = async (user, oldPassword, newPassword) => {
   if (!user.password)
     throw new AppError("This account was registered with Google.", 401);
@@ -129,13 +86,10 @@ export const changePasswordService = async (user, oldPassword, newPassword) => {
   ]);
 
   return {
-    message: "Password has been successfully changed. Please login again.",
+    message: "Password has been successfully changed.",
   };
 };
 
-// DELETE /api/users/me
-// Headers: Authorization
-// Response: { message: "Account deleted" }
 export const deleteAccountService = async (user) => {
   await user.destroy();
 
@@ -144,10 +98,6 @@ export const deleteAccountService = async (user) => {
   };
 };
 
-// GET /api/users/me/subscriptions
-// Headers: Authorization
-// Query: ?page=1&limit=20&sort=newest|oldest
-// Response: { subscriptions[], pagination }
 export const getUserSubscriptionsService = async (
   user,
   inPage,
@@ -164,15 +114,14 @@ export const getUserSubscriptionsService = async (
     include: {
       model: Channel,
       as: "channel",
-      attributes: ["username", "name", "avatar"],
+      attributes: SHORT_CHANNEL_FIELDS,
     },
     attributes: ["created_at"],
     order,
     limit,
     offset,
-    raw: true,
   });
-  const total = subscriptions?.length || 0;
+  const total = await user.countSubscriptions();
 
   const pagination = {
     page,
@@ -187,10 +136,6 @@ export const getUserSubscriptionsService = async (
   };
 };
 
-// GET /api/users/me/subscriptions/feed
-// Headers: Authorization
-// Query: ?page=1&limit=20
-// Response: { videos from subscribed channels[], pagination }
 export const getUserSubscriptionsFeedService = async (
   user,
   inPage,
@@ -200,45 +145,45 @@ export const getUserSubscriptionsFeedService = async (
   const page = inPage || 1;
   const offset = (page - 1) * limit;
 
-  // const subscriptions = await user.getSubscriptions({
-  //   include: {
-  //     model: Channel,
-  //     as: "channel",
-  //   },
-  // });
-  // const channels = subscriptions.map((subscription) => subscription.channel);
-  // const videos = await Promise.all(
-  //   channels.map((channel) =>
-  //     channel.getVideos({
-  //       attributes: publicVideoFields,
-  //       where: { is_published: true, is_private: false },
-  //       order: [["created_at", "DESC"]],
-  //       limit,
-  //       offset,
-  //       raw: true,
-  //     })
-  //   )
-  // );
-  // const total = videos.flat().length || 0;
+  const subscribedChannelIds = await user
+    .getSubscriptions({
+      attributes: ["channel_id"],
+    })
+    .then((subs) => subs.map((sub) => sub.channel_id));
 
-  const videos = Video.findAll({
-    attributes: publicVideoFields,
-    include: {
-      model: Channel,
-      as: "channel",
+  if (subscribedChannelIds.length === 0) {
+    return {
+      videos: [],
+      pagination: { page, limit, total: 0, pages: 0 },
+    };
+  }
+
+  const [videos, total] = await Promise.all([
+    Video.findAll({
+      attributes: SHORT_VIDEO_FIELDS,
       include: {
-        model: Subscription,
-        as: "subscriptions",
-        where: { subscriber_id: user.id },
+        model: Channel,
+        as: "channel",
+        attributes: SHORT_CHANNEL_FIELDS,
       },
-    },
-    where: { is_published: true, is_private: false },
-    order: [["publish_at", "DESC"]],
-    limit,
-    offset,
-    raw: true,
-  });
-  const total = videos?.length || 0;
+      where: {
+        channel_id: { [Op.in]: subscribedChannelIds },
+        is_published: true,
+        is_private: false,
+      },
+      order: [["publish_at", "DESC"]],
+      limit,
+      offset,
+    }),
+
+    Video.count({
+      where: {
+        channel_id: { [Op.in]: subscribedChannelIds },
+        is_published: true,
+        is_private: false,
+      },
+    }),
+  ]);
 
   const pagination = {
     page,
@@ -253,33 +198,40 @@ export const getUserSubscriptionsFeedService = async (
   };
 };
 
+// =============== IN-DEVELOPMENT ================
 // GET /api/users/me/playlists
 // Headers: Authorization
 // Query: ?page=1&limit=20&include_public=true
 // Response: { playlists[], pagination }
 
-// GET /api/users/me/views
-// Headers: Authorization
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
 export const getUserViewsService = async (user, inPage, inLimit) => {
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
 
-  const videos = await user.getVideoViews({
-    include: {
-      model: Video,
-      as: "video",
-      attributes: publicVideoFields,
-      where: { is_published: true, is_private: false },
-    },
-    order: [["watched_at", "DESC"]],
-    limit,
-    offset,
-    raw: true,
-  });
-  const total = videos?.length || 0;
+  const [videos, total] = await Promise.all([
+    user.getVideoViews({
+      attributes: [],
+      include: {
+        model: Video,
+        as: "video",
+        attributes: SHORT_VIDEO_FIELDS,
+        where: { is_published: true, is_private: false },
+      },
+      order: [["watched_at", "DESC"]],
+      limit,
+      offset,
+    }),
+    user.countVideoViews({
+      include: {
+        model: Video,
+        as: "video",
+        attributes: [],
+        where: { is_published: true, is_private: false },
+      },
+      distinct: true,
+    }),
+  ]);
 
   const pagination = {
     page,
@@ -294,29 +246,35 @@ export const getUserViewsService = async (user, inPage, inLimit) => {
   };
 };
 
-// GET /api/users/me/likes
-// Headers: Authorization
-// Query: ?page=1&limit=20
-// Response: { videos[], pagination }
 export const getUserLikesService = async (user, inPage, inLimit) => {
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
 
-  const videos = await user.getVideoReactions({
-    include: {
-      model: Video,
-      as: "video",
-      where: { is_published: true, is_private: false },
-      attributes: publicVideoFields,
-    },
-    where: { is_like: true },
-    order: [["created_at", "DESC"]],
-    limit,
-    offset,
-    raw: true,
-  });
-  const total = videos?.length || 0;
+  const [videos, total] = await Promise.all([
+    user.getVideoReactions({
+      attributes: [],
+      include: {
+        model: Video,
+        as: "video",
+        attributes: SHORT_VIDEO_FIELDS,
+        where: { is_published: true, is_private: false },
+      },
+      where: { is_like: true },
+      order: [["created_at", "DESC"]],
+      limit,
+      offset,
+    }),
+    user.countVideoReactions({
+      include: {
+        model: Video,
+        as: "video",
+        attributes: [],
+        where: { is_published: true, is_private: false },
+      },
+      distinct: true,
+    }),
+  ]);
 
   const pagination = {
     page,
@@ -328,5 +286,25 @@ export const getUserLikesService = async (user, inPage, inLimit) => {
   return {
     videos,
     pagination,
+  };
+};
+
+export const getPublicUserInfoService = async (username) => {
+  const user = await User.findOne({
+    attributes: {
+      exclude: PRIVATE_USER_FIELDS,
+    },
+    where: { username },
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: SHORT_CHANNEL_FIELDS,
+    },
+  });
+  if (!user)
+    throw new AppError("User not found with the provided username", 404);
+
+  return {
+    user,
   };
 };
