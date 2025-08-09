@@ -22,12 +22,13 @@ export const deleteCommentService = async (user, commentId) => {
   const comment = await VideoComment.findByPk(commentId);
   if (!comment) throw new AppError("Comment not found", 404);
 
+  const video = await comment.getVideo();
+  const videoChannel = await video.getChannel();
+
+  // to allow only comment owner and channel owner to delete the comment
   if (comment.user_id !== user.id) {
-    const [video, channel] = await Promise.all([
-      comment.getVideo(),
-      user.getChannel(),
-    ]);
-    if (video.channel_id !== channel.id)
+    const userChannel = await user.getChannel();
+    if (video.channel_id !== userChannel.id)
       throw new AppError("Unauthorized to delete comment", 401);
   }
 
@@ -40,9 +41,11 @@ export const deleteCommentService = async (user, commentId) => {
         by: childCommentsCount + 1,
         transaction,
       }),
-      comment.destroy({
+      videoChannel.decrement("comments_count", {
+        by: childCommentsCount + 1,
         transaction,
       }),
+      comment.destroy({ transaction }),
     ]);
 
     await transaction.commit();
