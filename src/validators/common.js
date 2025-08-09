@@ -80,7 +80,7 @@ export const optionalStringBody = (name, { min = 1, max = 512 } = {}) => [
   body(name)
     .optional()
     .isString()
-    .matches(/^a-zA-Z0-9.,!?'"()\-\s]$/)
+    .matches(/^[a-zA-Z0-9.,!?'"()\-\s]+$/)
     .isLength({ min, max })
     .withMessage(`${name} must be a string`)
     .trim(),
@@ -92,7 +92,7 @@ export const requiredStringBody = (name, { min = 1, max = 512 } = {}) => [
     .withMessage(`${name} is required`)
     .bail()
     .isString()
-    .matches(/^a-zA-Z0-9.,!?'"()\-\s]$/)
+    .matches(/^[a-zA-Z0-9.,!?'"()\-\s]+$/)
     .isLength({ min, max })
     .withMessage(
       `${name} must be a string with length between ${min} and ${max}`
@@ -174,7 +174,7 @@ export const optionalBioBody = [
   body("bio")
     .optional()
     .isString()
-    .matches(/^a-zA-Z0-9.,!?'"()\-\s]{3,256}$/)
+    .matches(/^[a-zA-Z0-9.,!?'"()\-\s]{3,256}$/)
     .withMessage(
       "bio must be minimum 3 maximum 256 characters and  A-Z a-z or space"
     )

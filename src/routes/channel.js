@@ -7,9 +7,9 @@ import * as channelValidator from "../validators/shared/channel.js";
 
 const router = Router();
 
-// POST /api/channels/me
+// POST channels/
 // Headers: Authorization
-// Body: { username, name, description, avatar?, banner? }
+// Body: { username, name, description }
 // Response: { channel }
 router.post(
   "/me",
@@ -19,12 +19,12 @@ router.post(
   channelController.createChannel
 );
 
-// GET /api/channels/me
-// Authorization: Bearer token
+// GET channels/me
+// Headers: Authorization (channel owner)
 // Response: { channel with stats, recent videos }
 router.get("/me", isAuth, channelController.getChannel);
 
-// GET /api/channels/:username
+// GET channels/:username
 // Response: { channel with stats, recent videos }
 router.get(
   "/:username",
@@ -33,9 +33,9 @@ router.get(
   channelController.getPublicChannel
 );
 
-// PUT /api/channels/me
+// PUT channels/me
 // Headers: Authorization (channel owner)
-// Body: { name?, description?, avatar?, banner? }
+// Body: { name?, description? }
 // Response: { channel }
 router.put(
   "/me",
@@ -45,13 +45,13 @@ router.put(
   channelController.updateChannel
 );
 
-// DELETE /api/channels/me
+// DELETE channels/me
 // Headers: Authorization (channel owner)
-// Response: { message: "Channel deleted" }
+// Response: { message: "Channel deleted successfully" }
 router.delete("/me", isAuth, channelController.deleteChannel);
 
-// GET /api/channels/me/videos
-// Authorization: Bearer token
+// GET channels/me/videos
+// Headers: Authorization (channel owner)
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&privateOnly=true|false&unpublishedOnly=true|false
 // Response: { videos[], pagination }
 router.get(
@@ -62,7 +62,7 @@ router.get(
   channelController.getChannelVideos
 );
 
-// GET /api/channels/:channelId/videos
+// GET channels/:username/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
 router.get(
@@ -73,6 +73,7 @@ router.get(
   channelController.getPublicChannelVideos
 );
 
+// ========== IN-DEVELOPMENT ============
 // GET /api/channels/:channelId/playlists
 // Query: ?page=1&limit=20
 // Response: { playlists[], pagination }
@@ -81,7 +82,7 @@ router.get(
 // Query: ?page=1&limit=20 (public only)
 // Response: { playlists[], pagination }
 
-// GET /api/channels/me/subscribers
+// GET channels/me/subscribers
 // Headers: Authorization (channel owner only)
 // Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscribers[], pagination }
@@ -93,7 +94,7 @@ router.get(
   channelController.getChannelSubscribers
 );
 
-// POST /api/channels/:channelId/subscribe
+// POST channels/:username/subscribe
 // Headers: Authorization
 // Response: { subscribed: true, subscribers_count }
 router.post(
@@ -104,7 +105,7 @@ router.post(
   channelController.subscribeChannel
 );
 
-// DELETE /api/channels/:channelId/subscribe
+// DELETE channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: false, subscribers_count }
 router.delete(

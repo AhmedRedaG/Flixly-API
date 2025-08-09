@@ -29,6 +29,7 @@ export const constants = {
       "verified",
       "updated_at",
     ],
+    SHORT_USER_FIELDS: ["id", "username", "firstName", "lastName", "avatar"],
   },
 
   video: {

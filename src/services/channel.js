@@ -1,33 +1,18 @@
 import { db, sequelize } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
+import { constants } from "../../config/constants.js";
 
+const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
+const { PRIVATE_VIDEO_FIELDS, SHORT_VIDEO_FIELDS } = constants.video;
+const { SHORT_CHANNEL_FIELDS } = constants.channel;
+const { PRIVATE_USER_FIELDS, SHORT_USER_FIELDS } = constants.user;
 const { User, Channel, Subscription } = db;
 
-const publicVideoFields = [
-  "id",
-  "title",
-  "description",
-  "url",
-  "thumbnail",
-  "views_count",
-  "likes_count",
-  "dislikes_count",
-  "comments_count",
-  "duration",
-  "publish_at",
-];
-
-// POST /api/channels
-// Headers: Authorization
-// Body: { username, name, description, avatar?, banner? }
-// Response: { channel }
 export const createChannelService = async (
   user,
   username,
   name,
-  description,
-  avatar,
-  banner
+  description
 ) => {
   const channelExisted = await user.getChannel();
   if (channelExisted) throw new AppError("User already has a channel", 409);
@@ -35,99 +20,69 @@ export const createChannelService = async (
   const usernameExisted = await Channel.findOne({ where: { username } });
   if (usernameExisted) throw new AppError("Username already exists", 409);
 
-  const channelData = await user.createChannel({
+  const channel = await user.createChannel({
     username,
     name,
     description,
-    avatar,
-    banner,
   });
-  const { id, user_id, ...channel } = channelData.toJSON();
 
   return {
     channel,
   };
 };
 
-// GET /api/channels/me
-// Authorization: Bearer token
-// Response: { channel with stats, recent videos }
 export const getChannelService = async (user) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
   const recentVideos = await channel.getVideos({
-    attributes: { exclude: ["channel_id"] },
-    order: [["created_at", "DESC"]],
+    attributes: SHORT_VIDEO_FIELDS,
+    order: [["publish_at", "DESC"]],
     limit: 10,
-    raw: true,
   });
-
-  const { id, user_id, ...channelData } = channel.toJSON();
 
   return {
     channel: {
-      ...channelData,
+      ...channel.dataValues,
       recentVideos,
     },
   };
 };
 
-// GET /api/channels/:username
-// Response: { channel with stats, recent videos }
 export const getPublicChannelService = async (username) => {
   const channel = await Channel.findOne({ where: { username } });
   if (!channel) throw new AppError("Channel not found", 404);
 
   const recentVideos = await channel.getVideos({
-    attributes: publicVideoFields,
+    attributes: SHORT_VIDEO_FIELDS,
     where: { is_published: true, is_private: false },
-    order: [["created_at", "DESC"]],
+    order: [["publish_at", "DESC"]],
     limit: 10,
     raw: true,
   });
 
-  const { id, user_id, ...channelData } = channel.toJSON();
-
   return {
     channel: {
-      ...channelData,
+      ...channel.dataValues,
       recentVideos,
     },
   };
 };
 
-// PUT /api/channels/me
-// Headers: Authorization (channel owner)
-// Body: { name?, description?, avatar?, banner? }
-// Response: { channel }
-export const updateChannelService = async (
-  user,
-  name,
-  description,
-  avatar,
-  banner
-) => {
+export const updateChannelService = async (user, name, description) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
   if (name) channel.name = name;
   if (description) channel.description = description;
-  if (avatar) channel.avatar = avatar;
-  if (banner) channel.banner = banner;
 
   await channel.save();
 
-  const { id, user_id, ...channelData } = channel.toJSON();
-
   return {
-    channel: channelData,
+    channel,
   };
 };
 
-// DELETE /api/channels/:username
-// Headers: Authorization (channel owner)
-// Response: { message: "Channel deleted" }
 export const deleteChannelService = async (user) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
@@ -139,10 +94,6 @@ export const deleteChannelService = async (user) => {
   };
 };
 
-// GET /api/channels/me/videos
-// Authorization: Bearer token
-// Query: ?page=1&limit=20&sort=newest|oldest|popular&privateOnly=true|false&unpublishedOnly=true|false
-// Response: { videos[], pagination }
 export const getChannelVideosService = async (
   user,
   inPage,
@@ -169,15 +120,10 @@ export const getChannelVideosService = async (
     ? { is_published: false }
     : {};
 
-  const videos = await channel.getVideos({
-    attributes: { exclude: ["channel_id"] },
-    where,
-    order,
-    limit,
-    offset,
-    raw: true,
-  });
-  const total = videos?.length || 0;
+  const [videos, total] = await Promise.all([
+    channel.getVideos({ where, order, limit, offset }),
+    channel.countVideos({ where }),
+  ]);
 
   const pagination = {
     page,
@@ -192,9 +138,6 @@ export const getChannelVideosService = async (
   };
 };
 
-// GET /api/channels/:username/videos
-// Query: ?page=1&limit=20&sort=newest|oldest|popular
-// Response: { videos[], pagination }
 export const getPublicChannelVideosService = async (
   username,
   inPage,
@@ -214,15 +157,16 @@ export const getPublicChannelVideosService = async (
       ? [["created_at", "ASC"]]
       : [["views_count", "DESC"]];
 
-  const videos = await channel.getVideos({
-    attributes: publicVideoFields,
-    where: { is_published: true, is_private: false },
-    order,
-    limit,
-    offset,
-    raw: true,
-  });
-  const total = videos?.length || 0;
+  const [videos, total] = await Promise.all([
+    channel.getVideos({
+      attributes: SHORT_VIDEO_FIELDS,
+      where: { is_published: true, is_private: false },
+      order,
+      limit,
+      offset,
+    }),
+    channel.countVideos({ where: { is_published: true, is_private: false } }),
+  ]);
 
   const pagination = {
     page,
@@ -237,18 +181,6 @@ export const getPublicChannelVideosService = async (
   };
 };
 
-// GET /api/channels/:username/playlists
-// Query: ?page=1&limit=20
-// Response: { playlists[], pagination }
-
-// GET /api/channels/:username/playlists
-// Query: ?page=1&limit=20 (public only)
-// Response: { playlists[], pagination }
-
-// GET /api/channels/me/subscribers
-// Headers: Authorization (channel owner only)
-// Query: ?page=1&limit=20&sort=newest|oldest
-// Response: { subscribers[], pagination }
 export const getChannelSubscribersService = async (
   user,
   inPage,
@@ -268,15 +200,13 @@ export const getChannelSubscribersService = async (
     include: {
       model: User,
       as: "subscriber",
-      attributes: ["username", "firstName", "lastName", "avatar"],
+      attributes: SHORT_USER_FIELDS,
     },
-    attributes: { exclude: ["channel_id"] },
     order,
     limit,
     offset,
-    raw: true,
   });
-  const total = subscribers?.length || 0;
+  const total = channel.subscribers;
 
   const pagination = {
     page,
@@ -291,9 +221,6 @@ export const getChannelSubscribersService = async (
   };
 };
 
-// POST /api/channels/:username/subscribe
-// Headers: Authorization
-// Response: { subscribed: true, subscribers_count }
 export const subscribeChannelService = async (user, username) => {
   const channel = await Channel.findOne({ where: { username } });
   if (!channel) throw new AppError("Channel not found", 404);
@@ -301,8 +228,8 @@ export const subscribeChannelService = async (user, username) => {
   if (channel.user_id === user.id)
     throw new AppError("Cannot subscribe to own channel", 409);
 
-  const subscription = await Subscription.findOne({
-    where: { subscriber_id: user.id, channel_id: channel.id },
+  const subscription = await channel.getSubscriptions({
+    where: { subscriber_id: user.id },
   });
   if (subscription)
     throw new AppError("Already subscribed to this channel", 409);
@@ -325,9 +252,6 @@ export const subscribeChannelService = async (user, username) => {
   };
 };
 
-// DELETE /api/channels/:username/subscribe
-// Headers: Authorization
-// Response: { subscribed: false, subscribers_count }
 export const unsubscribeChannelService = async (user, username) => {
   const channel = await Channel.findOne({ where: { username } });
   if (!channel) throw new AppError("Channel not found", 404);
@@ -335,8 +259,8 @@ export const unsubscribeChannelService = async (user, username) => {
   if (channel.user_id === user.id)
     throw new AppError("Cannot unsubscribe to own channel", 409);
 
-  const subscription = await Subscription.findOne({
-    where: { subscriber_id: user.id, channel_id: channel.id },
+  const subscription = await channel.getSubscriptions({
+    where: { subscriber_id: user.id },
   });
   if (!subscription)
     throw new AppError("Already unsubscribed to this channel", 409);
