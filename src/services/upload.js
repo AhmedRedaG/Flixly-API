@@ -96,18 +96,25 @@ export const uploadImageService = async (user, processId, file, type) => {
   }
 
   if (type === "userAvatar") {
+    if (user.id !== processId) throw new AppError("User not found", 404);
     await user.update({
       avatar: result.secure_url,
     });
   } else if (type === "channelAvatar") {
-    await user.getChannel().update({
+    const channel = await user.getChannel();
+    if (channel.id !== processId) throw new AppError("Channel not found", 404);
+    await channel.update({
       avatar: result.secure_url,
     });
   } else if (type === "channelBanner") {
-    await user.getChannel().update({
+    const channel = await user.getChannel();
+    if (channel.id !== processId) throw new AppError("Channel not found", 404);
+    await channel.update({
       banner: result.secure_url,
     });
   } else if (type === "thumbnail") {
+    const video = await Video.findByPk(processId);
+    if (!video) throw new AppError("Video not found");
     await Video.update(
       { thumbnail: result.secure_url },
       { where: { id: processId } }
