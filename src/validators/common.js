@@ -133,6 +133,35 @@ export const stringArrayBody = (
     .trim(),
 ];
 
+export const stringArrayQueryCommaSeparated = (
+  name,
+  { itemMin = 1, itemMax = 64, maxItems = 50 } = {}
+) => [
+  query(name)
+    .optional()
+    .customSanitizer(value => {
+      if (typeof value === "string") {
+        // Split by comma, trim spaces, remove empty
+        return value.split(",").map(item => item.trim()).filter(Boolean);
+      }
+      return value;
+    })
+    .isArray({ max: maxItems })
+    .withMessage(`${name} must be a comma-separated list of up to ${maxItems} items`),
+
+  query(name)
+    .optional()
+    .custom(items => {
+      if (!Array.isArray(items)) return false;
+      return items.every(
+        item => typeof item === "string" && item.length >= itemMin && item.length <= itemMax
+      );
+    })
+    .withMessage(
+      `${name} items must be strings with length between ${itemMin} and ${itemMax}`
+    ),
+];
+
 // Auth-specific common validators
 export const requiredName = (field) => [
   body(field)

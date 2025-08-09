@@ -11,13 +11,13 @@ import {
   optionalIsoDateBody,
   stringArrayBody,
   stringSearchQuery,
+  stringArrayQueryCommaSeparated,
 } from "../common.js";
 
 // Discovery & search
 export const listPublic = [
   ...pagination,
   ...sortBy(["newest", "trending", "popular"]),
-  ...stringSearchQuery("tags"),
 ];
 
 export const listTrending = [
@@ -27,9 +27,9 @@ export const listTrending = [
 
 export const search = [
   ...pagination,
-  ...sortBy(["relevance", "date", "views"]),
+  ...sortBy(["relevance", "newest", "oldest", "popular"]),
   ...stringSearchQuery("search"),
-  ...stringSearchQuery("tags"),
+  ...stringArrayQueryCommaSeparated("tags"),
 ];
 
 // CRUD
@@ -45,7 +45,6 @@ export const update = [
   ...optionalStringBody("title", { min: 3, max: 256 }),
   ...optionalStringBody("description", { min: 1, max: 1000 }),
   ...optionalBooleanBody("is_private"),
-  ...stringArrayBody("tags", { itemMin: 1, itemMax: 32, maxItems: 20 }),
 ];
 
 export const publish = [...optionalIsoDateBody("publishAt")];
@@ -72,19 +71,21 @@ export const reactionsQuery = [
 
 export const commentsQuery = [
   ...pagination,
-  ...sortBy(["newest", "oldest", "popular"]),
-  query("parentCommentId")
+  ...sortBy(["newest", "oldest"]),
+  param("parentCommentId")
     .optional()
     .isString()
     .isLength({ min: 1, max: 128 })
+    .withMessage(`parentCommentId must be a non-empty id`)
     .trim(),
 ];
 
 export const commentBody = [
-  body("content").exists().isString().isLength({ min: 1, max: 1000 }).trim(),
+  ...optionalStringBody("content", { min: 1, max: 1000 }),
   body("parentCommentId")
     .optional()
     .isString()
     .isLength({ min: 1, max: 128 })
+    .withMessage(`parentCommentId must be a non-empty id`)
     .trim(),
 ];

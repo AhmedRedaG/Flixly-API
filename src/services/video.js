@@ -1,49 +1,17 @@
 import { Op, Sequelize } from "sequelize";
 
 import AppError from "../utilities/appError.js";
-import { db } from "../../database/models/index.js";
+import { db, sequelize } from "../../database/models/index.js";
+import { constants } from "../../config/constants.js";
 
-const {
-  User,
-  RefreshToken,
-  ResetToken,
-  Channel,
-  Playlist,
-  Video,
-  Subscription,
-  VideoReaction,
-  VideoView,
-  VideoComment,
-  Report,
-  Tag,
-} = db;
+const { User, Channel, Video, VideoReaction, VideoView, VideoComment, Tag } =
+  db;
 
-const publicVideoFields = [
-  "id",
-  "title",
-  "description",
-  "url",
-  "thumbnail",
-  "views_count",
-  "likes_count",
-  "dislikes_count",
-  "comments_count",
-  "duration",
-  "publish_at",
-];
+const { PRIVATE_VIDEO_FIELDS, SHORT_VIDEO_FIELDS } = constants.video;
+const { SHORT_CHANNEL_FIELDS } = constants.channel;
+const { SHORT_USER_FIELDS } = constants.user;
 
-/**
- * VIDEO DISCOVERY & SEARCH
- */
-// GET /api/videos
-// Query: ?page=1&limit=20&sort=newest|popular&tags=?&search=?
-// Response: { videos[], pagination, filters }
-export const getMainPublicVideosService = async (
-  inPage,
-  inLimit,
-  sort,
-  tags
-) => {
+export const getMainPublicVideosService = async (inPage, inLimit, sort) => {
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
@@ -55,29 +23,22 @@ export const getMainPublicVideosService = async (
       : [["views_count", "DESC"]];
   const where = { is_published: true, is_private: false };
 
-  const tagCondition = tags ? { name: { [Op.in]: tags } } : {};
-
-  const videos = await Video.findAll({
-    attributes: ["id", "title", "thumbnail", "views_count"],
-    include: [
-      {
+  const [videos, total] = await Promise.all([
+    Video.findAll({
+      attributes: SHORT_VIDEO_FIELDS,
+      include: {
         model: Channel,
         as: "channel",
-        attributes: ["username", "name", "avatar"],
+        attributes: SHORT_CHANNEL_FIELDS,
       },
-      {
-        model: Tag,
-        as: "tags",
-        attributes: ["name"],
-        where: tagCondition,
-      },
-    ],
-    where,
-    order,
-    limit,
-    offset,
-  });
-  const total = videos?.length || 0;
+      where,
+      order,
+      limit,
+      offset,
+    }),
+
+    Video.count({ where }),
+  ]);
 
   const pagination = {
     page,
@@ -192,9 +153,6 @@ export const getTrendingPublicVideosService = async (
   };
 };
 
-// GET /api/videos/search
-// Query: ?q=search_term&page=1&limit=20&sort=relevance|newest|oldest/popular
-// Response: { videos[], pagination }
 export const searchPublicVideosService = async (
   search,
   inPage,
@@ -229,27 +187,37 @@ export const searchPublicVideosService = async (
 
   const tagCondition = tags ? { name: { [Op.in]: tags } } : {};
 
-  const videos = await Video.findAll({
-    attributes: ["id", "title", "description", "thumbnail", "views_count"],
-    include: [
-      {
-        model: Channel,
-        as: "channel",
-        attributes: ["username", "name", "avatar"],
-      },
-      {
+  const [videos, total] = await Promise.all([
+    Video.findAll({
+      attributes: SHORT_VIDEO_FIELDS,
+      include: [
+        {
+          model: Channel,
+          as: "channel",
+          attributes: SHORT_CHANNEL_FIELDS,
+        },
+        {
+          model: Tag,
+          as: "tags",
+          attributes: ["name"],
+          where: tagCondition,
+        },
+      ],
+      where,
+      order,
+      limit,
+      offset,
+    }),
+
+    Video.count({
+      include: {
         model: Tag,
         as: "tags",
-        attributes: ["name"],
         where: tagCondition,
       },
-    ],
-    where,
-    order,
-    limit,
-    offset,
-  });
-  const total = videos?.length || 0;
+      where,
+    }),
+  ]);
 
   const pagination = {
     page,
@@ -264,56 +232,58 @@ export const searchPublicVideosService = async (
   };
 };
 
-/**
- * VIDEO CRUD
- */
-// POST /api/videos
-// Headers: Authorization
-// Body: { title, description?, tags[] }
-// Response: { video, upload_url? }
 export const createVideoService = async (user, title, description, tags) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
-  const video = await channel.createVideo({
-    title,
-    description,
-    processing_message: "upload your video",
-  });
+  let video;
+  const transaction = await sequelize.transaction();
+  try {
+    video = await channel.createVideo(
+      {
+        title,
+        description: description || null,
+        processing_message: "upload your video",
+      },
+      { transaction }
+    );
 
-  for (const tagName of tags) {
-    const [tag] = await Tag.findOrCreate({ where: { name: tagName } });
-    await tag.increment("use_count");
-    await video.addTag(tag);
+    const tagPromises = tags.map(async (tagName) => {
+      const [tag] = await Tag.findOrCreate({ where: { name: tagName } });
+      await tag.increment("use_count", { transaction });
+      return tag;
+    });
+    const createdTags = await Promise.all(tagPromises);
+    await video.addTags(createdTags, { transaction });
+    video.dataValues.tags = tags;
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
-  video.dataValues.tags = tags;
-  // await promise.all(tags.map((tag) => {}));
-  // await video.createTags(tags); // need to implement
 
+  // update it to use env as BASE_URL
   const videoUploadUrl = `https://localhost:3000/upload/video/${video.id}`;
   const thumbnailUploadUrl = `https://localhost:3000/upload/image/${video.id}?type=thumbnail`;
 
   return {
-    // video: {
-    //   ...video.dataValues,
-    //   tags,
-    // },
     video,
     videoUploadUrl,
     thumbnailUploadUrl,
   };
 };
 
-// GET /api/videos/:videoId
-// Response: { video with channel, tags, comments?, view_count }
 export const getPublicVideoService = async (videoId) => {
   const video = await Video.findOne({
-    where: { id: videoId, is_published: true, is_private: false },
+    attributes: {
+      exclude: PRIVATE_VIDEO_FIELDS,
+    },
     include: [
       {
         model: Channel,
         as: "channel",
-        attributes: ["username", "name", "avatar"],
+        attributes: SHORT_CHANNEL_FIELDS,
       },
       {
         model: Tag,
@@ -326,46 +296,50 @@ export const getPublicVideoService = async (videoId) => {
         include: {
           model: User,
           as: "user",
-          attributes: ["username", "firstName", "lastName", "avatar"],
+          attributes: SHORT_USER_FIELDS,
         },
         attributes: ["id", "content", "created_at"],
         limit: 10,
-        raw: true,
       },
     ],
-    attributes: publicVideoFields,
+    where: { id: videoId, is_published: true, is_private: false },
   });
   if (!video) throw new AppError("Video not found", 404);
 
   return { video };
 };
 
-// GET /api/videos/:videoId
-// Authorization: Bearer token
-// Response: { video with channel, tags, comments?, view_count }
 export const getVideoService = async (user, videoId) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
-  const video = await channel.getVideos({
-    where: { id: videoId },
+  const [video] = await channel.getVideos({
     include: [
       {
         model: Tag,
         as: "tags",
         attributes: ["name"],
       },
+      {
+        model: VideoComment,
+        as: "comments",
+        include: {
+          model: User,
+          as: "user",
+          attributes: SHORT_USER_FIELDS,
+        },
+        attributes: ["id", "content", "created_at"],
+        limit: 10,
+      },
     ],
+    where: { id: videoId },
+    limit: 1,
   });
   if (!video) throw new AppError("Video not found", 404);
 
   return { video };
 };
 
-// PUT /api/videos/:videoId
-// Headers: Authorization (video owner)
-// Body: { title?, description?, is_private?, tags[] }
-// Response: { video }
 export const updateVideoService = async (
   user,
   videoId,
@@ -388,30 +362,52 @@ export const updateVideoService = async (
   return video;
 };
 
-// DELETE /api/videos/:videoId
-// Headers: Authorization (video owner)
-// Response: { message: "Video deleted" }
 export const deleteVideoService = async (user, videoId) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
-  const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
-  if (!video) throw new AppError("Video not found", 404);
+  const transaction = await sequelize.transaction();
+  try {
+    const [video] = await channel.getVideos({
+      where: { id: videoId },
+      limit: 1,
+      transaction,
+    });
+    if (!video) throw new AppError("Video not found", 404);
 
-  const tags = await video.getTags();
-  await Promise.all(tags.map((tag) => tag.decrement("use_count")));
+    const tags = await video.getTags({ transaction });
+    if (tags.length > 0) {
+      await Tag.decrement("use_count", {
+        where: { id: tags.map((t) => t.id) },
+        transaction,
+      });
+    }
 
-  await video.destroy();
+    await channel.decrement(
+      {
+        views_count: video.views_count,
+        likes_count: video.likes_count,
+        dislikes_count: video.dislikes_count,
+        comments_count: video.comments_count,
+      },
+      { transaction }
+    );
+
+    // still need to cleanup the associations
+
+    await video.destroy();
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return {
     message: "Video deleted successfully",
   };
 };
 
-// PATCH /api/videos/:videoId/publish
-// Headers: Authorization (video owner)
-// Body: { publish_at? } // null = publish now
-// Response: { video }
 export const publishVideoService = async (user, videoId, publishAt) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
@@ -442,25 +438,33 @@ export const publishVideoService = async (user, videoId, publishAt) => {
   return video;
 };
 
-/**
- * VIDEO INTERACTIONS
- */
-// POST /api/videos/:videoId/view
-// Headers: Authorization
-// Body: { watch_time } // seconds watched
-// Response: { message: "View recorded" }
 export const recordVideoViewService = async (user, videoId, watchTime) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
-  const [view, created] = await VideoView.findOrCreate({
-    where: { user_id: user.id, video_id: videoId },
-    defaults: { watch_time: watchTime },
-  });
-  if (!created && watchTime > view.watch_time)
-    await view.update({ watch_time: watchTime });
+  const transaction = await sequelize.transaction();
+  try {
+    const [view, created] = await VideoView.findOrCreate({
+      where: { user_id: user.id, video_id: videoId },
+      defaults: { watch_time: watchTime },
+      transaction,
+    });
+    if (!created && watchTime > view.watch_time)
+      await view.update({ watch_time: watchTime }, { transaction });
 
-  if (created) await video.increment("views_count");
+    if (created) {
+      const channel = video.getChannel();
+      await Promise.all([
+        video.increment("views_count", { transaction }),
+        channel.increment("views_count", { transaction }),
+      ]);
+    }
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return {
     watchedAt: view.watched_at,
@@ -469,25 +473,38 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
   };
 };
 
-// POST /api/videos/:videoId/like
-// Headers: Authorization
-// Response: { is_liked: true, likes_count, dislikes_count }
 export const likeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
-  const [reaction, created] = await VideoReaction.findOrCreate({
-    where: { user_id: user.id, video_id: videoId },
-    defaults: { is_like: true },
-  });
-  if (!created && reaction.is_like) throw new AppError("Already liked", 409);
-  if (!created && !reaction.is_like) {
-    await reaction.update({ is_like: true });
-    video.dislikes_count--;
-  }
+  const transaction = await sequelize.transaction();
+  try {
+    const [reaction, created] = await VideoReaction.findOrCreate({
+      where: { user_id: user.id, video_id: videoId },
+      defaults: { is_like: true },
+      transaction,
+    });
+    if (!created && reaction.is_like) throw new AppError("Already liked", 409);
+    if (!created && !reaction.is_like) {
+      await Promise.all([
+        await reaction.update({ is_like: true }, { transaction }),
+        await video.decrement("dislikes_count", { transaction }),
+      ]);
+    }
 
-  video.likes_count++;
-  await video.save();
+    if (created) {
+      const channel = video.getChannel();
+      await Promise.all([
+        video.increment("likes_count", { transaction }),
+        channel.increment("likes_count", { transaction }),
+      ]);
+    }
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return {
     is_liked: true,
@@ -496,26 +513,39 @@ export const likeVideoService = async (user, videoId) => {
   };
 };
 
-// POST /api/videos/:videoId/dislike
-// Headers: Authorization
-// Response: { is_liked: false, likes_count, dislikes_count }
 export const dislikeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
-  const [reaction, created] = await VideoReaction.findOrCreate({
-    where: { user_id: user.id, video_id: videoId },
-    defaults: { is_like: false },
-  });
-  if (!created && !reaction.is_like)
-    throw new AppError("Already disliked", 409);
-  if (!created && reaction.is_like) {
-    await reaction.update({ is_like: false });
-    video.likes_count--;
-  }
+  const transaction = await sequelize.transaction();
+  try {
+    const [reaction, created] = await VideoReaction.findOrCreate({
+      where: { user_id: user.id, video_id: videoId },
+      defaults: { is_like: false },
+      transaction,
+    });
+    if (!created && !reaction.is_like)
+      throw new AppError("Already disliked", 409);
+    if (!created && reaction.is_like) {
+      await Promise.all([
+        await reaction.update({ is_like: false }, { transaction }),
+        await video.decrement("likes_count", { transaction }),
+      ]);
+    }
 
-  video.dislikes_count++;
-  await video.save();
+    if (created) {
+      const channel = video.getChannel();
+      await Promise.all([
+        video.increment("dislikes_count", { transaction }),
+        channel.increment("dislikes_count", { transaction }),
+      ]);
+    }
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return {
     is_liked: false,
@@ -524,9 +554,6 @@ export const dislikeVideoService = async (user, videoId) => {
   };
 };
 
-// DELETE /api/videos/:videoId/reaction
-// Headers: Authorization
-// Response: { likes_count, dislikes_count }
 export const removeVideoReactionService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
@@ -534,14 +561,31 @@ export const removeVideoReactionService = async (user, videoId) => {
   const [reaction] = await video.getReactions({
     where: { user_id: user.id },
   });
-
   if (!reaction) throw new AppError("No reaction found", 404);
 
-  if (reaction.is_like) video.likes_count--;
-  else video.dislikes_count--;
+  const transaction = await sequelize.transaction();
+  try {
+    const channel = await video.getChannel();
 
-  await video.save();
-  await reaction.destroy();
+    if (reaction.is_like) {
+      await Promise.all([
+        video.decrement("likes_count", { transaction }),
+        channel.decrement("likes_count", { transaction }),
+      ]);
+    } else {
+      await Promise.all([
+        video.decrement("dislikes_count", { transaction }),
+        channel.decrement("dislikes_count", { transaction }),
+      ]);
+    }
+
+    await reaction.destroy({ transaction });
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return {
     is_liked: null,
@@ -550,10 +594,6 @@ export const removeVideoReactionService = async (user, videoId) => {
   };
 };
 
-// GET /api/videos/:videoId/reactions
-// Headers: Authorization (video owner only)
-// Query: ?page=1&limit=20&type=like|dislike
-// Response: { reactions[], pagination }
 export const getVideoReactionsService = async (
   user,
   videoId,
@@ -577,18 +617,21 @@ export const getVideoReactionsService = async (
 
   const where = type ? { is_like: type === "like" } : {};
 
-  const [reactions] = await video.getReactions({
-    where,
-    include: {
-      model: User,
-      as: "user",
-      attributes: ["username", "firstName", "lastName", "avatar"],
-    },
-    order,
-    limit,
-    offset,
-  });
-  const total = video.likes_count + video.dislikes_count;
+  const [[reactions], total] = await Promise.all([
+    video.getReactions({
+      where,
+      include: {
+        model: User,
+        as: "user",
+        attributes: SHORT_USER_FIELDS,
+      },
+      order,
+      limit,
+      offset,
+    }),
+
+    video.getReactions({ where }),
+  ]);
 
   const pagination = {
     page,
@@ -603,9 +646,6 @@ export const getVideoReactionsService = async (
   };
 };
 
-// GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest&parent_id=?
-// Response: { comments[], pagination }
 export const getPublicVideoCommentsService = async (
   videoId,
   inPage,
@@ -622,18 +662,23 @@ export const getPublicVideoCommentsService = async (
   const order =
     sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
-  const comments = await VideoComment.findAll({
-    where: { video_id: videoId, parent_comment_id: parentCommentId || null },
-    include: {
-      model: User,
-      as: "user",
-      attributes: ["username", "firstName", "lastName", "avatar"],
-    },
-    order,
-    limit,
-    offset,
-  });
-  const total = video.total_comments;
+  const [comments, total] = await Promise.all([
+    VideoComment.findAll({
+      where: { video_id: videoId, parent_comment_id: parentCommentId || null },
+      include: {
+        model: User,
+        as: "user",
+        attributes: SHORT_USER_FIELDS,
+      },
+      order,
+      limit,
+      offset,
+    }),
+
+    VideoComment.findAll({
+      where: { video_id: videoId, parent_comment_id: parentCommentId || null },
+    }),
+  ]);
 
   const pagination = {
     page,
@@ -648,10 +693,6 @@ export const getPublicVideoCommentsService = async (
   };
 };
 
-// POST /api/videos/:videoId/comments
-// Headers: Authorization
-// Body: { content, parent_comment_id? }
-// Response: { comment }
 export const createVideoCommentService = async (
   user,
   videoId,
@@ -661,20 +702,40 @@ export const createVideoCommentService = async (
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
-  if (parentCommentId) {
-    const parentComment = await VideoComment.findByPk(parentCommentId);
-    if (!parentComment) throw new AppError("Parent comment not found", 404);
-    if (parentComment.video_id !== videoId)
-      throw new AppError("Parent comment not found", 404);
-    await parentComment.increment("child_comments_count");
-  }
+  let comment;
+  const transaction = await sequelize.transaction();
+  try {
+    if (parentCommentId) {
+      const parentComment = await VideoComment.findByPk(parentCommentId, {
+        transaction,
+      });
+      if (!parentComment) throw new AppError("Parent comment not found", 404);
 
-  const comment = await user.createVideoComment({
-    video_id: videoId,
-    parent_comment_id: parentCommentId || null,
-    content,
-  });
-  await video.increment("comments_count");
+      if (parentComment.video_id !== videoId)
+        throw new AppError("Parent comment not found", 404);
+
+      await parentComment.increment("child_comments_count", { transaction });
+    }
+
+    const channel = await video.getChannel();
+    [comment] = await Promise.all([
+      user.createVideoComment(
+        {
+          video_id: videoId,
+          parent_comment_id: parentCommentId || null,
+          content,
+        },
+        { transaction }
+      ),
+      video.increment("comments_count", { transaction }),
+      channel.increment("comments_count", { transaction }),
+    ]);
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 
   return { comment };
 };

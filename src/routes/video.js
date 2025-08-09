@@ -10,9 +10,9 @@ const router = Router();
 /**
  * VIDEO DISCOVERY & SEARCH
  */
-// GET /api/videos
-// Query: ?page=1&limit=20&sort=newest|trending|popular&category=?&search=?
-// Response: { videos[], pagination, filters }
+// GET videos
+// Query: ?page=1&limit=20&sort=newest|popular
+// Response: { videos[], pagination }
 router.get(
   "/",
   videoValidator.listPublic,
@@ -30,9 +30,9 @@ router.get(
   videoController.getTrendingPublicVideos
 );
 
-// GET /api/videos/search
-// Query: ?q=search_term&page=1&limit=20&sort=relevance|date|views
-// Response: { videos[], pagination, suggestions[] }
+// GET videos/search
+// Query: ?q=search_term&page=1&limit=20&sort=relevance|newest|oldest|popular&tags=?,?,...
+// Response: { videos[], pagination }
 router.get(
   "/search",
   videoValidator.search,
@@ -43,10 +43,10 @@ router.get(
 /**
  * VIDEO CRUD
  */
-// POST /api/videos
+// POST videos
 // Headers: Authorization
 // Body: { title, description?, tags[] }
-// Response: { video, upload_url? }
+// Response: { video with tags, video upload url, thumbnail upload url}
 router.post(
   "/me",
   isAuth,
@@ -55,8 +55,8 @@ router.post(
   videoController.createVideo
 );
 
-// GET /api/videos/:videoId
-// Response: { video with channel, tags, comments?, view_count }
+// GET videos/:videoId
+// Response: { video data with channel and comments }
 router.get(
   "/:videoId",
   videoValidator.videoIdParam,
@@ -64,9 +64,9 @@ router.get(
   videoController.getPublicVideo
 );
 
-// GET /api/videos/:videoId
-// Authorization: Bearer token
-// Response: { video with channel, tags, comments?, view_count }
+// GET videos/me/:videoId
+// Headers: Authorization (video owner)
+// Response: { video data with comments }
 router.get(
   "/me/:videoId",
   isAuth,
@@ -75,22 +75,21 @@ router.get(
   videoController.getVideo
 );
 
-// PUT /api/videos/me/:videoId
+// PUT videos/me/:videoId
 // Headers: Authorization (video owner)
-// Body: { title?, description?, thumbnail?, is_private?, tags[] }
+// Body: { title?, description?, is_private? }
 // Response: { video }
 router.put(
   "/me/:videoId",
   isAuth,
-  videoValidator.videoIdParam,
-  ...videoValidator.update,
+  [...videoValidator.videoIdParam, ...videoValidator.update],
   isValid,
   videoController.updateVideo
 );
 
-// DELETE /api/videos/:videoId
+// DELETE videos/me/:videoId
 // Headers: Authorization (video owner)
-// Response: { message: "Video deleted" }
+// Response: { message: "Video deleted successfully" }
 router.delete(
   "/me/:videoId",
   isAuth,
@@ -99,15 +98,14 @@ router.delete(
   videoController.deleteVideo
 );
 
-// PATCH /api/videos/:videoId/publish
+// PATCH videos/me/:videoId/publish
 // Headers: Authorization (video owner)
 // Body: { publish_at? } // null = publish now
 // Response: { video }
 router.patch(
   "/me/:videoId/publish",
   isAuth,
-  videoValidator.videoIdParam,
-  ...videoValidator.publish,
+  [...videoValidator.videoIdParam, ...videoValidator.publish],
   isValid,
   videoController.publishVideo
 );
@@ -115,10 +113,10 @@ router.patch(
 /**
  * VIDEO INTERACTIONS
  */
-// POST /api/videos/:videoId/view
+// POST videos/:videoId/view
 // Headers: Authorization
 // Body: { watch_time } // seconds watched
-// Response: { message: "View recorded" }
+// Response: { watchedAt, watchTime, viewsCount }
 router.post(
   "/:videoId/view",
   isAuth,
@@ -127,7 +125,7 @@ router.post(
   videoController.recordVideoView
 );
 
-// POST /api/videos/:videoId/like
+// POST videos/:videoId/like
 // Headers: Authorization
 // Response: { is_liked: true, likes_count, dislikes_count }
 router.post(
@@ -138,7 +136,7 @@ router.post(
   videoController.likeVideo
 );
 
-// POST /api/videos/:videoId/dislike
+// POST videos/:videoId/dislike
 // Headers: Authorization
 // Response: { is_liked: false, likes_count, dislikes_count }
 router.post(
@@ -149,9 +147,9 @@ router.post(
   videoController.dislikeVideo
 );
 
-// DELETE /api/videos/:videoId/reaction
+// DELETE videos/:videoId/reaction
 // Headers: Authorization
-// Response: { likes_count, dislikes_count }
+// Response: { is_liked: null, likes_count, dislikes_count }
 router.delete(
   "/:videoId/reaction",
   isAuth,
@@ -160,39 +158,36 @@ router.delete(
   videoController.removeVideoReaction
 );
 
-// GET /api/videos/:videoId/reactions
+// GET videos/me/:videoId/reactions
 // Headers: Authorization (video owner only)
 // Query: ?page=1&limit=20&type=like|dislike
 // Response: { reactions[], pagination }
 router.get(
   "/:videoId/reactions",
   isAuth,
-  videoValidator.videoIdParam,
-  ...videoValidator.reactionsQuery,
+  [...videoValidator.videoIdParam, ...videoValidator.reactionsQuery],
   isValid,
   videoController.getVideoReactions
 );
 
-// GET /api/videos/:videoId/comments
-// Query: ?page=1&limit=20&sort=newest|oldest|popular&parent_id=?
+// GET videos/:videoId/comments
+// Query: ?page=1&limit=20&sort=newest|oldest&parentCommentId=?
 // Response: { comments[], pagination }
 router.get(
   "/:videoId/comments",
-  videoValidator.videoIdParam,
-  ...videoValidator.commentsQuery,
+  [...videoValidator.videoIdParam, ...videoValidator.commentsQuery],
   isValid,
   videoController.getPublicVideoComments
 );
 
-// POST /api/videos/:videoId/comments
+// POST videos/:videoId/comments
 // Headers: Authorization
 // Body: { content, parent_comment_id? }
 // Response: { comment }
 router.post(
   "/:videoId/comments",
   isAuth,
-  videoValidator.videoIdParam,
-  ...videoValidator.commentBody,
+  [...videoValidator.videoIdParam, ...videoValidator.commentBody],
   isValid,
   videoController.createVideoComment
 );
