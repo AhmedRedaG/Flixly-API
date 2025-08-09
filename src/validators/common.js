@@ -64,9 +64,7 @@ export const usernameParam = [
     .bail()
     .isString()
     .matches(/^[a-zA-Z0-9_]{3,16}$/)
-    .withMessage(
-      "username must be minimum 3 characters, start with a-z and can contain a number"
-    )
+    .withMessage("username must be 3-16 characters.")
     .trim(),
 ];
 
@@ -159,9 +157,7 @@ export const requiredUsernameBody = [
     .exists()
     .isString()
     .matches(/^[a-zA-Z0-9_]{3,16}$/)
-    .withMessage(
-      "username must be minimum 3 characters, start with a-z and can contain a number"
-    )
+    .withMessage("username must be 3-16 characters.")
     .trim(),
 ];
 
@@ -170,9 +166,7 @@ export const optionalUsernameBody = [
     .optional()
     .isString()
     .matches(/^[a-zA-Z0-9_]{3,16}$/)
-    .withMessage(
-      "username must be minimum 3 characters, start with a-z and can contain a number"
-    )
+    .withMessage("username must be 3-16 characters.")
     .trim(),
 ];
 
