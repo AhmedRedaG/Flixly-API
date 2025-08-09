@@ -22,7 +22,6 @@ import { swaggerMiddlewares } from "./middlewares/swaggerDocs.js";
 const app = express();
 
 app.use(cors());
-app.use(helmet());
 app.use(jsendMiddleware());
 app.use(cookieParser());
 app.use(express.json());
