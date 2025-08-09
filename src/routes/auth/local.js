@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as authLocal from "../../controllers/auth/local.js";
 import isValid from "../../middlewares/isValid.js";
 import * as authValidator from "../../validators/shared/auth.js";
+import { idParam } from "../../validators/common.js";
 
 const router = Router();
 
@@ -10,7 +11,12 @@ const router = Router();
 router.post("/register", authValidator.register, isValid, authLocal.register);
 
 // PATCH auth/local/verify/{verifyToken}
-router.patch("/verify/:verifyToken", authLocal.verifyMail);
+router.patch(
+  "/verify/:verifyToken",
+  ...idParam("verifyToken"),
+  isValid,
+  authLocal.verifyMail
+);
 
 // POST auth/local/login
 router.post("/login", authValidator.login, isValid, authLocal.login);

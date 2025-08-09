@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import { isAuth } from "../middlewares/isAuth.js";
 import * as commentController from "../controllers/comment.js";
+import isValid from "../middlewares/isValid.js";
+import * as commentValidator from "../validators/shared/comment.js";
 
 const router = Router();
 
@@ -9,16 +11,35 @@ const router = Router();
 // Headers: Authorization (comment owner)
 // Body: { content }
 // Response: { comment }
-router.put("/:commentId", isAuth, commentController.updateComment);
+router.put(
+  "/:commentId",
+  isAuth,
+  commentValidator.commentIdPath,
+  ...commentValidator.update,
+  isValid,
+  commentController.updateComment
+);
 
 // DELETE /api/comments/:commentId
 // Headers: Authorization (comment owner or video owner)
 // Response: { message: "Comment deleted" }
-router.delete("/:commentId", isAuth, commentController.deleteComment);
+router.delete(
+  "/:commentId",
+  isAuth,
+  commentValidator.commentIdPath,
+  isValid,
+  commentController.deleteComment
+);
 
 // GET /api/comments/:commentId/replies
 // Query: ?page=1&limit=10
 // Response: { replies[], pagination }
-router.get("/:commentId/replies", commentController.getCommentReplies);
+router.get(
+  "/:commentId/replies",
+  commentValidator.commentIdPath,
+  ...commentValidator.repliesQuery,
+  isValid,
+  commentController.getCommentReplies
+);
 
 export default router;

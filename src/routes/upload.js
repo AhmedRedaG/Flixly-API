@@ -3,6 +3,8 @@ import { Router } from "express";
 import { isAuth } from "../middlewares/isAuth.js";
 import * as uploadController from "../controllers/upload.js";
 import { videoUploader, imageUploader } from "../middlewares/localUploader.js";
+import isValid from "../middlewares/isValid.js";
+import * as uploadValidator from "../validators/shared/upload.js";
 
 const router = Router();
 
@@ -14,6 +16,8 @@ const router = Router();
 router.post(
   "/video/:videoId",
   isAuth,
+  uploadValidator.uploadVideo,
+  isValid,
   videoUploader,
   uploadController.uploadVideo
 );
@@ -26,6 +30,8 @@ router.post(
 router.post(
   "/image/:processId",
   isAuth,
+  uploadValidator.uploadImage,
+  isValid,
   imageUploader,
   uploadController.uploadImage
 );
@@ -33,6 +39,12 @@ router.post(
 // GET /api/upload/status/:videoId
 // Headers: Authorization
 // Response: { status, progress?, error?, video_url? }
-router.get("/status/:videoId", isAuth, uploadController.getUploadStatus);
+router.get(
+  "/status/:videoId",
+  isAuth,
+  uploadValidator.status,
+  isValid,
+  uploadController.getUploadStatus
+);
 
 export default router;

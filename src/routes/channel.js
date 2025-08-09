@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import * as channelController from "../controllers/channel.js";
 import { isAuth } from "../middlewares/isAuth.js";
+import isValid from "../middlewares/isValid.js";
+import * as channelValidator from "../validators/shared/channel.js";
 
 const router = Router();
 
@@ -9,7 +11,13 @@ const router = Router();
 // Headers: Authorization
 // Body: { username, name, description, avatar?, banner? }
 // Response: { channel }
-router.post("/me", isAuth, channelController.createChannel);
+router.post(
+  "/me",
+  isAuth,
+  channelValidator.create,
+  isValid,
+  channelController.createChannel
+);
 
 // GET /api/channels/me
 // Authorization: Bearer token
@@ -18,13 +26,24 @@ router.get("/me", isAuth, channelController.getChannel);
 
 // GET /api/channels/:username
 // Response: { channel with stats, recent videos }
-router.get("/:username", channelController.getPublicChannel);
+router.get(
+  "/:username",
+  channelValidator.usernamePath,
+  isValid,
+  channelController.getPublicChannel
+);
 
 // PUT /api/channels/me
 // Headers: Authorization (channel owner)
 // Body: { name?, description?, avatar?, banner? }
 // Response: { channel }
-router.put("/me", isAuth, channelController.updateChannel);
+router.put(
+  "/me",
+  isAuth,
+  channelValidator.update,
+  isValid,
+  channelController.updateChannel
+);
 
 // DELETE /api/channels/me
 // Headers: Authorization (channel owner)
@@ -35,12 +54,24 @@ router.delete("/me", isAuth, channelController.deleteChannel);
 // Authorization: Bearer token
 // Query: ?page=1&limit=20&sort=newest|oldest|popular&privateOnly=true|false&unpublishedOnly=true|false
 // Response: { videos[], pagination }
-router.get("/me/videos", isAuth, channelController.getChannelVideos);
+router.get(
+  "/me/videos",
+  isAuth,
+  channelValidator.listMyVideosQuery,
+  isValid,
+  channelController.getChannelVideos
+);
 
 // GET /api/channels/:channelId/videos
 // Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
-router.get("/:username/videos", channelController.getPublicChannelVideos);
+router.get(
+  "/:username/videos",
+  channelValidator.usernamePath,
+  ...channelValidator.listPublicVideosQuery,
+  isValid,
+  channelController.getPublicChannelVideos
+);
 
 // GET /api/channels/:channelId/playlists
 // Query: ?page=1&limit=20
@@ -54,12 +85,24 @@ router.get("/:username/videos", channelController.getPublicChannelVideos);
 // Headers: Authorization (channel owner only)
 // Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscribers[], pagination }
-router.get("/me/subscribers", isAuth, channelController.getChannelSubscribers);
+router.get(
+  "/me/subscribers",
+  isAuth,
+  channelValidator.listSubscribersQuery,
+  isValid,
+  channelController.getChannelSubscribers
+);
 
 // POST /api/channels/:channelId/subscribe
 // Headers: Authorization
 // Response: { subscribed: true, subscribers_count }
-router.post("/:username/subscribe", isAuth, channelController.subscribeChannel);
+router.post(
+  "/:username/subscribe",
+  isAuth,
+  channelValidator.usernamePath,
+  isValid,
+  channelController.subscribeChannel
+);
 
 // DELETE /api/channels/:channelId/subscribe
 // Headers: Authorization
@@ -67,6 +110,8 @@ router.post("/:username/subscribe", isAuth, channelController.subscribeChannel);
 router.delete(
   "/:username/subscribe",
   isAuth,
+  channelValidator.usernamePath,
+  isValid,
   channelController.unsubscribeChannel
 );
 

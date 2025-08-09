@@ -4,6 +4,7 @@ import { isAuth } from "../middlewares/isAuth.js";
 import * as userController from "../controllers/user.js";
 import * as authValidator from "../validators/shared/auth.js";
 import isValid from "../middlewares/isValid.js";
+import * as userValidator from "../validators/shared/user.js";
 
 const router = Router();
 
@@ -16,7 +17,13 @@ router.get("/me", isAuth, userController.getUserInfo);
 // Headers: Authorization
 // Body: { first_name?, last_name?, username?, bio?, avatar? }
 // Response: { user }
-router.put("/me", isAuth, userController.updateUserInfo);
+router.put(
+  "/me",
+  isAuth,
+  userValidator.updateMe,
+  isValid,
+  userController.updateUserInfo
+);
 
 // PUT /api/users/me/password
 // Headers: Authorization
@@ -40,7 +47,13 @@ router.delete("/me", isAuth, userController.deleteAccount);
 // Headers: Authorization
 // Query: ?page=1&limit=20&sort=newest|oldest
 // Response: { subscriptions[], pagination }
-router.get("/me/subscriptions", isAuth, userController.getUserSubscriptions);
+router.get(
+  "/me/subscriptions",
+  isAuth,
+  userValidator.pagingOnly,
+  isValid,
+  userController.getUserSubscriptions
+);
 
 // GET /api/users/me/subscriptions/feed
 // Headers: Authorization
@@ -49,6 +62,8 @@ router.get("/me/subscriptions", isAuth, userController.getUserSubscriptions);
 router.get(
   "/me/subscriptions/feed",
   isAuth,
+  userValidator.pagingOnly,
+  isValid,
   userController.getUserSubscriptionsFeed
 );
 
@@ -61,16 +76,33 @@ router.get(
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
-router.get("/me/views", isAuth, userController.getUserViews);
+router.get(
+  "/me/views",
+  isAuth,
+  userValidator.pagingOnly,
+  isValid,
+  userController.getUserViews
+);
 
 // GET /api/users/me/likes
 // Headers: Authorization
 // Query: ?page=1&limit=20
 // Response: { videos[], pagination }
-router.get("/me/likes", isAuth, userController.getUserLikes);
+router.get(
+  "/me/likes",
+  isAuth,
+  userValidator.pagingOnly,
+  isValid,
+  userController.getUserLikes
+);
 
 // GET /api/users/:username
 // Response: { user public profile with channel info }
-router.get("/:username", userController.getPublicUserInfo);
+router.get(
+  "/:username",
+  userValidator.usernamePath,
+  isValid,
+  userController.getPublicUserInfo
+);
 
 export default router;
