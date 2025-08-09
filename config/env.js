@@ -33,5 +33,11 @@ export const env = {
     supportEmail: process.env.SUPPORT_MAIL || process.env.SERVER_MAIL,
   },
 
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
+
   frontendUrl: process.env.FRONTEND_URL,
 };

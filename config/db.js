@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// need to change it to URI
+// need to change it to URI later
 export const dbConfig = {
   development: {
     username: process.env.DB_USER,
@@ -29,12 +29,6 @@ export const dbConfig = {
     port: process.env.DB_PORT,
     dialect: "postgres",
     logging: false,
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
   },
 };
 
