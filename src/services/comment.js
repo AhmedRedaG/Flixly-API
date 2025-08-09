@@ -1,12 +1,11 @@
 import AppError from "../utilities/appError.js";
-import { db } from "../../database/models/index.js";
+import { db, sequelize } from "../../database/models/index.js";
+import { constants } from "../../config/constants.js";
+
+const { SHORT_USER_FIELDS } = constants.user;
 
 const { VideoComment, User } = db;
 
-// PUT /api/comments/:commentId
-// Headers: Authorization (comment owner)
-// Body: { content }
-// Response: { comment }
 export const updateCommentService = async (user, commentId, content) => {
   const comment = await VideoComment.findByPk(commentId);
   if (!comment) throw new AppError("Comment not found", 404);
@@ -16,12 +15,9 @@ export const updateCommentService = async (user, commentId, content) => {
 
   await comment.update({ content });
 
-  return comment;
+  return { comment };
 };
 
-// DELETE /api/comments/:commentId
-// Headers: Authorization (comment owner or video owner)
-// Response: { message: "Comment deleted" }
 export const deleteCommentService = async (user, commentId) => {
   const comment = await VideoComment.findByPk(commentId);
   if (!comment) throw new AppError("Comment not found", 404);
@@ -35,34 +31,50 @@ export const deleteCommentService = async (user, commentId) => {
       throw new AppError("Unauthorized to delete comment", 401);
   }
 
-  const childComments = await comment.child_comments_count;
-  await video.decrement("comments_count", { by: childComments + 1 });
-  await comment.destroy();
+  const childCommentsCount = comment.child_comments_count;
+
+  const transaction = await sequelize.transaction();
+  try {
+    await Promise.all([
+      video.decrement("comments_count", {
+        by: childCommentsCount + 1,
+        transaction,
+      }),
+      comment.destroy({
+        transaction,
+      }),
+    ]);
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 
   return {
     message: "Comment deleted successfully",
   };
 };
 
-// GET /api/comments/:commentId/replies
-// Query: ?page=1&limit=10
-// Response: { replies[], pagination }
 export const getCommentRepliesService = async (commentId, inPage, inLimit) => {
   const limit = inLimit || 10;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
 
-  const replies = await VideoComment.findAll({
-    where: { parent_comment_id: commentId },
-    include: {
-      model: User,
-      as: "user",
-      attributes: ["username", "firstName", "lastName", "avatar"],
-    },
-    limit,
-    offset,
-  });
-  const total = replies?.length || 0;
+  const [replies, total] = await Promise.all([
+    VideoComment.findAll({
+      where: { parent_comment_id: commentId },
+      include: {
+        model: User,
+        as: "user",
+        attributes: SHORT_USER_FIELDS,
+      },
+      limit,
+      offset,
+    }),
+
+    VideoComment.findAll({ where: { parent_comment_id: commentId } }),
+  ]);
 
   const pagination = {
     page,

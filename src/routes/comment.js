@@ -7,22 +7,21 @@ import * as commentValidator from "../validators/shared/comment.js";
 
 const router = Router();
 
-// PUT /api/comments/:commentId
+// PUT comments/:commentId
 // Headers: Authorization (comment owner)
 // Body: { content }
 // Response: { comment }
 router.put(
   "/:commentId",
   isAuth,
-  commentValidator.commentIdPath,
-  ...commentValidator.update,
+  [...commentValidator.commentIdPath, ...commentValidator.update],
   isValid,
   commentController.updateComment
 );
 
-// DELETE /api/comments/:commentId
+// DELETE comments/:commentId
 // Headers: Authorization (comment owner or video owner)
-// Response: { message: "Comment deleted" }
+// Response: { message: "Comment deleted successfully" }
 router.delete(
   "/:commentId",
   isAuth,
@@ -31,13 +30,12 @@ router.delete(
   commentController.deleteComment
 );
 
-// GET /api/comments/:commentId/replies
+// GET comments/:commentId/replies
 // Query: ?page=1&limit=10
 // Response: { replies[], pagination }
 router.get(
   "/:commentId/replies",
-  commentValidator.commentIdPath,
-  ...commentValidator.repliesQuery,
+  [...commentValidator.commentIdPath, ...commentValidator.repliesQuery],
   isValid,
   commentController.getCommentReplies
 );
