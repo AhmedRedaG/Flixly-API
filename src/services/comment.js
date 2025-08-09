@@ -73,7 +73,7 @@ export const getCommentRepliesService = async (commentId, inPage, inLimit) => {
       offset,
     }),
 
-    VideoComment.findAll({ where: { parent_comment_id: commentId } }),
+    VideoComment.count({ where: { parent_comment_id: commentId } }),
   ]);
 
   const pagination = {
