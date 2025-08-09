@@ -6,15 +6,15 @@ import { db } from "../../database/models/index.js";
 import { constants } from "../../config/constants.js";
 
 const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
-const { PRIVET_VIDEO_FIELDS } = constants.video;
+const { PRIVATE_VIDEO_FIELDS } = constants.video;
 const { SHORT_CHANNEL_FIELDS } = constants.channel;
-const { PRIVET_USER_FIELDS } = constants.user;
+const { PRIVATE_USER_FIELDS } = constants.user;
 const { User, RefreshToken, Channel, Video, Subscription } = db;
 
 export const getPublicUserInfoService = async (username) => {
   const user = await User.findOne({
     attributes: {
-      exclude: PRIVET_USER_FIELDS,
+      exclude: PRIVATE_USER_FIELDS,
     },
     where: { username },
     include: {

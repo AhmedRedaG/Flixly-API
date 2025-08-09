@@ -22,7 +22,7 @@ export const constants = {
   },
 
   user: {
-    PRIVET_USER_FIELDS: [
+    PRIVATE_USER_FIELDS: [
       "email",
       "googleId",
       "password",
@@ -32,7 +32,7 @@ export const constants = {
   },
 
   video: {
-    PRIVET_VIDEO_FIELDS: ["processing_status", "processing_message"],
+    PRIVATE_VIDEO_FIELDS: ["processing_status", "processing_message"],
     SHORT_VIDEO_FIELDS: [
       "id",
       "channel_id",
