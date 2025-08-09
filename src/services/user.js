@@ -1,40 +1,37 @@
 import bcrypt from "bcrypt";
 
-import { db } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
 import { getSafeData } from "../utilities/dataHelper.js";
-import * as configs from "../../config/index.js";
+import { db } from "../../database/models/index.js";
+import { constants } from "../../config/constants.js";
 
-const { HASH_PASSWORD_ROUNDS } = configs.constants.bcrypt;
-const {
-  User,
-  RefreshToken,
-  ResetToken,
-  Channel,
-  Playlist,
-  Video,
-  Subscription,
-  VideoReaction,
-  VideoView,
-  VideoComment,
-  Report,
-} = db;
+const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
+const { PRIVET_VIDEO_FIELDS } = constants.video;
+const { SHORT_CHANNEL_FIELDS } = constants.channel;
+const { PRIVET_USER_FIELDS } = constants.user;
+const { User, RefreshToken, Channel, Video, Subscription } = db;
 
-const publicVideoFields = [
-  "id",
-  "title",
-  "description",
-  "url",
-  "thumbnail",
-  "views_count",
-  "likes_count",
-  "dislikes_count",
-  "comments_count",
-  "duration",
-  "publish_at",
-];
+export const getPublicUserInfoService = async (username) => {
+  const user = await User.findOne({
+    attributes: {
+      exclude: PRIVET_USER_FIELDS,
+    },
+    where: { username },
+    include: {
+      model: Channel,
+      as: "channel",
+      attributes: SHORT_CHANNEL_FIELDS,
+    },
+  });
+  if (!user)
+    throw new AppError("User not found with the provided username", 404);
 
-// GET /api/v1/users/me
+  return {
+    user,
+  };
+};
+
+// GET users/me
 // Headers: Authorization
 // Response: { user with channel info }
 export const getUserInfoService = async (user) => {
@@ -331,33 +328,5 @@ export const getUserLikesService = async (user, inPage, inLimit) => {
   return {
     videos,
     pagination,
-  };
-};
-
-// GET /api/users/:username
-// Response: { user public profile with channel info }
-export const getPublicUserInfoService = async (username) => {
-  const user = await User.findOne({
-    where: { username },
-    include: {
-      model: Channel,
-      as: "channel",
-      attributes: [
-        "username",
-        "name",
-        "description",
-        "avatar",
-        "banner",
-        "subscribers",
-        "views_count",
-      ],
-    },
-  });
-  if (!user) throw new AppError("User not found with the provided ID", 404);
-
-  const userData = getSafeData(user, { public: true });
-
-  return {
-    user: userData,
   };
 };

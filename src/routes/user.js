@@ -8,6 +8,15 @@ import * as userValidator from "../validators/shared/user.js";
 
 const router = Router();
 
+// GET users/:username
+// Response: { user public profile with channel info }
+router.get(
+  "/:username",
+  userValidator.usernamePath,
+  isValid,
+  userController.getPublicUserInfo
+);
+
 // GET /api/v1/users/me
 // Headers: Authorization
 // Response: { user with channel info }
@@ -94,15 +103,6 @@ router.get(
   userValidator.pagingOnly,
   isValid,
   userController.getUserLikes
-);
-
-// GET /api/users/:username
-// Response: { user public profile with channel info }
-router.get(
-  "/:username",
-  userValidator.usernamePath,
-  isValid,
-  userController.getPublicUserInfo
 );
 
 export default router;

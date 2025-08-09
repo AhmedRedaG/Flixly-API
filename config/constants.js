@@ -20,4 +20,37 @@ export const constants = {
     WINDOW_DURATION: 1000 * 60 * 15,
     REQUESTS_BARE_WINDOW: 50,
   },
+
+  user: {
+    PRIVET_USER_FIELDS: [
+      "email",
+      "googleId",
+      "password",
+      "verified",
+      "updated_at",
+    ],
+  },
+
+  video: {
+    PRIVET_VIDEO_FIELDS: ["processing_status", "processing_message"],
+    SHORT_VIDEO_FIELDS: [
+      "id",
+      "channel_id",
+      "title",
+      "thumbnail",
+      "views_count",
+      "publish_at",
+    ],
+  },
+
+  channel: {
+    SHORT_CHANNEL_FIELDS: [
+      "id",
+      "username",
+      "name",
+      "avatar",
+      "subscribers",
+      "created_at",
+    ],
+  },
 };
