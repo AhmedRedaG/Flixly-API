@@ -43,7 +43,10 @@ export const isUserUploadImageAllowed = async (req, res, next) => {
   if (type === "thumbnail") {
     if (!channel) throw new AppError("Channel not found", 404);
 
-    const [video] = channel.getVideos({ where: processId, limit: 1 });
+    const [video] = await channel.getVideos({
+      where: { id: processId },
+      limit: 1,
+    });
     if (!video) throw new AppError("Video not found");
 
     req.video = video;

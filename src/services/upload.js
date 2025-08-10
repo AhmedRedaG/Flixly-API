@@ -23,6 +23,7 @@ export const remoteUploadVideoService = async (video, file) => {
     const uploadOptions = videoUploadOptions();
     const result = await cloudinary.uploader.upload(file.path, uploadOptions);
 
+    const durationInSeconds = Math.round(result.duration);
     await video.update(
       {
         processing_status: video.thumbnail ? "completed" : "processing",
@@ -30,7 +31,7 @@ export const remoteUploadVideoService = async (video, file) => {
           ? "ready to publish :)"
           : "video uploaded successfully, waiting to upload thr thumbnail",
         url: result.secure_url,
-        duration: result.duration,
+        duration: durationInSeconds,
       },
       { transaction }
     );
