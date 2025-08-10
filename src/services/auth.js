@@ -13,7 +13,11 @@ import {
 import { constants } from "../../config/constants.js";
 
 const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
-const { RESET_TOKEN_AGE_IN_MS } = constants.jwt;
+const {
+  ALLOWED_OTP_AFTER_IN_MINUTES,
+  ALLOWED_OTP_TRIES,
+  OTP_EXPIRES_AFTER_IN_MS,
+} = constants.otp;
 const { User, ResetToken, RefreshToken } = db;
 
 export const postRegisterService = async (
@@ -209,7 +213,7 @@ export const requestResetPasswordMailService = async (email) => {
 
     await user.createResetOtp({
       otp,
-      expires_at: new Date(Date.now() + RESET_TOKEN_AGE_IN_MS),
+      expires_at: new Date(Date.now() + OTP_EXPIRES_AFTER_IN_MS),
       tries: (oldOtp?.tries || 0) + 1,
     });
 

@@ -4,11 +4,8 @@ export const constants = {
   jwt: {
     ACCESS_TOKEN_AGE: "15h", // for testing
     REFRESH_TOKEN_AGE: "7d",
-    REFRESH_TOKEN_AGE_IN_MS: 7 * 24 * 60 * 60 * 1000,
-    RESET_TOKEN_AGE: "1h",
-    RESET_TOKEN_AGE_IN_MS: 60 * 60 * 1000,
-    TEMP_TOKEN_AGE: "10m",
     VERIFY_TOKEN_AGE: "3h",
+    REFRESH_TOKEN_AGE_IN_MS: 7 * 24 * 60 * 60 * 1000,
   },
 
   bcrypt: {
@@ -62,5 +59,11 @@ export const constants = {
     ALLOWED_IMAGE_TYPES: ["jpg", "jpeg", "png", "gif", "webp"],
     ALLOWED_VIDEO_TYPES: ["mp4", "mov", "avi", "mkv", "webm"],
     CLOUDINARY_UPLOAD_TIMEOUT: 6000000, // 10 minutes
+  },
+
+  otp: {
+    ALLOWED_OTP_AFTER_IN_MINUTES: 5,
+    ALLOWED_OTP_TRIES: 10,
+    OTP_EXPIRES_AFTER_IN_MS: 5 * 60 * 1000,
   },
 };
