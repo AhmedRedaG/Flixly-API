@@ -215,7 +215,7 @@ export const requestResetPasswordMailService = async (email) => {
       if (oldOtp.tries > ALLOWED_OTP_TRIES && allowAfter > new Date())
         throw new AppError(
           `Too many requests. Try again after ${Math.ceil(
-            (allowAfter - now) / 60000
+            (allowAfter - new Date()) / 60000
           )} minutes.`,
           429
         );
