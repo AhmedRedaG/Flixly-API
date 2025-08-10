@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
 import jsendMiddleware from "jsend-middleware";
-import helmet from "helmet";
 import cors from "cors";
 
 import "../config/passport.js";
@@ -34,7 +33,6 @@ app.use(express.static(path.join(process.cwd(), "public")));
 app.use(rateLimiter);
 app.use(requestDurationLogger);
 
-app.use("/api/v1/docs", swaggerMiddlewares);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/channels", channelRouter);
@@ -42,7 +40,8 @@ app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/tags", tagRouter);
 app.use("/api/v1/upload", uploadRouter);
-app.use("/pages/", pagesRouter);
+app.use("/pages", pagesRouter);
+app.use("/docs", swaggerMiddlewares);
 app.use(errorHandler);
 
 export default app;
