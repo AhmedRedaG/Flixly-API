@@ -32,7 +32,7 @@ imageForm?.addEventListener("submit", async (e) => {
     if (!res.ok || data.status !== "success")
       throw new Error(data?.data?.message || data?.message || "Upload failed");
     const urlOut = data.data.imageUrl || data.data.uploadUrl;
-    result.innerHTML = `✅ Uploaded: <a href="${urlOut}" target="_blank" rel="noopener">${urlOut}</a>`;
+    result.innerHTML = `✅ Uploaded`;
   } catch (err) {
     result.textContent = `❌ ${err.message}`;
   }
@@ -65,7 +65,7 @@ videoForm?.addEventListener("submit", async (e) => {
     if (!res.ok || data.status !== "success")
       throw new Error(data?.data?.message || data?.message || "Upload failed");
     const urlOut = data.data.uploadUrl;
-    result.innerHTML = `✅ Uploaded: <a href="${urlOut}" target="_blank" rel="noopener">${urlOut}</a>`;
+    result.innerHTML = `✅ Uploaded`;
   } catch (err) {
     result.textContent = `❌ ${err.message}`;
   }

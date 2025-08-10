@@ -9,16 +9,4 @@ router.get("/upload", (req, res) => {
   res.render("upload", { title: "Flixly Uploader" });
 });
 
-router.get(
-  "/video/:id",
-  pagesValidator.videoIdPath,
-  isValid,
-  async (req, res) => {
-    res.render("video-preview", {
-      title: `Flixly Video`,
-      videoId: req.params.id,
-    });
-  }
-);
-
 export default router;
