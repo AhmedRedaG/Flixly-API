@@ -2,27 +2,22 @@ import { Router } from "express";
 
 import * as authController from "../../controllers/auth.js";
 import isValid from "../../middlewares/isValid.js";
-import {
-  emailBody,
-  strongPasswordBody,
-  idParam,
-} from "../../validators/common.js";
+import * as authValidator from "../../validators/shared/auth.js";
 
 const router = Router();
 
 // POST auth/password/reset
 router.post(
   "/reset",
-  ...emailBody,
+  ...authValidator.requestReset,
   isValid,
   authController.requestResetPasswordMail
 );
 
-// PATCH auth/password/reset/{resetToken}
+// PATCH auth/password/reset
 router.patch(
-  "/reset/:resetToken",
-  ...idParam("resetToken"),
-  ...strongPasswordBody("password"),
+  "/reset",
+  ...authValidator.resetPassword,
   isValid,
   authController.resetPassword
 );

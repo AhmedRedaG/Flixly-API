@@ -69,10 +69,8 @@ export const requestResetPasswordMail = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-  const { resetToken } = req.params;
-  const { password } = req.body;
-  if (!resetToken) throw new AppError("Reset token is missing");
-  const data = await authServer.resetPasswordService(resetToken, password);
+  const { email, otp, password } = req.body;
+  const data = await authServer.resetPasswordService(email, otp, password);
   CookieHelper.clearRefreshTokenCookie(res);
   res.jsend.success(data);
 };
