@@ -2,6 +2,10 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 
+import { constants } from "./constants.js";
+
+const { MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } = constants.upload;
+
 try {
   fs.mkdirSync(path.join(process.cwd(), "uploads", "temp"), {
     recursive: true,
@@ -35,13 +39,13 @@ const videoFileFilter = (req, file, cb) => {
 const uploadImage = multer({
   storage,
   fileFilter: imageFileFilter,
-  limits: { fileSize: 1024 * 1024 * 5 },
+  limits: { fileSize: MAX_IMAGE_SIZE },
 });
 
 const uploadVideo = multer({
   storage,
   fileFilter: videoFileFilter,
-  limits: { fileSize: 1024 * 1024 * 10 },
+  limits: { fileSize: MAX_VIDEO_SIZE },
 });
 
 export { uploadImage, uploadVideo };
