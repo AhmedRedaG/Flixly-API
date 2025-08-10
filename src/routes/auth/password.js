@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import * as authPassword from "../../controllers/auth/password.js";
+import * as authController from "../../controllers/auth.js";
 import isValid from "../../middlewares/isValid.js";
 import {
   emailBody,
@@ -15,7 +15,7 @@ router.post(
   "/reset",
   ...emailBody,
   isValid,
-  authPassword.requestResetPasswordMail
+  authController.requestResetPasswordMail
 );
 
 // PATCH auth/password/reset/{resetToken}
@@ -24,7 +24,7 @@ router.patch(
   ...idParam("resetToken"),
   ...strongPasswordBody("password"),
   isValid,
-  authPassword.resetPassword
+  authController.resetPassword
 );
 
 export default router;

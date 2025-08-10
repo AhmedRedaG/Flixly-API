@@ -1,7 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 
-import * as authGoogle from "../../controllers/auth/google.js";
+import * as authController from "../../controllers/auth.js";
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.get(
 router.get(
   "/callback",
   passport.authenticate("google", { session: false }),
-  authGoogle.authWithGoogle
+  authController.authWithGoogle
 );
 
 export default router;
