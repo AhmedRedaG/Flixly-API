@@ -7,8 +7,9 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
     description: Local
-  - url: https://api.example.com/api/v1
-    description: Production
+  # API Auto Mocking
+  - url: https://virtserver.swaggerhub.com/Ahmed-Reda-Freelance/Flixly/1.0.0
+    description: SwaggerHub API Auto Mocking
 
 tags:
   - name: Auth
