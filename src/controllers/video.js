@@ -1,4 +1,4 @@
-import * as videoServer from "../services/video.js";
+import * as videoServer from "../services/video/index.js";
 
 export const getMainPublicVideos = async (req, res) => {
   const { page, limit, sort } = req.query;
