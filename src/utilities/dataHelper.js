@@ -3,14 +3,8 @@ import AppError from "./appError.js";
 
 const { User } = db;
 
-export const getSafeData = (user, options = { public: false }) => {
-  const { password, id, googleId, ...safeData } = user.toJSON();
-
-  if (options.public) {
-    const { created_at, updated_at, verified, role, ...publicData } = safeData;
-    return publicData;
-  }
-
+export const getSafeData = (user) => {
+  const { password, ...safeData } = user.toJSON();
   return safeData;
 };
 
