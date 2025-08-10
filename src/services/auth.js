@@ -199,16 +199,17 @@ export const requestResetPasswordMailService = async (email) => {
     const otp = crypto.randomInt(100000, 1000000); // 100000–999999 inclusive
 
     const [oldOtp] = await user.getResetOtps({
-      order: [["created_at"], ["DESC"]],
+      order: [["created_at", "DESC"]],
       limit: 1,
     });
 
     if (oldOtp) {
-      const allowedAfter = new Date(oldOtp.create_at).setMinutes(
-        this.getMinutes() + ALLOWED_OTP_AFTER_IN_MINUTES
+      const allowAfter = new Date(oldOtp.created_at);
+      allowAfter.setMinutes(
+        allowAfter.getMinutes() + ALLOWED_OTP_AFTER_IN_MINUTES
       );
 
-      if (oldOtp.tries > ALLOWED_OTP_TRIES && allowedAfter > new Date())
+      if (oldOtp.tries > ALLOWED_OTP_TRIES && allowAfter > new Date())
         throw new AppError("Try again later", 422);
     }
 
