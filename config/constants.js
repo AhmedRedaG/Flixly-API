@@ -58,14 +58,14 @@ export const constants = {
     MAX_VIDEO_SIZE: 1024 * 1024 * 10, // 10M free cloudinary plane
     ALLOWED_IMAGE_TYPES: ["jpg", "jpeg", "png", "gif", "webp"],
     ALLOWED_VIDEO_TYPES: ["mp4", "mov", "avi", "mkv", "webm"],
-    CLOUDINARY_UPLOAD_TIMEOUT: 6000000, // 10 minutes
+    CLOUDINARY_UPLOAD_TIMEOUT: 10 * 60 * 1000, // 10 minutes
   },
 
   otp: {
     OTP_MIN: 100_000,
     OTP_MAX: 999_999,
-    BASE_BACKOFF_MINUTES: 3,
+    BASE_BACKOFF_MINUTES: 4,
     ALLOWED_OTP_TRIES: 5,
-    OTP_EXPIRES_AFTER_IN_MS: 5 * 60 * 1000,
+    OTP_EXPIRES_AFTER_IN_MS: 5 * 60 * 1000, // 5 minutes
   },
 };
