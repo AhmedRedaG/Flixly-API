@@ -5,8 +5,7 @@ import { sequelize } from "../database/models/index.js";
 
 const PORT = configs.env.port[configs.env.nodeEnv];
 
-// I will change it later
-let server, mongooseConnection, sequelizeConnection;
+let server, sequelizeConnection;
 
 await (async () => {
   try {
@@ -22,5 +21,4 @@ await (async () => {
   }
 })();
 
-// need changes in tests also
-export { server, mongooseConnection };
+export { server, sequelizeConnection };
