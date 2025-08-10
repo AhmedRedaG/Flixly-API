@@ -4,7 +4,6 @@ export const uploadVideo = async (req, res) => {
   const user = req.user;
   const { videoId } = req.params;
   const file = req.file;
-  await uploadServer.validateLocalUploadService(file, uploadType);
   const data = await uploadServer.remoteUploadImageService(user, videoId, file);
   res.jsend.success(data);
 };
@@ -14,7 +13,6 @@ export const uploadImage = async (req, res) => {
   const { processId } = req.params;
   const file = req.file;
   const { type } = req.query;
-  await uploadServer.validateLocalUploadService(file);
   const data = await uploadServer.remoteUploadImageService(
     user,
     processId,
