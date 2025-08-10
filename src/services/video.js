@@ -426,11 +426,13 @@ export const publishVideoService = async (user, videoId, publishAt) => {
     );
   }
 
-  if (publishAt && new Date(publishAt) > new Date())
+  if (publishAt && new Date(publishAt) > new Date()) {
     video.publish_at = publishAt;
-  else {
+    video.processing_message = "waiting for publish...";
+  } else {
     video.publish_at = new Date();
     video.is_published = true;
+    video.processing_message = "published -_-";
   }
 
   await video.save();
