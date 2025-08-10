@@ -6,6 +6,7 @@ import {
   emailBody,
   strongPasswordBody,
   confirmPasswordBody,
+  booleanQuery,
 } from "../common.js";
 import { constants } from "../../../config/constants.js";
 
@@ -34,10 +35,7 @@ export const verify = [
     .trim(),
 ];
 
-export const changePassword = [
-  ...strongPasswordBody("oldPassword"),
-  ...strongPasswordBody("newPassword"),
-];
+export const logout = [...booleanQuery("full")];
 
 export const requestReset = [...emailBody];
 

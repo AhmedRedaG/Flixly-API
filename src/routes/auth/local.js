@@ -29,6 +29,6 @@ router.post("/login", authValidator.login, isValid, authController.login);
 router.post("/refresh", authController.refresh);
 
 // DELETE auth/local/logout
-router.delete("/logout", authController.logout);
+router.delete("/logout", authValidator.logout, authController.logout);
 
 export default router;

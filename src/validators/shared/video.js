@@ -4,7 +4,6 @@ import {
   pagination,
   sortBy,
   timeframeQuery,
-  booleanQuery,
   optionalStringBody,
   requiredStringBody,
   optionalBooleanBody,

@@ -5,6 +5,7 @@ import {
   optionalName,
   optionalBioBody,
   optionalUsernameBody,
+  strongPasswordBody,
 } from "../common.js";
 
 export const updateMe = [
@@ -12,6 +13,11 @@ export const updateMe = [
   ...optionalName("lastName"),
   ...optionalBioBody,
   ...optionalUsernameBody,
+];
+
+export const changePassword = [
+  ...strongPasswordBody("oldPassword"),
+  ...strongPasswordBody("newPassword"),
 ];
 
 export const usernamePath = [...usernameParam];

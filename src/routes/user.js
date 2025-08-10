@@ -2,7 +2,6 @@ import { Router } from "express";
 
 import { isAuth } from "../middlewares/isAuth.js";
 import * as userController from "../controllers/user.js";
-import * as authValidator from "../validators/shared/auth.js";
 import isValid from "../middlewares/isValid.js";
 import * as userValidator from "../validators/shared/user.js";
 
@@ -31,7 +30,7 @@ router.put(
 // Response: { message: "Password has been successfully changed." }
 router.put(
   "/me/password",
-  authValidator.changePassword,
+  userValidator.changePassword,
   isValid,
   isAuth,
   userController.changePassword
