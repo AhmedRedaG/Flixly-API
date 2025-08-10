@@ -15,7 +15,9 @@ import { constants } from "../../config/constants.js";
 
 const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
 const {
-  ALLOWED_OTP_AFTER_IN_MINUTES,
+  OTP_MIN,
+  OTP_MAX,
+  BASE_BACKOFF_MINUTES,
   ALLOWED_OTP_TRIES,
   OTP_EXPIRES_AFTER_IN_MS,
 } = constants.otp;
@@ -196,7 +198,7 @@ export const authWithGoogleService = async (user) => {
 export const requestResetPasswordMailService = async (email) => {
   const user = await User.findOne({ where: { email } });
   if (user) {
-    const otp = crypto.randomInt(100000, 1000000); // 100000–999999 inclusive
+    const otp = crypto.randomInt(OTP_MIN, OTP_MAX);
 
     const [oldOtp] = await user.getResetOtps({
       order: [["created_at", "DESC"]],
@@ -204,13 +206,19 @@ export const requestResetPasswordMailService = async (email) => {
     });
 
     if (oldOtp) {
+      const addedMinutes =
+        2 ** (Math.max(oldOtp.tries - ALLOWED_OTP_TRIES), BASE_BACKOFF_MINUTES);
+
       const allowAfter = new Date(oldOtp.created_at);
-      allowAfter.setMinutes(
-        allowAfter.getMinutes() + ALLOWED_OTP_AFTER_IN_MINUTES
-      );
+      allowAfter.setMinutes(allowAfter.getMinutes() + addedMinutes);
 
       if (oldOtp.tries > ALLOWED_OTP_TRIES && allowAfter > new Date())
-        throw new AppError("Try again later", 422);
+        throw new AppError(
+          `Too many requests. Try again after ${Math.ceil(
+            (allowAfter - now) / 60000
+          )} minutes.`,
+          429
+        );
     }
 
     await user.createResetOtp({
