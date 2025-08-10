@@ -200,14 +200,16 @@ export const requestResetPasswordMailService = async (email) => {
   if (user) {
     const otp = crypto.randomInt(OTP_MIN, OTP_MAX);
 
+    // get the last otp
     const [oldOtp] = await user.getResetOtps({
       order: [["created_at", "DESC"]],
       limit: 1,
     });
 
     if (oldOtp) {
+      // double time for every wrong try over allowed tries
       const addedMinutes =
-        2 ** (Math.max(oldOtp.tries - ALLOWED_OTP_TRIES), BASE_BACKOFF_MINUTES);
+        2 ** Math.max(oldOtp.tries - ALLOWED_OTP_TRIES, BASE_BACKOFF_MINUTES);
 
       const allowAfter = new Date(oldOtp.created_at);
       allowAfter.setMinutes(allowAfter.getMinutes() + addedMinutes);
