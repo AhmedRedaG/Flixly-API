@@ -40,6 +40,7 @@ export const constants = {
       "title",
       "thumbnail",
       "views_count",
+      "duration",
       "publish_at",
     ],
   },
