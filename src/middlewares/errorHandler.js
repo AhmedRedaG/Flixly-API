@@ -8,17 +8,6 @@ const notFoundError = (req, res) => {
 const apiError = (err, req, res, next) => {
   if (err instanceof AppError) {
     const { message, statusCode } = err;
-
-    logger.warn(`app error`, {
-      ip: req.ip,
-      method: req.method,
-      originalUrl: req.originalUrl,
-      statusCode: res.statusCode,
-      userAgent: req.get("User-Agent"),
-      contentLength: res.get("Content-Length"),
-      error: err.message,
-    });
-
     res.jsend.fail({ message }, statusCode);
   } else {
     logger.error("unexpected error", {

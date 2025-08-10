@@ -7,6 +7,9 @@ const requestLogger = (req, res, next) => {
     const end = Date.now();
     const duration = end - start;
 
+    if (res.statusCode >= 500) {
+      return;
+    }
     const logLevel = res.statusCode >= 400 ? "warn" : "info";
 
     logger.log(
@@ -20,6 +23,7 @@ const requestLogger = (req, res, next) => {
         duration: `${duration}ms`,
         userAgent: req.get("User-Agent"),
         contentLength: res.get("Content-Length"),
+        error: res?.body?.data?.message,
       }
     );
   });
