@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import {
   requiredName,
   requiredUsernameBody,
@@ -22,6 +22,17 @@ export const register = [
 ];
 
 export const login = [...emailBody, ...strongPasswordBody("password")];
+
+export const verify = [
+  param("verifyToken")
+    .exists()
+    .withMessage(`verifyToken is required`)
+    .bail()
+    .isString()
+    .isLength({ min: 1, max: 128 })
+    .withMessage(`verifyToken must be a non-empty token`)
+    .trim(),
+];
 
 export const changePassword = [
   ...strongPasswordBody("oldPassword"),

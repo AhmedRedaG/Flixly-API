@@ -3,7 +3,6 @@ import { Router } from "express";
 import * as authController from "../../controllers/auth.js";
 import isValid from "../../middlewares/isValid.js";
 import * as authValidator from "../../validators/shared/auth.js";
-import { idParam } from "../../validators/common.js";
 
 const router = Router();
 
@@ -18,7 +17,7 @@ router.post(
 // PATCH auth/local/verify/{verifyToken}
 router.patch(
   "/verify/:verifyToken",
-  ...idParam("verifyToken"),
+  authValidator.verify,
   isValid,
   authController.verifyMail
 );
