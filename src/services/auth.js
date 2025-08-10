@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 import crypto from "crypto";
 
-import { db } from "../../database/models/index.js";
+import { db, sequelize } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
 import * as JwtHelper from "../utilities/jwtHelper.js";
 import { generateTokensForUser } from "../utilities/authHelper.js";
@@ -245,32 +245,53 @@ export const requestResetPasswordMailService = async (email) => {
   };
 };
 
-export const resetPasswordService = async (resetToken, password) => {
-  const decoded = JwtHelper.verifyResetToken(resetToken);
-  const userId = decoded.id;
+export const resetPasswordService = async (email, otp, password) => {
+  const user = await User.findOne({ where: { email } });
+  if (!user) throw new AppError("User not found", 404);
 
-  const user = await getUserByIdOrFail(userId);
-
-  // to ignore token rotation and reuse
-  const resetTokenRecord = await ResetToken.findOne({
-    where: {
-      token: resetToken,
-    },
-  });
-  if (!resetTokenRecord) throw new AppError("Reset token is already used", 403);
-  await resetTokenRecord.destroy();
-
-  // hash new password and save
-  const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
-  user.password = hashedPassword;
-  await user.save();
-
-  // remove all refresh tokens
-  await RefreshToken.destroy({
+  const otpRecord = await ResetOtp.findOne({
     where: {
       user_id: user.id,
+      otp,
+      expires_at: { [Op.gt]: new Date() },
     },
+    order: [["created_at", "DESC"]],
   });
+
+  if (!otpRecord) {
+    throw new AppError("Invalid or expired OTP, please request a new one", 400);
+  }
+
+  const transaction = await sequelize.transaction();
+  try {
+    // delete all after one is valid
+    await ResetOtp.destroy({ where: { user_id: user.id }, transaction });
+
+    // hash new password and save
+    const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
+
+    await Promise.all([
+      user.update(
+        {
+          password: hashedPassword,
+        },
+        { transaction }
+      ),
+
+      // remove all refresh tokens
+      RefreshToken.destroy({
+        where: {
+          user_id: user.id,
+        },
+        transaction,
+      }),
+    ]);
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 
   return { message: "Password has been successfully reset." };
 };
