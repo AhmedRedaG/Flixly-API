@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { Op } from "sequelize";
+import crypto from "crypto";
 
 import { db } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
