@@ -29,7 +29,7 @@ export const verify = [
     .withMessage(`verifyToken is required`)
     .bail()
     .isString()
-    .isLength({ min: 1, max: 128 })
+    .isLength({ min: 1 })
     .withMessage(`verifyToken must be a non-empty token`)
     .trim(),
 ];

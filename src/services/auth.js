@@ -51,7 +51,6 @@ export const postRegisterService = async (
   const userSafeData = getSafeData(user);
 
   const verifyToken = JwtHelper.createVerifyToken({ id: user.id });
-  console.log(verifyToken);
 
   // async mail request without await to avoid blocking I/O
   sendVerifyTokenMail(user, verifyToken).catch((error) => {
@@ -62,7 +61,9 @@ export const postRegisterService = async (
   });
 
   return {
-    userSafeData,
+    user: {
+      ...userSafeData,
+    },
     message:
       "Registration successful. A verification link is being sent to your email.",
   };
@@ -76,17 +77,18 @@ export const verifyMailService = async (verifyToken) => {
   const user = await getUserByIdOrFail(userId);
 
   if (user.verified) throw new AppError("User is already verified", 409);
-  user.verified = true;
-  await user.save();
 
-  // generate safe data and access token for client and refresh token for cookie
+  await user.update({
+    verified: true,
+  });
+
+  // generate access token for client and refresh token for cookie
   const { accessToken, refreshToken } = await generateTokensForUser(user);
-  const userSafeData = getSafeData(user);
 
   return {
     accessToken,
     refreshToken,
-    userSafeData,
+    user,
     message: "Email verified successfully",
   };
 };
@@ -118,7 +120,9 @@ export const postLoginService = async (email, password) => {
   return {
     accessToken,
     refreshToken,
-    userSafeData,
+    user: {
+      ...userSafeData,
+    },
     message: "Login successful",
   };
 };
@@ -185,12 +189,11 @@ export const postLogoutService = async (oldRefreshToken, logoutFullCase) => {
 
 export const authWithGoogleService = async (user) => {
   const { accessToken, refreshToken } = await generateTokensForUser(user);
-  const userSafeData = getSafeData(user);
 
   return {
     accessToken,
     refreshToken,
-    userSafeData,
+    user,
     message: "Google login successful",
   };
 };
@@ -267,7 +270,6 @@ export const resetPasswordService = async (email, otp, password) => {
     // delete all after one is valid
     await ResetOtp.destroy({ where: { user_id: user.id }, transaction });
 
-    // hash new password and save
     const hashedPassword = await bcrypt.hash(password, HASH_PASSWORD_ROUNDS);
 
     await Promise.all([
