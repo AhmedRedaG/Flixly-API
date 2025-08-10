@@ -1,28 +1,1394 @@
 openapi: 3.0.3
 info:
-  title: Authentication & Authorization API
+  title: Flixly API
   version: 1.0.0
-  description: |
-    Comprehensive API for user authentication, authorization, and two-factor authentication (2FA).
-
-    **Response Format:**
-    - All responses follow a consistent format:
-
-    ```json
-    {
-      "status": "success" | "fail" | "error",
-      "data": {...} | null,
-      "message": "..."
-    }
-    ```
-  contact:
-    name: Ahmed Reda
-    url: https://github.com/AhmedRedaG/Authentication-Authorization-CAT
-    email: ahmedrf.dev@gmail.com
+  description: REST API for a YouTube-like backend. Responses follow JSend (success/fail/error) format.
 
 servers:
-  - url: http://localhost:3000/api/v1/
-    description: Local server
+  - url: http://localhost:3000/api/v1
+    description: Local
+  - url: https://api.example.com/api/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentication and authorization
+  - name: Users
+    description: User profile and activity
+  - name: Channels
+    description: Channel management and subscriptions
+  - name: Videos
+    description: Video discovery, CRUD, and interactions
+  - name: Comments
+    description: Comment moderation and replies
+  - name: Tags
+    description: Tags and tag-based discovery
+  - name: Upload
+    description: Media upload and processing status
+
+paths:
+  /auth/local/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Creates a user with local credentials and sends a verification email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            examples:
+              example:
+                value:
+                  firstName: Ahmed
+                  lastName: Reda
+                  username: ahmedreda
+                  email: ahmed@example.com
+                  password: Password123!
+                  confirmPassword: Password123!
+                  bio: Developer
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [userSafeData, message]
+                        properties:
+                          userSafeData:
+                            $ref: "#/components/schemas/UserPublic"
+                          message:
+                            type: string
+                            example: Registration successful. A verification link is being sent to your email.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/local/verify/{verifyToken}:
+    patch:
+      tags: [Auth]
+      summary: Verify email
+      parameters:
+        - $ref: "#/components/parameters/verifyToken"
+      responses:
+        "200":
+          description: Email verified; returns access token and user data; refresh token set in cookie.
+          headers:
+            Set-Cookie:
+              description: HTTP-only `refreshToken` cookie scoped to `/api/v1/auth`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, userSafeData, message]
+                        properties:
+                          accessToken:
+                            $ref: "#/components/schemas/Jwt"
+                          userSafeData:
+                            $ref: "#/components/schemas/UserPublic"
+                          message:
+                            type: string
+                            example: Email verified successfully
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      security: []
+  /auth/local/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            examples:
+              example:
+                value:
+                  email: ahmed@example.com
+                  password: Password123!
+      responses:
+        "200":
+          description: Authenticated; returns access token and user data; refresh token set in cookie.
+          headers:
+            Set-Cookie:
+              description: HTTP-only `refreshToken` cookie scoped to `/api/v1/auth`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, userSafeData, message]
+                        properties:
+                          accessToken:
+                            $ref: "#/components/schemas/Jwt"
+                          userSafeData:
+                            $ref: "#/components/schemas/UserPublic"
+                          message:
+                            type: string
+                            example: Login successful
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      security: []
+  /auth/local/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token with refresh token cookie
+      responses:
+        "200":
+          description: Returns a fresh access token; new refresh token set in cookie.
+          headers:
+            Set-Cookie:
+              description: HTTP-only `refreshToken` cookie scoped to `/api/v1/auth`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, message]
+                        properties:
+                          accessToken:
+                            $ref: "#/components/schemas/Jwt"
+                          message:
+                            type: string
+                            example: Tokens refreshed successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - RefreshTokenCookie: []
+  /auth/local/logout:
+    delete:
+      tags: [Auth]
+      summary: Logout (invalidate refresh token)
+      parameters:
+        - in: query
+          name: full
+          required: false
+          schema:
+            type: boolean
+          description: If true, invalidates all refresh tokens for the user (global logout)
+      responses:
+        "200":
+          description: Logged out or already logged out
+          headers:
+            Set-Cookie:
+              description: Clears HTTP-only `refreshToken` cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - RefreshTokenCookie: []
+  /auth/google:
+    get:
+      tags: [Auth]
+      summary: Start Google OAuth 2.0 flow
+      description: Redirects to Google for authentication.
+      responses:
+        "302":
+          description: Redirect to Google
+      security: []
+  /auth/google/callback:
+    get:
+      tags: [Auth]
+      summary: Google OAuth callback
+      description: On success, returns access token and user data; refresh token set in cookie.
+      responses:
+        "200":
+          description: Authenticated
+          headers:
+            Set-Cookie:
+              description: HTTP-only `refreshToken` cookie scoped to `/api/v1/auth`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, userSafeData, message]
+                        properties:
+                          accessToken:
+                            $ref: "#/components/schemas/Jwt"
+                          userSafeData:
+                            $ref: "#/components/schemas/UserPublic"
+                          message:
+                            type: string
+                            example: Google login successful
+      security: []
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get my profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: My user profile with channel and stats
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [user]
+                        properties:
+                          user:
+                            allOf:
+                              - $ref: "#/components/schemas/User"
+                              - type: object
+                                properties:
+                                  channel:
+                                    $ref: "#/components/schemas/Channel"
+                                  stats:
+                                    $ref: "#/components/schemas/UserStats"
+    put:
+      tags: [Users]
+      summary: Update my profile
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                firstName: { type: string, minLength: 3, maxLength: 256 }
+                lastName: { type: string, minLength: 3, maxLength: 256 }
+                username: { $ref: "#/components/schemas/Username" }
+                bio: { type: string, minLength: 3, maxLength: 256 }
+              additionalProperties: false
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessUser"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Users]
+      summary: Delete my account
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+  /users/me/password:
+    put:
+      tags: [Users]
+      summary: Change my password
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [oldPassword, newPassword]
+              properties:
+                oldPassword: { $ref: "#/components/schemas/Password" }
+                newPassword: { $ref: "#/components/schemas/Password" }
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /users/me/subscriptions:
+    get:
+      tags: [Users]
+      summary: List my subscriptions
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, enum: [newest, oldest] }
+      responses:
+        "200":
+          description: Subscriptions list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [subscriptions, pagination]
+                        properties:
+                          subscriptions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                created_at:
+                                  type: string
+                                  format: date-time
+                                channel:
+                                  $ref: "#/components/schemas/ChannelShort"
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+  /users/me/subscriptions/feed:
+    get:
+      tags: [Users]
+      summary: Subscription feed videos
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Feed videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /users/me/views:
+    get:
+      tags: [Users]
+      summary: My watch history (public videos)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Watched videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /users/me/likes:
+    get:
+      tags: [Users]
+      summary: My liked videos (public videos)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: Liked videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /users/{username}:
+    get:
+      tags: [Users]
+      summary: Get public user profile
+      parameters:
+        - $ref: "#/components/parameters/username"
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [user]
+                        properties:
+                          user:
+                            allOf:
+                              - $ref: "#/components/schemas/UserPublic"
+                              - type: object
+                                properties:
+                                  channel:
+                                    $ref: "#/components/schemas/ChannelShort"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /channels/me:
+    post:
+      tags: [Channels]
+      summary: Create my channel
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [username, name, description]
+              properties:
+                username: { $ref: "#/components/schemas/Username" }
+                name: { type: string, minLength: 3, maxLength: 256 }
+                description: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        "201":
+          description: Channel created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessChannel"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    get:
+      tags: [Channels]
+      summary: Get my channel
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: My channel with recent videos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [channel]
+                        properties:
+                          channel:
+                            allOf:
+                              - $ref: "#/components/schemas/Channel"
+                              - type: object
+                                properties:
+                                  recentVideos:
+                                    type: array
+                                    items:
+                                      {
+                                        $ref: "#/components/schemas/VideoShort",
+                                      }
+    put:
+      tags: [Channels]
+      summary: Update my channel
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name: { type: string, minLength: 3, maxLength: 256 }
+                description: { type: string, minLength: 1, maxLength: 1000 }
+              additionalProperties: false
+      responses:
+        "200":
+          description: Channel updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessChannel"
+    delete:
+      tags: [Channels]
+      summary: Delete my channel
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Channel deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+  /channels/{username}:
+    get:
+      tags: [Channels]
+      summary: Get public channel
+      parameters:
+        - $ref: "#/components/parameters/username"
+      responses:
+        "200":
+          description: Public channel with recent videos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [channel]
+                        properties:
+                          channel:
+                            allOf:
+                              - $ref: "#/components/schemas/Channel"
+                              - type: object
+                                properties:
+                                  recentVideos:
+                                    type: array
+                                    items:
+                                      {
+                                        $ref: "#/components/schemas/VideoShort",
+                                      }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /channels/me/videos:
+    get:
+      tags: [Channels]
+      summary: List my channel videos
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, enum: [newest, oldest, popular] }
+        - name: privateOnly
+          in: query
+          schema: { type: boolean }
+        - name: unpublishedOnly
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: My videos list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /channels/{username}/videos:
+    get:
+      tags: [Channels]
+      summary: List public channel videos
+      parameters:
+        - $ref: "#/components/parameters/username"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, enum: [newest, oldest, popular] }
+      responses:
+        "200":
+          description: Public videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /channels/me/subscribers:
+    get:
+      tags: [Channels]
+      summary: List my subscribers
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, enum: [newest, oldest] }
+      responses:
+        "200":
+          description: Subscribers list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [subscribers, pagination]
+                        properties:
+                          subscribers:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                created_at:
+                                  type: string
+                                  format: date-time
+                                subscriber:
+                                  $ref: "#/components/schemas/UserShort"
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+  /channels/{username}/subscribe:
+    post:
+      tags: [Channels]
+      summary: Subscribe to a channel
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/username"
+      responses:
+        "200":
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessSubscriptionState"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags: [Channels]
+      summary: Unsubscribe from a channel
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/username"
+      responses:
+        "200":
+          description: Unsubscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessSubscriptionState"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /videos:
+    get:
+      tags: [Videos]
+      summary: Discover public videos
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string, enum: [newest, trending, popular] }
+      responses:
+        "200":
+          description: Public videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /videos/trending:
+    get:
+      tags: [Videos]
+      summary: Trending videos
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: timeframe
+          in: query
+          schema: { type: string, enum: [day, week, month] }
+      responses:
+        "200":
+          description: Trending videos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /videos/search:
+    get:
+      tags: [Videos]
+      summary: Search videos
+      parameters:
+        - $ref: "#/components/parameters/search"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          schema: { type: string, enum: [relevance, newest, oldest, popular] }
+        - $ref: "#/components/parameters/tags"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+  /videos/me:
+    post:
+      tags: [Videos]
+      summary: Create a video draft
+      description: Creates a video record and returns upload URLs for video and thumbnail.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [title, tags]
+              properties:
+                title: { type: string, minLength: 3, maxLength: 256 }
+                description: { type: string, minLength: 1, maxLength: 1000 }
+                tags:
+                  type: array
+                  maxItems: 20
+                  items: { type: string, minLength: 1, maxLength: 32 }
+      responses:
+        "201":
+          description: Draft created with upload URLs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [video, videoUploadUrl, thumbnailUploadUrl]
+                        properties:
+                          video: { $ref: "#/components/schemas/Video" }
+                          videoUploadUrl: { type: string, format: uri }
+                          thumbnailUploadUrl: { type: string, format: uri }
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /videos/{videoId}:
+    get:
+      tags: [Videos]
+      summary: Get public video
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: Public video details (excluding private fields)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [video]
+                        properties:
+                          video:
+                            allOf:
+                              - $ref: "#/components/schemas/VideoPublic"
+                              - type: object
+                                properties:
+                                  channel:
+                                    {
+                                      $ref: "#/components/schemas/ChannelShort",
+                                    }
+                                  tags:
+                                    type: array
+                                    items:
+                                      { $ref: "#/components/schemas/TagName" }
+                                  comments:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        id: { type: string, format: uuid }
+                                        content: { type: string }
+                                        created_at:
+                                          { type: string, format: date-time }
+                                        user:
+                                          {
+                                            $ref: "#/components/schemas/UserShort",
+                                          }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /videos/me/{videoId}:
+    get:
+      tags: [Videos]
+      summary: Get my video
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: My video details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideoWithExtras"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Videos]
+      summary: Update my video
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                title: { type: string, minLength: 3, maxLength: 256 }
+                description: { type: string, minLength: 1, maxLength: 1000 }
+                is_private: { type: boolean }
+              additionalProperties: false
+      responses:
+        "200":
+          description: Updated video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideo"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Videos]
+      summary: Delete my video
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /videos/me/{videoId}/publish:
+    patch:
+      tags: [Videos]
+      summary: Publish my video (now or schedule)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                publishAt:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Publish state updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideo"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /videos/{videoId}/view:
+    post:
+      tags: [Videos]
+      summary: Record a view with watch time
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [watchTime]
+              properties:
+                watchTime:
+                  type: integer
+                  minimum: 0
+      responses:
+        "200":
+          description: View recorded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          watchedAt: { type: string, format: date-time }
+                          watchTime: { type: integer }
+                          viewsCount: { type: integer }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /videos/{videoId}/like:
+    post:
+      tags: [Videos]
+      summary: Like a video
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessReactionState"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /videos/{videoId}/dislike:
+    post:
+      tags: [Videos]
+      summary: Dislike a video
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: Disliked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessReactionState"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /videos/{videoId}/reaction:
+    delete:
+      tags: [Videos]
+      summary: Remove my reaction
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: Reaction removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessReactionState"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /videos/{videoId}/reactions:
+    get:
+      tags: [Videos]
+      summary: List reactions (owner only)
+      description: Only the video owner's channel can view reactions.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          schema: { type: string, enum: [newest, oldest, popular] }
+        - name: type
+          in: query
+          schema: { type: string, enum: [like, dislike] }
+      responses:
+        "200":
+          description: Reactions list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [reactions, pagination]
+                        properties:
+                          reactions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id: { type: string, format: uuid }
+                                is_like: { type: boolean, nullable: false }
+                                created_at: { type: string, format: date-time }
+                                user: { $ref: "#/components/schemas/UserShort" }
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /videos/{videoId}/comments:
+    get:
+      tags: [Videos]
+      summary: List comments
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          schema: { type: string, enum: [newest, oldest] }
+        - name: parentCommentId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Comments list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [comments, pagination]
+                        properties:
+                          comments:
+                            type: array
+                            items:
+                              allOf:
+                                - $ref: "#/components/schemas/VideoCommentPublic"
+                                - type: object
+                                  properties:
+                                    user:
+                                      { $ref: "#/components/schemas/UserShort" }
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Videos]
+      summary: Add a comment
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                content: { type: string, minLength: 1, maxLength: 1000 }
+                parentCommentId: { type: string }
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [comment]
+                        properties:
+                          comment:
+                            $ref: "#/components/schemas/VideoComment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /comments/{commentId}:
+    put:
+      tags: [Comments]
+      summary: Update a comment (owner only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/commentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [content]
+              properties:
+                content: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        "200":
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessComment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Comments]
+      summary: Delete a comment (owner or video owner)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/commentId"
+      responses:
+        "200":
+          description: Comment deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /comments/{commentId}/replies:
+    get:
+      tags: [Comments]
+      summary: List replies to a comment
+      parameters:
+        - $ref: "#/components/parameters/commentId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit10"
+      responses:
+        "200":
+          description: Replies list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [replies, pagination]
+                        properties:
+                          replies:
+                            type: array
+                            items:
+                              allOf:
+                                - $ref: "#/components/schemas/VideoCommentPublic"
+                                - type: object
+                                  properties:
+                                    user:
+                                      { $ref: "#/components/schemas/UserShort" }
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+
+  /tags:
+    get:
+      tags: [Tags]
+      summary: List tags
+      parameters:
+        - $ref: "#/components/parameters/search"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: popular
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Tags list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [tags, pagination]
+                        properties:
+                          tags:
+                            type: array
+                            items: { $ref: "#/components/schemas/Tag" }
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+  /tags/{tagId}/videos:
+    get:
+      tags: [Tags]
+      summary: List videos by tag
+      parameters:
+        - $ref: "#/components/parameters/tagId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: sort
+          in: query
+          schema: { type: string, enum: [newest, oldest, popular] }
+      responses:
+        "200":
+          description: Videos with the tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessVideosPage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /tags/{tagId}:
+    delete:
+      tags: [Tags]
+      summary: Delete a tag (admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/tagId"
+      responses:
+        "200":
+          description: Tag deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /upload/video/{videoId}:
+    post:
+      tags: [Upload]
+      summary: Upload video file
+      description: Uploads a video file for a draft video. Only the channel owner of the draft can upload.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [video_file]
+              properties:
+                video_file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "415":
+          description: Unsupported or invalid media
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendFail"
+  /upload/image/{processId}:
+    post:
+      tags: [Upload]
+      summary: Upload image file
+      description: Uploads an image for user avatar, channel avatar/banner, or video thumbnail.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/processId"
+        - name: type
+          in: query
+          required: true
+          schema:
+            {
+              type: string,
+              enum: [userAvatar, channelAvatar, channelBanner, thumbnail],
+            }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image_file]
+              properties:
+                image_file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "415":
+          description: Unsupported or invalid media
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendFail"
+  /upload/status/{videoId}:
+    get:
+      tags: [Upload]
+      summary: Get upload/processing status
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/videoId"
+      responses:
+        "200":
+          description: Upload/processing status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsendSuccess"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [status, progress]
+                        properties:
+                          status:
+                            type: string
+                            enum: [pending, processing, completed, failed]
+                          progress:
+                            type: string
+                            example: video uploaded successfully, waiting to upload thr thumbnail
 
 components:
   securitySchemes:
@@ -30,741 +1396,568 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    Cookies:
+    RefreshTokenCookie:
       type: apiKey
       in: cookie
       name: refreshToken
 
+  parameters:
+    page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1 }
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100 }
+    limit10:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+    search:
+      name: search
+      in: query
+      schema: { type: string, minLength: 1, maxLength: 256 }
+    tags:
+      name: tags
+      in: query
+      description: Comma separated tags list
+      schema:
+        type: string
+        example: music,lofi,chill
+    username:
+      name: username
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/Username" }
+    videoId:
+      name: videoId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    commentId:
+      name: commentId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    tagId:
+      name: tagId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    processId:
+      name: processId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    verifyToken:
+      name: verifyToken
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendFail"
+          examples:
+            missing:
+              value:
+                status: fail
+                data:
+                  message: Authorization header is missing
+            invalid:
+              value:
+                status: fail
+                data:
+                  message: Invalid Authorization format
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendFail"
+          example:
+            status: fail
+            data:
+              message: Authentication failed
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendFail"
+          example:
+            status: fail
+            data:
+              message: Resource not found
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendFail"
+          example:
+            status: fail
+            data:
+              message: Conflict
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendFail"
+          example:
+            status: fail
+            data:
+              message: Invalid Data
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendError"
+          example:
+            status: error
+            message: Too many attempts, please try again after 15 minutes
+
   schemas:
+    Jwt:
+      type: string
+      description: JWT access token
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    Username:
+      type: string
+      pattern: "^[a-zA-Z0-9_]{3,16}$"
+      example: channel_123
+
+    Password:
+      type: string
+      format: password
+      maxLength: 64
+      example: Password123!
+
+    Pagination:
+      type: object
+      required: [page, limit, total, pages]
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        pages: { type: integer }
+
+    # JSend wrappers
+    JsendSuccess:
+      type: object
+      required: [status, data]
+      properties:
+        status:
+          type: string
+          enum: [success]
+        data:
+          description: Payload
+          nullable: false
+    JsendSuccessMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  { type: string, example: Operation completed successfully }
+    JsendSuccessUser:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/User" }
+    JsendSuccessChannel:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [channel]
+              properties:
+                channel: { $ref: "#/components/schemas/Channel" }
+    JsendSuccessVideo:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [video]
+              properties:
+                video: { $ref: "#/components/schemas/Video" }
+    JsendSuccessVideoWithExtras:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [video]
+              properties:
+                video:
+                  allOf:
+                    - $ref: "#/components/schemas/Video"
+                    - type: object
+                      properties:
+                        tags:
+                          type: array
+                          items: { $ref: "#/components/schemas/TagName" }
+                        comments:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id: { type: string, format: uuid }
+                              content: { type: string }
+                              created_at: { type: string, format: date-time }
+                              user: { $ref: "#/components/schemas/UserShort" }
+    JsendSuccessVideosPage:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [videos, pagination]
+              properties:
+                videos:
+                  type: array
+                  items: { $ref: "#/components/schemas/VideoShort" }
+                pagination:
+                  $ref: "#/components/schemas/Pagination"
+    JsendSuccessReactionState:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                is_liked:
+                  type: boolean
+                  nullable: true
+                  description: true=liked, false=disliked, null=removed
+                likes_count: { type: integer }
+                dislikes_count: { type: integer }
+    JsendSuccessSubscriptionState:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                subscribed: { type: boolean }
+                subscribersCount: { type: integer }
+    JsendFail:
+      type: object
+      required: [status, data]
+      properties:
+        status:
+          type: string
+          enum: [fail]
+        data:
+          type: object
+          properties:
+            message: { type: string }
+          additionalProperties:
+            type: string
+    JsendError:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+
+    # Auth payloads
     RegisterRequest:
       type: object
-      required: [name, email, password, confirmPassword]
+      required:
+        [firstName, lastName, username, email, password, confirmPassword]
       properties:
-        name:
-          type: string
-          minLength: 3
-          maxLength: 256
-          example: "Ahmed Reda"
-        email:
-          type: string
-          format: email
-          example: "ahmed@example.com"
-        password:
-          type: string
-          format: password
-          example: "Password123!"
-        confirmPassword:
-          type: string
-          format: password
-          example: "Password123!"
-
+        firstName: { type: string, minLength: 3, maxLength: 256 }
+        lastName: { type: string, minLength: 3, maxLength: 256 }
+        username: { $ref: "#/components/schemas/Username" }
+        email: { type: string, format: email }
+        password: { $ref: "#/components/schemas/Password" }
+        confirmPassword: { type: string, format: password }
+        bio: { type: string, minLength: 3, maxLength: 256 }
     LoginRequest:
       type: object
       required: [email, password]
       properties:
-        email:
-          type: string
-          format: email
-          example: "ahmed@example.com"
-        password:
-          type: string
-          format: password
-          example: "Password123!"
+        email: { type: string, format: email }
+        password: { $ref: "#/components/schemas/Password" }
 
-    ChangePasswordRequest:
+    # Entities
+    User:
       type: object
-      required: [oldPassword, newPassword]
+      required:
+        [id, firstName, lastName, username, email, verified, role, created_at]
       properties:
-        oldPassword:
-          type: string
-          format: password
-          example: "OldPassword123!"
-        newPassword:
-          type: string
-          format: password
-          example: "NewPassword123!"
-
-    EmailRequest:
+        id: { type: string, format: uuid }
+        firstName: { type: string }
+        lastName: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+        googleId: { type: string, nullable: true }
+        avatar: { type: string, format: uri, nullable: true }
+        bio: { type: string, nullable: true }
+        verified: { type: boolean }
+        role: { type: string, enum: [user, admin] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time, nullable: true }
+    UserPublic:
+      description: User object excluding private fields (email, googleId, password, verified, updated_at)
       type: object
-      required: [email]
+      required: [id, firstName, lastName, username]
       properties:
-        email:
-          type: string
-          format: email
-          example: "ahmed@example.com"
-
-    PasswordRequest:
+        id: { type: string, format: uuid }
+        firstName: { type: string }
+        lastName: { type: string }
+        username: { type: string }
+        avatar: { type: string, format: uri, nullable: true }
+        bio: { type: string, nullable: true }
+        role: { type: string, enum: [user, admin] }
+        created_at: { type: string, format: date-time }
+    UserShort:
       type: object
-      required: [password]
+      required: [id, username, firstName, lastName]
       properties:
-        password:
-          type: string
-          format: password
-          example: "NewPassword123!"
+        id: { type: string, format: uuid }
+        username: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        avatar: { type: string, format: uri, nullable: true }
 
-    SuccessResponse:
+    UserStats:
       type: object
+      required: [totalViews, totalReactions, totalComments, totalSubscriptions]
       properties:
-        status:
-          type: string
-          example: success
-        data:
-          type: object
+        totalViews: { type: integer }
+        totalReactions: { type: integer }
+        totalComments: { type: integer }
+        totalSubscriptions: { type: integer }
 
-    FailResponse:
+    Channel:
       type: object
+      required:
+        [id, user_id, username, name, description, subscribers, created_at]
       properties:
-        status:
-          type: string
-          example: fail
-        data:
-          type: object
-
-    ErrorResponse:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        username: { type: string }
+        name: { type: string }
+        description: { type: string }
+        avatar: { type: string, format: uri, nullable: true }
+        banner: { type: string, format: uri, nullable: true }
+        views_count: { type: integer }
+        subscribers: { type: integer }
+        likes_count: { type: integer }
+        dislikes_count: { type: integer }
+        comments_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time, nullable: true }
+    ChannelShort:
       type: object
+      required: [id, username, name, created_at]
       properties:
-        status:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        name: { type: string }
+        avatar: { type: string, format: uri, nullable: true }
+        subscribers: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    Video:
+      type: object
+      required:
+        [
+          id,
+          channel_id,
+          title,
+          is_private,
+          is_published,
+          views_count,
+          likes_count,
+          dislikes_count,
+          comments_count,
+          processing_status,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        channel_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        url: { type: string, format: uri, nullable: true }
+        thumbnail: { type: string, format: uri, nullable: true }
+        is_private: { type: boolean }
+        views_count: { type: integer }
+        likes_count: { type: integer }
+        dislikes_count: { type: integer }
+        comments_count: { type: integer }
+        processing_status:
           type: string
-          example: error
-        message:
-          type: string
-          example: "Internal server error"
+          enum: [pending, processing, completed, failed]
+        processing_message: { type: string, nullable: true }
+        duration:
+          { type: integer, nullable: true, description: Duration in seconds }
+        publish_at: { type: string, format: date-time, nullable: true }
+        is_published: { type: boolean }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    VideoPublic:
+      description: Video excluding private processing fields
+      allOf:
+        - $ref: "#/components/schemas/Video"
+        - type: object
+          properties:
+            processing_status: { readOnly: true }
+            processing_message: { readOnly: true }
+    VideoShort:
+      type: object
+      required: [id, channel_id, title, views_count, duration]
+      properties:
+        id: { type: string, format: uuid }
+        channel_id: { type: string, format: uuid }
+        title: { type: string }
+        thumbnail: { type: string, format: uri, nullable: true }
+        views_count: { type: integer }
+        duration: { type: integer, nullable: true }
+        publish_at: { type: string, format: date-time, nullable: true }
 
-security:
-  - BearerAuth: []
-  - Cookies: []
+    VideoComment:
+      type: object
+      required: [id, user_id, video_id, content]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        video_id: { type: string, format: uuid }
+        parent_comment_id: { type: string, format: uuid, nullable: true }
+        content: { type: string }
+        child_comments_count: { type: integer }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+    VideoCommentPublic:
+      type: object
+      required: [id, content, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        content: { type: string }
+        created_at: { type: string, format: date-time }
 
-tags:
-  - name: Auth (Local)
-    description: Local authentication endpoints
-  - name: Auth (Google)
-    description: Google OAuth2 authentication endpoints
-  - name: Auth (Password)
-    description: Password management endpoints
-  - name: Auth (2FA)
-    description: Two-factor authentication endpoints
+    VideoReaction:
+      type: object
+      required: [id, user_id, video_id, is_like]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        video_id: { type: string, format: uuid }
+        is_like: { type: boolean }
+        created_at: { type: string, format: date-time }
 
-paths:
-  # Auth (Local)
-  /auth/local/register:
-    post:
-      tags: [Auth (Local)]
-      summary: Register a new user
-      description: Register a new user with name, email, and password.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterRequest"
-      responses:
-        "201":
-          description: User registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  userSafeData:
-                    _id: "60d0fe4f5311236168a109ca"
-                    name: "Ahmed Reda"
-                    email: "ahmed@example.com"
-                    role: "user"
-                  message: "Email sent successfully"
-        "409":
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Email already in use"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Data"
-                  email: "Email must be valid"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security: []
+    VideoView:
+      type: object
+      required: [id, user_id, video_id, watch_time, watched_at]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        video_id: { type: string, format: uuid }
+        watch_time: { type: integer }
+        watched_at: { type: string, format: date-time }
 
-  /auth/local/verify/{verifyToken}:
-    patch:
-      tags: [Auth (Local)]
-      summary: Verify user email
-      description: Verify a user's email address using a verification token.
-      parameters:
-        - in: path
-          name: verifyToken
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Email verified successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  message: "Email verified successfully."
-        "403":
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              examples:
-                token_expired:
-                  summary: "Token Expired"
-                  description: "The verification token has expired"
-                  value:
-                    status: fail
-                    data:
-                      message: "Access token expired"
-                invalid_format:
-                  summary: "Invalid Format"
-                  description: "The token format is invalid"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid Authorization format"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "User not found with the provided ID"
-        "409":
-          description: User already verified
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "User already verified"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security: []
+    Tag:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        use_count: { type: integer }
+    TagName:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
 
-  /auth/local/login:
-    post:
-      tags: [Auth (Local)]
-      summary: Login with email and password
-      description: Authenticate user and return JWT access and refresh tokens.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginRequest"
-      responses:
-        "200":
-          description: Login successful or two-factor authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              examples:
-                login_success:
-                  summary: "Successful login"
-                  description: "User logged in successfully without 2FA"
-                  value:
-                    status: success
-                    data:
-                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      userSafeData:
-                        _id: "60d0fe4f5311236168a109ca"
-                        name: "Ahmed Reda"
-                        email: "ahmed@example.com"
-                        role: "user"
-                      message: "Login successful"
-        "401":
-          description: Invalid credentials or account not verified
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              examples:
-                invalid_credentials:
-                  summary: "Invalid Credentials"
-                  description: "Email or password is incorrect"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid email or password"
-                google_account:
-                  summary: "Google Account"
-                  description: "User trying to login with local auth but account was created with Google"
-                  value:
-                    status: fail
-                    data:
-                      message: "This account was registered with Google."
-                unverified_account:
-                  summary: "Unverified Account"
-                  description: "User account exists but email verification is pending"
-                  value:
-                    status: fail
-                    data:
-                      message: "Account not verified, please check your email for verification link."
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Data"
-                  email: "Email must be valid"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security: []
+    Subscription:
+      type: object
+      required: [id, subscriber_id, channel_id, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        subscriber_id: { type: string, format: uuid }
+        channel_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
 
-  /auth/local/refresh:
-    post:
-      tags: [Auth (Local)]
-      summary: Refresh JWT access token
-      description: Refresh the JWT access token using a valid refresh token (sent via cookie).
-      responses:
-        "200":
-          description: Token refreshed successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                  message: "Token refreshed successfully"
-        "401":
-          description: no refresh token exist in the cookie
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "No oldRefreshToken exist"
-        "403":
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              examples:
-                token_expired:
-                  summary: "Token Expired"
-                  description: "The access token has expired"
-                  value:
-                    status: fail
-                    data:
-                      message: "Access token expired"
-                invalid_format:
-                  summary: "Invalid Format"
-                  description: "The authorization format is invalid"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid Authorization format"
-                invalid_refresh:
-                  summary: "Invalid Refresh Token"
-                  description: "The refresh token is invalid"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid refresh token"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "User not found with the provided ID"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - Cookies: []
+    Playlist:
+      type: object
+      required: [id, name, is_private]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid, nullable: true }
+        channel_id: { type: string, format: uuid, nullable: true }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        is_private: { type: boolean }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
 
-  /auth/local/logout:
-    delete:
-      tags: [Auth (Local)]
-      summary: Logout user
-      description: Logout the user and clear refresh token cookie.
-      responses:
-        "200":
-          description: Logout successful or already logged out
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              examples:
-                successful_logout:
-                  summary: "Successful Logout"
-                  description: "User was logged in and has been successfully logged out"
-                  value:
-                    status: success
-                    data:
-                      message: "User logged out successfully"
-                already_logged_out:
-                  summary: "Already Logged Out"
-                  description: "User was already logged out, no action needed"
-                  value:
-                    status: success
-                    data:
-                      message: "Already logged out"
-        "403":
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              examples:
-                token_expired:
-                  summary: "Token Expired"
-                  description: "The access token has expired"
-                  value:
-                    status: fail
-                    data:
-                      message: "Access token expired"
-                invalid_format:
-                  summary: "Invalid Format"
-                  description: "The authorization format is invalid"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid Authorization format"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "User not found with the provided ID"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - BearerAuth: []
-        - Cookies: []
+    PlaylistVideo:
+      type: object
+      required: [playlist_id, video_id, added_at]
+      properties:
+        playlist_id: { type: string, format: uuid }
+        video_id: { type: string, format: uuid }
+        added_at: { type: string, format: date-time }
 
-  # Auth (Google)
-  /auth/google:
-    get:
-      tags: [Auth (Google)]
-      summary: Google OAuth2 login
-      description: Redirects user to Google for authentication.
-      responses:
-        "302":
-          description: Redirect to Google OAuth2
-      security: []
+    Report:
+      type: object
+      required:
+        [id, reporter_id, target_type, target_id, reason, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        reporter_id: { type: string, format: uuid }
+        target_type: { type: string, enum: [video, comment] }
+        target_id: { type: string, format: uuid }
+        reason: { type: string }
+        status: { type: string, enum: [pending, reviewed, dismissed] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time, nullable: true }
 
-  /auth/google/callback:
-    get:
-      tags: [Auth (Google)]
-      summary: Google OAuth2 callback
-      description: Handles Google OAuth2 callback and authenticates user.
-      responses:
-        "200":
-          description: Login successful or two-factor authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              examples:
-                login_success:
-                  summary: "Successful login"
-                  description: "User logged in successfully without 2FA"
-                  value:
-                    status: success
-                    data:
-                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                      userSafeData:
-                        _id: "60d0fe4f5311236168a109ca"
-                        name: "Ahmed Reda"
-                        email: "ahmed@example.com"
-                        role: "user"
-                      message: "Login successful"
-        "401":
-          description: Invalid Google credentials
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Google credentials"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security: []
+    RefreshToken:
+      type: object
+      required: [id, user_id, token, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        token: { type: string }
+        expires_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
 
-  # Auth (Password)
-  /auth/password/change:
-    patch:
-      tags: [Auth (Password)]
-      summary: Change user password
-      description: Change the password for an authenticated user.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ChangePasswordRequest"
-      responses:
-        "200":
-          description: Password changed successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  message: "Password has been successfully changed."
-        "400":
-          description: Invalid new password
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "New password must be different from old password"
-        "401":
-          description: Invalid Authorization
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              examples:
-                missing_header:
-                  summary: "Missing Authorization"
-                  description: "The authorization header is missing"
-                  value:
-                    status: fail
-                    data:
-                      message: "Authorization header is missing"
-                invalid_format:
-                  summary: "Invalid Format"
-                  description: "The authorization format is invalid"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid Authorization format"
-                wrong_password:
-                  summary: "Wrong Password"
-                  description: "The old password is incorrect"
-                  value:
-                    status: fail
-                    data:
-                      message: "Old password is wrong"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "User not found with the provided ID"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Data"
-                  oldPassword: "Password must be valid"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security:
-        - BearerAuth: []
-
-  /auth/password/reset:
-    post:
-      tags: [Auth (Password)]
-      summary: Request password reset
-      description: Send a password reset email to the user.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EmailRequest"
-      responses:
-        "200":
-          description: Password reset email sent
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  message: "If an account exists for this email, a password reset link has been sent."
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Data"
-                  email: "Email must be valid"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security: []
-
-  /auth/password/reset/{resetToken}:
-    patch:
-      tags: [Auth (Password)]
-      summary: Reset password
-      description: Reset the user's password using a reset token.
-      parameters:
-        - in: path
-          name: resetToken
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PasswordRequest"
-      responses:
-        "200":
-          description: Password reset successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-              example:
-                status: success
-                data:
-                  message: "Password has been successfully reset."
-        "401":
-          description: Invalid Authorization
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              examples:
-                missing_header:
-                  summary: "Missing Authorization"
-                  description: "The authorization header is missing"
-                  value:
-                    status: fail
-                    data:
-                      message: "Authorization header is missing"
-                invalid_format:
-                  summary: "Invalid Format"
-                  description: "The authorization format is invalid"
-                  value:
-                    status: fail
-                    data:
-                      message: "Invalid Authorization format"
-        "403":
-          description: Used token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Reset token is already used"
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "User not found with the provided ID"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailResponse"
-              example:
-                status: fail
-                data:
-                  message: "Invalid Data"
-                  password: "Password must be valid"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-      security: []
+    ResetToken:
+      type: object
+      required: [user_id, token, created_at]
+      properties:
+        user_id: { type: string, format: uuid }
+        token: { type: string }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
