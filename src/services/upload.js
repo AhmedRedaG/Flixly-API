@@ -1,17 +1,50 @@
 import fs from "fs/promises";
+import { fileTypeFromFile } from "file-type";
 
 import AppError from "../utilities/appError.js";
 import { db } from "../../database/models/index.js";
 import cloudinary from "../../config/cloudinary.js";
+import { constants } from "../../config/constants.js";
 
+const { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } = constants.upload;
 const { Video, Channel, User } = db;
+
+export const validateLocalUploadService = async (file, uploadType) => {
+  let allowedTypes;
+  if (uploadType === "video") allowedTypes = ALLOWED_VIDEO_TYPES;
+  else allowedTypes = ALLOWED_IMAGE_TYPES;
+
+  try {
+    if (!file) {
+      const err = new Error("Error in uploading file, check your file type");
+      err.statusCode = 415;
+      throw err;
+    }
+
+    const fileType = await fileTypeFromFile(file.path);
+    if (!fileType || !allowedTypes.includes(fileType.ext)) {
+      const err = new Error(
+        "Invalid file type. File content does not match expected format."
+      );
+      err.statusCode = 415;
+      throw err;
+    }
+
+    next();
+  } catch (err) {
+    if (file?.path) {
+      await fs.unlink(file.path).catch(console.error);
+    }
+    throw new AppError(err.message, err.statusCode);
+  }
+};
 
 // POST /api/upload/video/:videoId
 // Headers: Authorization
 // Content-Type: multipart/form-data
 // Body: { video_file }
 // Response: { upload_url, processing_id }
-export const uploadVideoService = async (user, videoId, file) => {
+export const remoteUploadVideoService = async (user, videoId, file) => {
   const maxSize = 10 * 1024 * 1024; // 10MB
   if (file.size > maxSize) throw new AppError("File too large");
 
@@ -20,6 +53,7 @@ export const uploadVideoService = async (user, videoId, file) => {
 
   const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
   if (!video) throw new AppError("Video not found", 404);
+
   if (video.processing_status === "completed")
     throw new AppError("Video already uploaded", 409);
   if (video.processing_status === "processing")
@@ -73,7 +107,7 @@ export const uploadVideoService = async (user, videoId, file) => {
 // Content-Type: multipart/form-data
 // Body: { image_file, type: 'avatar'|'banner'|'thumbnail' }
 // Response: { image_url }
-export const uploadImageService = async (user, processId, file, type) => {
+export const remoteUploadImageService = async (user, processId, file, type) => {
   const maxSize = 5 * 1024 * 1024; // 5MB
   if (file.size > maxSize) throw new AppError("File too large");
 
