@@ -2,26 +2,11 @@ import { Op } from "sequelize";
 
 import { db } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
+import { constants } from "../../config/constants.js";
 
+const { SHORT_VIDEO_FIELDS } = constants.video;
 const { Tag, User } = db;
 
-const publicVideoFields = [
-  "id",
-  "title",
-  "description",
-  "url",
-  "thumbnail",
-  "views_count",
-  "likes_count",
-  "dislikes_count",
-  "comments_count",
-  "duration",
-  "publish_at",
-];
-
-// GET /api/tags
-// Query: ?search=?&limit=20&popular=true
-// Response: { tags[] }
 export const getTagsService = async (search, inPage, inLimit, popular) => {
   const page = inPage || 1;
   const limit = inLimit || 20;
@@ -29,8 +14,10 @@ export const getTagsService = async (search, inPage, inLimit, popular) => {
   const order = popular ? [["use_count", "DESC"]] : [["name", "ASC"]];
   const where = search ? { name: { [Op.iLike]: `%${search}%` } } : {};
 
-  const tags = await Tag.findAll({ where, order, limit, offset });
-  const total = tags?.length || 0;
+  const [tags, total] = await Promise.all([
+    Tag.findAll({ where, order, limit, offset }),
+    Tag.count({ where }),
+  ]);
 
   const pagination = {
     page,
@@ -45,9 +32,6 @@ export const getTagsService = async (search, inPage, inLimit, popular) => {
   };
 };
 
-// GET /api/tags/:tagId/videos
-// Query: ?page=1&limit=20&sort=newest|popular
-// Response: { videos[], pagination }
 export const getTagVideosService = async (tagId, inPage, inLimit, sort) => {
   const tag = await Tag.findByPk(tagId);
   if (!tag) throw new AppError("Tag not found", 404);
@@ -62,14 +46,16 @@ export const getTagVideosService = async (tagId, inPage, inLimit, sort) => {
       ? [["created_at", "ASC"]]
       : [["views_count", "DESC"]];
 
-  const videos = await tag.getVideos({
-    attributes: publicVideoFields,
-    where: { is_published: true, is_private: false },
-    order,
-    limit,
-    offset,
-  });
-  const total = videos?.length || 0;
+  const [videos, total] = await Promise.all([
+    tag.getVideos({
+      attributes: SHORT_VIDEO_FIELDS,
+      where: { is_published: true, is_private: false },
+      order,
+      limit,
+      offset,
+    }),
+    tag.countVideos({ where: { is_published: true, is_private: false } }),
+  ]);
 
   const pagination = {
     page,
@@ -84,9 +70,6 @@ export const getTagVideosService = async (tagId, inPage, inLimit, sort) => {
   };
 };
 
-// DELETE /api/tags/:tagId
-// Headers: Authorization (admin only)
-// Response: { message: "Tag deleted" }
 export const deleteTagService = async (user, tagId) => {
   if (user.role !== "admin") throw new AppError("Cannot delete tag", 403);
 
