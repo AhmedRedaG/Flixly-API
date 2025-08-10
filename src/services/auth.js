@@ -9,7 +9,7 @@ import { generateTokensForUser } from "../utilities/authHelper.js";
 import { getSafeData, getUserByIdOrFail } from "../utilities/dataHelper.js";
 import {
   sendVerifyTokenMail,
-  sendResetPasswordMail,
+  sendResetPasswordOtpMail,
 } from "../utilities/mailHelper/mailSender.js";
 import { constants } from "../../config/constants.js";
 
@@ -230,7 +230,7 @@ export const requestResetPasswordMailService = async (email) => {
     });
 
     // async mail request without await to avoid blocking I/O
-    sendResetPasswordMail(user, otp).catch((error) => {
+    sendResetPasswordOtpMail(user, otp).catch((error) => {
       console.error(
         `Failed to send password reset email for user ${user.id}:`,
         error
@@ -241,7 +241,7 @@ export const requestResetPasswordMailService = async (email) => {
   // to avoid user enumeration
   return {
     message:
-      "If an account exists for this email, a password reset link has been sent.",
+      "If an account exists for this email, a password reset code has been sent.",
   };
 };
 
