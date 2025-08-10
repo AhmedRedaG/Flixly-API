@@ -15,10 +15,10 @@ export default (sequelize, DataTypes) => {
         as: "refreshTokens",
       });
 
-      // User has one reset token
-      User.hasOne(models.ResetToken, {
+      // User has many OTPs
+      User.hasMany(models.ResetOtp, {
         foreignKey: "user_id",
-        as: "resetToken",
+        as: "resetOtps",
       });
 
       // User has many video reactions

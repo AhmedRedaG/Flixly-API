@@ -1,9 +1,8 @@
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("reset_tokens", {
+    await queryInterface.createTable("reset-otps", {
       user_id: {
         type: Sequelize.UUID,
-        primaryKey: true,
         allowNull: false,
         references: {
           model: "users",
@@ -12,8 +11,8 @@ export default {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
-      token: {
-        type: Sequelize.TEXT,
+      otp: {
+        type: Sequelize.INTEGER,
         allowNull: false,
       },
       created_at: {
@@ -26,6 +25,8 @@ export default {
         allowNull: false,
       },
     });
+
+    await queryInterface.addIndex("reset-otps", ["user_id"]);
   },
 
   async down(queryInterface) {
