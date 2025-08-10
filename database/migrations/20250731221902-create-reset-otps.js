@@ -1,6 +1,12 @@
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("reset-otps", {
+    await queryInterface.createTable("reset_otps", {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.literal("gen_random_uuid()"),
+        primaryKey: true,
+        allowNull: false,
+      },
       user_id: {
         type: Sequelize.UUID,
         allowNull: false,
@@ -30,7 +36,7 @@ export default {
       },
     });
 
-    await queryInterface.addIndex("reset-otps", ["user_id"]);
+    await queryInterface.addIndex("reset_otps", ["user_id"]);
   },
 
   async down(queryInterface) {

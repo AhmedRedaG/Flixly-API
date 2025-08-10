@@ -12,6 +12,11 @@ export default (sequelize, DataTypes) => {
 
   ResetOtp.init(
     {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
       user_id: {
         type: DataTypes.UUID,
       },
@@ -28,7 +33,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "ResetOtp",
-      tableName: "reset-otps",
+      tableName: "reset_otps",
       timestamps: true,
       createdAt: "created_at",
       updatedAt: false,
