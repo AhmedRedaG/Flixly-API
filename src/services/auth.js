@@ -21,7 +21,7 @@ const {
   ALLOWED_OTP_TRIES,
   OTP_EXPIRES_AFTER_IN_MS,
 } = constants.otp;
-const { User, ResetToken, RefreshToken } = db;
+const { User, ResetOtp, RefreshToken } = db;
 
 export const postRegisterService = async (
   firstName,
