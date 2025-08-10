@@ -1,13 +1,11 @@
 import fs from "fs/promises";
 
 import AppError from "../utilities/appError.js";
-import { db, sequelize } from "../../database/models/index.js";
+import { sequelize } from "../../database/models/index.js";
 import cloudinary, {
   imageUploadOptions,
   videoUploadOptions,
 } from "../../config/cloudinary.js";
-
-const { Video, Channel, User } = db;
 
 export const remoteUploadVideoService = async (video, file) => {
   const transaction = await sequelize.transaction();
