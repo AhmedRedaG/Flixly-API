@@ -11,13 +11,3 @@ export const isAuth = async (req, res, next) => {
 
   next();
 };
-
-export const isTempAuth = async (req, res, next) => {
-  const tempToken = extractAuthorizationHeader(req);
-  const decoded = JwtHelper.verifyTempToken(tempToken);
-  const userId = decoded.id;
-
-  req.user = await getUserByIdOrFail(userId);
-
-  next();
-};

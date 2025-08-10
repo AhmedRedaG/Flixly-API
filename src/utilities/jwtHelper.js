@@ -12,10 +12,6 @@ const TOKEN_TYPES = {
     secret: configs.env.jwt.refreshTokenSecret,
     expiresIn: configs.constants.jwt.REFRESH_TOKEN_AGE,
   },
-  RESET: {
-    secret: configs.env.jwt.resetTokenSecret,
-    expiresIn: configs.constants.jwt.RESET_TOKEN_AGE,
-  },
   VERIFY: {
     secret: configs.env.jwt.verifyTokenSecret,
     expiresIn: configs.constants.jwt.VERIFY_TOKEN_AGE,
@@ -54,10 +50,8 @@ const verifyToken = (token, tokenType) => {
 
 export const createAccessToken = (payload) => createToken(payload, "ACCESS");
 export const createRefreshToken = (payload) => createToken(payload, "REFRESH");
-export const createResetToken = (payload) => createToken(payload, "RESET");
 export const createVerifyToken = (payload) => createToken(payload, "VERIFY");
 
 export const verifyAccessToken = (token) => verifyToken(token, "ACCESS");
 export const verifyRefreshToken = (token) => verifyToken(token, "REFRESH");
-export const verifyResetToken = (token) => verifyToken(token, "RESET");
 export const verifyVerifyToken = (token) => verifyToken(token, "VERIFY");
