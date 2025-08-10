@@ -2,8 +2,16 @@ import { Router } from "express";
 
 import { isAuth } from "../middlewares/isAuth.js";
 import * as uploadController from "../controllers/upload.js";
-import { videoUploader, imageUploader } from "../middlewares/localUploader.js";
+import {
+  localVideoUploader,
+  localImageUploader,
+} from "../middlewares/localUploader.js";
+import {
+  isUserUploadVideoAllowed,
+  isUserUploadImageAllowed,
+} from "../middlewares/isAllowedToUpload.js";
 import isValid from "../middlewares/isValid.js";
+import isValidLocalUploadedFile from "../middlewares/isValidUpload.js";
 import * as uploadValidator from "../validators/shared/upload.js";
 
 const router = Router();
@@ -15,10 +23,12 @@ const router = Router();
 // Response: { upload_url, processing_id }
 router.post(
   "/video/:videoId",
-  isAuth,
-  uploadValidator.uploadVideo,
+  uploadValidator.uploadVideoId,
   isValid,
-  videoUploader,
+  isAuth,
+  isUserUploadVideoAllowed,
+  localVideoUploader,
+  isValidLocalUploadedFile,
   uploadController.uploadVideo
 );
 
@@ -29,10 +39,12 @@ router.post(
 // Response: { image_url }
 router.post(
   "/image/:processId",
-  isAuth,
-  uploadValidator.uploadImage,
+  uploadValidator.uploadImageIdAndType,
   isValid,
-  imageUploader,
+  isAuth,
+  isUserUploadImageAllowed,
+  localImageUploader,
+  isValidLocalUploadedFile,
   uploadController.uploadImage
 );
 

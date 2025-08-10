@@ -6,7 +6,7 @@ import { constants } from "../../config/constants.js";
 
 const { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } = constants.upload;
 
-export const validateLocalUploadService = async (req, res, next) => {
+const isValidLocalUploadedFile = async (req, res, next) => {
   const { file, uploadType } = req;
 
   let allowedTypes;
@@ -37,3 +37,5 @@ export const validateLocalUploadService = async (req, res, next) => {
     throw new AppError(err.message, err.statusCode);
   }
 };
+
+export default isValidLocalUploadedFile;
