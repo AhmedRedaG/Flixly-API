@@ -16,11 +16,11 @@ import * as uploadValidator from "../validators/shared/upload.js";
 
 const router = Router();
 
-// POST /api/upload/video
+// POST upload/video/:videoId
 // Headers: Authorization
 // Content-Type: multipart/form-data
 // Body: { video_file }
-// Response: { upload_url, processing_id }
+// Response: { message: "Video uploaded successfully" }
 router.post(
   "/video/:videoId",
   uploadValidator.uploadVideoId,
@@ -32,11 +32,11 @@ router.post(
   uploadController.uploadVideo
 );
 
-// POST /api/upload/image
+// POST upload/image/:processId?type=userAvatar|channelAvatar|channelBanner|thumbnail
 // Headers: Authorization
 // Content-Type: multipart/form-data
-// Body: { image_file, type: 'avatar'|'banner'|'thumbnail' }
-// Response: { image_url }
+// Body: { image_file }
+// Response: { message: "Image uploaded successfully" }
 router.post(
   "/image/:processId",
   uploadValidator.uploadImageIdAndType,
@@ -48,9 +48,9 @@ router.post(
   uploadController.uploadImage
 );
 
-// GET /api/upload/status/:videoId
+// GET upload/status/:videoId
 // Headers: Authorization
-// Response: { status, progress?, error?, video_url? }
+// Response: { status, progress }
 router.get(
   "/status/:videoId",
   isAuth,

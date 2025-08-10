@@ -12,8 +12,13 @@ export const isUserUploadVideoAllowed = async (req, res, next) => {
 
   if (video.processing_status === "completed")
     throw new AppError("Video already uploaded", 409);
-  if (video.processing_status === "processing")
-    throw new AppError("Video is being processed", 409);
+  if (
+    video.processing_status === "processing" &&
+    video.processing_message.startsWith("video uploaded")
+  )
+    throw new AppError("Video already uploaded", 409);
+
+  req.video = video;
 
   next();
 };
@@ -28,6 +33,7 @@ export const isUserUploadImageAllowed = async (req, res, next) => {
   }
 
   const channel = await user.getChannel();
+  req.channel = channel;
 
   if (type === "channelAvatar" || type === "channelBanner") {
     if (!channel || channel.id !== processId)
@@ -39,6 +45,8 @@ export const isUserUploadImageAllowed = async (req, res, next) => {
 
     const [video] = channel.getVideos({ where: processId, limit: 1 });
     if (!video) throw new AppError("Video not found");
+
+    req.video = video;
   }
 
   next();

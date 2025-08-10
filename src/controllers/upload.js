@@ -1,21 +1,18 @@
 import * as uploadServer from "../services/upload.js";
 
 export const uploadVideo = async (req, res) => {
-  const user = req.user;
-  const { videoId } = req.params;
-  const file = req.file;
-  const data = await uploadServer.remoteUploadImageService(user, videoId, file);
+  const { video, file } = req;
+  const data = await uploadServer.remoteUploadVideoService(video, file);
   res.jsend.success(data);
 };
 
 export const uploadImage = async (req, res) => {
-  const user = req.user;
-  const { processId } = req.params;
-  const file = req.file;
+  const { user, channel, video, file } = req;
   const { type } = req.query;
   const data = await uploadServer.remoteUploadImageService(
     user,
-    processId,
+    channel,
+    video,
     file,
     type
   );
