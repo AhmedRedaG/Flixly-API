@@ -259,6 +259,68 @@ paths:
                             type: string
                             example: Google login successful
       security: []
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      summary: Request password reset code (OTP)
+      description: Sends an 8-digit OTP to the user's email if an account exists. Response is always generic to prevent user enumeration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+            examples:
+              example:
+                value:
+                  email: user@example.com
+      responses:
+        "200":
+          description: OTP email sent (if account exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+      security: []
+    patch:
+      tags: [Auth]
+      summary: Reset password using OTP
+      description: Resets the user's password after validating the email and OTP. Clears any existing refresh tokens and cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetConfirmRequest"
+            examples:
+              example:
+                value:
+                  email: user@example.com
+                  otp: 12345678
+                  password: NewPassword123!
+      responses:
+        "200":
+          description: Password reset completed
+          headers:
+            Set-Cookie:
+              description: Clears HTTP-only `refreshToken` cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsendSuccessMessage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      security: []
 
   /users/me:
     get:
@@ -1524,6 +1586,16 @@ components:
           example:
             status: error
             message: Too many attempts, please try again after 15 minutes
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JsendFail"
+          example:
+            status: fail
+            data:
+              message: Invalid or expired OTP, please request a new one
 
   schemas:
     Jwt:
@@ -1629,6 +1701,16 @@ components:
                               content: { type: string }
                               created_at: { type: string, format: date-time }
                               user: { $ref: "#/components/schemas/UserShort" }
+    JsendSuccessComment:
+      allOf:
+        - $ref: "#/components/schemas/JsendSuccess"
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [comment]
+              properties:
+                comment: { $ref: "#/components/schemas/VideoComment" }
     JsendSuccessVideosPage:
       allOf:
         - $ref: "#/components/schemas/JsendSuccess"
@@ -1708,6 +1790,23 @@ components:
       required: [email, password]
       properties:
         email: { type: string, format: email }
+        password: { $ref: "#/components/schemas/Password" }
+
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    PasswordResetConfirmRequest:
+      type: object
+      required: [email, otp, password]
+      properties:
+        email: { type: string, format: email }
+        otp:
+          type: integer
+          minimum: 10000000
+          maximum: 99999999
         password: { $ref: "#/components/schemas/Password" }
 
     # Entities
@@ -1954,11 +2053,13 @@ components:
         expires_at: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
 
-    ResetToken:
+    ResetOtp:
       type: object
-      required: [user_id, token, created_at]
+      required: [id, user_id, otp, created_at]
       properties:
+        id: { type: string, format: uuid }
         user_id: { type: string, format: uuid }
-        token: { type: string }
+        otp: { type: integer, minimum: 10000000, maximum: 99999999 }
+        tries: { type: integer }
         created_at: { type: string, format: date-time }
         expires_at: { type: string, format: date-time }
