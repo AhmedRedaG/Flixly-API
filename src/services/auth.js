@@ -191,16 +191,30 @@ export const authWithGoogleService = async (user) => {
 export const requestResetPasswordMailService = async (email) => {
   const user = await User.findOne({ where: { email } });
   if (user) {
-    const resetToken = JwtHelper.createResetToken({ id: user.id });
+    const otp = crypto.randomInt(100000, 1000000); // 100000–999999 inclusive
 
-    console.log(resetToken);
-    await user.createResetToken({
-      token: resetToken,
-      expiresAt: new Date(Date.now() + RESET_TOKEN_AGE_IN_MS),
+    const [oldOtp] = await user.getResetOtps({
+      order: [["created_at"], ["DESC"]],
+      limit: 1,
+    });
+
+    if (oldOtp) {
+      const allowedAfter = new Date(oldOtp.create_at).setMinutes(
+        this.getMinutes() + ALLOWED_OTP_AFTER_IN_MINUTES
+      );
+
+      if (oldOtp.tries > ALLOWED_OTP_TRIES && allowedAfter > new Date())
+        throw new AppError("Try again later", 422);
+    }
+
+    await user.createResetOtp({
+      otp,
+      expires_at: new Date(Date.now() + RESET_TOKEN_AGE_IN_MS),
+      tries: (oldOtp?.tries || 0) + 1,
     });
 
     // async mail request without await to avoid blocking I/O
-    sendResetPasswordMail(user, resetToken).catch((error) => {
+    sendResetPasswordMail(user, otp).catch((error) => {
       console.error(
         `Failed to send password reset email for user ${user.id}:`,
         error

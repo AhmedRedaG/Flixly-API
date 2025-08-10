@@ -19,6 +19,9 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      tries: {
+        type: DataTypes.INTEGER,
+      },
       created_at: DataTypes.DATE,
       expires_at: DataTypes.DATE,
     },
