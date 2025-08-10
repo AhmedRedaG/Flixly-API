@@ -62,8 +62,8 @@ export const constants = {
   },
 
   otp: {
-    OTP_MIN: 100_000,
-    OTP_MAX: 999_999,
+    OTP_MIN: 10_000_000,
+    OTP_MAX: 99_999_999,
     BASE_BACKOFF_MINUTES: 4,
     ALLOWED_OTP_TRIES: 5,
     OTP_EXPIRES_AFTER_IN_MS: 5 * 60 * 1000, // 5 minutes
