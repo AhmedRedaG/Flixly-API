@@ -9,9 +9,10 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  let view, created;
   const transaction = await sequelize.transaction();
   try {
-    const [view, created] = await VideoView.findOrCreate({
+    [view, created] = await VideoView.findOrCreate({
       where: { user_id: user.id, video_id: videoId },
       defaults: { watch_time: watchTime },
       transaction,
@@ -20,7 +21,7 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
       await view.update({ watch_time: watchTime }, { transaction });
 
     if (created) {
-      const channel = video.getChannel();
+      const channel = await video.getChannel();
       await Promise.all([
         video.increment("views_count", { transaction }),
         channel.increment("views_count", { transaction }),
@@ -44,6 +45,8 @@ export const likeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  const channel = await video.getChannel();
+
   const transaction = await sequelize.transaction();
   try {
     const [reaction, created] = await VideoReaction.findOrCreate({
@@ -56,16 +59,14 @@ export const likeVideoService = async (user, videoId) => {
       await Promise.all([
         await reaction.update({ is_like: true }, { transaction }),
         await video.decrement("dislikes_count", { transaction }),
+        await channel.decrement("dislikes_count", { transaction }),
       ]);
     }
 
-    if (created) {
-      const channel = video.getChannel();
-      await Promise.all([
-        video.increment("likes_count", { transaction }),
-        channel.increment("likes_count", { transaction }),
-      ]);
-    }
+    await Promise.all([
+      video.increment("likes_count", { transaction }),
+      channel.increment("likes_count", { transaction }),
+    ]);
 
     await transaction.commit();
   } catch (error) {
@@ -84,6 +85,8 @@ export const dislikeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  const channel = await video.getChannel();
+
   const transaction = await sequelize.transaction();
   try {
     const [reaction, created] = await VideoReaction.findOrCreate({
@@ -95,18 +98,16 @@ export const dislikeVideoService = async (user, videoId) => {
       throw new AppError("Already disliked", 409);
     if (!created && reaction.is_like) {
       await Promise.all([
-        await reaction.update({ is_like: false }, { transaction }),
-        await video.decrement("likes_count", { transaction }),
+        reaction.update({ is_like: false }, { transaction }),
+        video.decrement("likes_count", { transaction }),
+        channel.decrement("likes_count", { transaction }),
       ]);
     }
 
-    if (created) {
-      const channel = video.getChannel();
-      await Promise.all([
-        video.increment("dislikes_count", { transaction }),
-        channel.increment("dislikes_count", { transaction }),
-      ]);
-    }
+    await Promise.all([
+      video.increment("dislikes_count", { transaction }),
+      channel.increment("dislikes_count", { transaction }),
+    ]);
 
     await transaction.commit();
   } catch (error) {
@@ -125,6 +126,8 @@ export const removeVideoReactionService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  const channel = await video.getChannel();
+
   const [reaction] = await video.getReactions({
     where: { user_id: user.id },
   });
@@ -132,8 +135,6 @@ export const removeVideoReactionService = async (user, videoId) => {
 
   const transaction = await sequelize.transaction();
   try {
-    const channel = await video.getChannel();
-
     if (reaction.is_like) {
       await Promise.all([
         video.decrement("likes_count", { transaction }),
@@ -197,7 +198,7 @@ export const getVideoReactionsService = async (
       offset,
     }),
 
-    video.getReactions({ where }),
+    video.countReactions({ where }),
   ]);
 
   const pagination = {
@@ -242,7 +243,7 @@ export const getPublicVideoCommentsService = async (
       offset,
     }),
 
-    VideoComment.findAll({
+    VideoComment.count({
       where: { video_id: videoId, parent_comment_id: parentCommentId || null },
     }),
   ]);
