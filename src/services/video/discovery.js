@@ -49,10 +49,6 @@ export const getMainPublicVideosService = async (inPage, inLimit, sort) => {
   };
 };
 
-// ================ not working yet ================
-// GET /api/videos/trending
-// Query: ?page=1&limit=20&timeframe=day|week|month
-// Response: { videos[], pagination }
 export const getTrendingPublicVideosService = async (
   inPage,
   inLimit,
@@ -62,14 +58,11 @@ export const getTrendingPublicVideosService = async (
   const page = inPage || 1;
   const offset = (page - 1) * limit;
 
-  const X_HOURS =
-    timeframe === "day"
-      ? 24
-      : timeframe === "week"
-      ? 24 * 7
-      : timeframe === "month"
-      ? 24 * 30
-      : 24;
+  const X_DAYS = timeframe === "week" ? 7 : timeframe === "month" ? 30 : 1;
+
+  const recentViewsCutoff = new Date(
+    Date.now() - X_DAYS * 60 * 60 * 1000
+  ).toISOString();
 
   /* 
   Formula that i use is:
@@ -80,20 +73,20 @@ export const getTrendingPublicVideosService = async (
   const videos = await Video.findAll({
     attributes: {
       include: [
-        // Recent Views in X Hours
+        // Recent Views in X DAYS
         [
           Sequelize.literal(`(
               SELECT COUNT(*)
               FROM video_views AS vv
               WHERE vv.video_id = "Video".id 
-              AND vv.created_at >= NOW() - INTERVAL ? HOUR
+              AND vv.watched_at >= TIMESTAMPTZ '${recentViewsCutoff}'
           )`),
           "recent_views",
         ],
         // Video Age in Hours
         [
           Sequelize.literal(
-            `GREATEST(EXTRACT(EPOCH FROM (NOW() - "Video"."created_at")) / 3600, 0.1)`
+            `GREATEST(EXTRACT(EPOCH FROM (NOW() - "Video"."publish_at")) / 3600, 0.1)`
           ),
           "video_age_hours",
         ],
@@ -104,8 +97,8 @@ export const getTrendingPublicVideosService = async (
                 SELECT COUNT(*)
                 FROM video_views AS vv
                 WHERE vv.video_id = "Video".id 
-                AND vv.created_at >= NOW() - INTERVAL ? HOUR
-              ) / GREATEST(EXTRACT(EPOCH FROM (NOW() - "Video"."created_at")) / 3600, 0.1)
+                AND vv.watched_at >= TIMESTAMPTZ '${recentViewsCutoff}'
+              ) / GREATEST(EXTRACT(EPOCH FROM (NOW() - "Video"."publish_at")) / 3600, 0.1)
             ) + ("Video"."likes_count" * 2)
               + ("Video"."dislikes_count" * 0.5)
               + ("Video"."comments_count" * 1.5)
@@ -118,23 +111,30 @@ export const getTrendingPublicVideosService = async (
       {
         model: Channel,
         as: "channel",
-        attributes: ["username", "name", "avatar"],
+        attributes: SHORT_CHANNEL_FIELDS,
       },
     ],
     where: {
       is_published: true,
       is_private: false,
-      // Only videos from last month
-      created_at: {
-        [Sequelize.Op.gte]: Sequelize.literal(`NOW() - INTERVAL '30 DAY'`),
+      // Only videos from last month => (max)
+      publish_at: {
+        [Sequelize.Op.gte]: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
       },
     },
     order: [["trending_score", "DESC"]],
     limit,
     offset,
-    bind: [X_HOURS, X_HOURS],
   });
-  const total = videos?.length || 0;
+  const total = await Video.count({
+    where: {
+      is_published: true,
+      is_private: false,
+      publish_at: {
+        [Sequelize.Op.gte]: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
+      },
+    },
+  });
 
   const pagination = {
     page,
