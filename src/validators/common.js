@@ -139,26 +139,26 @@ export const stringArrayQueryCommaSeparated = (
 ) => [
   query(name)
     .optional()
-    .customSanitizer(value => {
-      if (typeof value === "string") {
-        // Split by comma, trim spaces, remove empty
-        return value.split(",").map(item => item.trim()).filter(Boolean);
+    .customSanitizer((value) => {
+      if (!value || value.trim() === "") {
+        return [];
       }
-      return value;
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item !== "");
     })
-    .isArray({ max: maxItems })
-    .withMessage(`${name} must be a comma-separated list of up to ${maxItems} items`),
-
-  query(name)
-    .optional()
-    .custom(items => {
-      if (!Array.isArray(items)) return false;
+    .custom((items) => {
+      if (!Array.isArray(items) || items.length > maxItems) return false;
       return items.every(
-        item => typeof item === "string" && item.length >= itemMin && item.length <= itemMax
+        (item) =>
+          typeof item === "string" &&
+          item.length >= itemMin &&
+          item.length <= itemMax
       );
     })
     .withMessage(
-      `${name} items must be strings with length between ${itemMin} and ${itemMax}`
+      `${name} items must be a comma-separated strings with length between ${itemMin} and ${itemMax}`
     ),
 ];
 

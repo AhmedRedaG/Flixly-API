@@ -181,9 +181,8 @@ export const searchPublicVideosService = async (
     ],
   };
 
-  console.log(tags);
-
-  const tagCondition = tags ? { name: { [Op.in]: tags } } : {};
+  const tagsList = tags?.split(",");
+  const tagCondition = tags ? { name: { [Op.in]: tagsList } } : {};
 
   const [videos, total] = await Promise.all([
     Video.findAll({
