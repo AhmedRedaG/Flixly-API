@@ -11,7 +11,7 @@ const router = Router();
  * VIDEO DISCOVERY & SEARCH
  */
 // GET videos
-// Query: ?page=1&limit=20&sort=newest|popular
+// Query: ?page=1&limit=20&sort=newest|oldest|popular
 // Response: { videos[], pagination }
 router.get(
   "/",

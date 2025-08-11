@@ -16,7 +16,7 @@ import {
 // Discovery & search
 export const listPublic = [
   ...pagination,
-  ...sortBy(["newest", "trending", "popular"]),
+  ...sortBy(["newest", "oldest", "popular"]),
 ];
 
 export const listTrending = [

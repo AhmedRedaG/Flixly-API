@@ -13,9 +13,9 @@ export const getMainPublicVideosService = async (inPage, inLimit, sort) => {
   const offset = (page - 1) * limit;
   const order =
     sort === "newest"
-      ? [["created_at", "DESC"]]
+      ? [["publish_at", "DESC"]]
       : sort === "oldest"
-      ? [["created_at", "ASC"]]
+      ? [["publish_at", "ASC"]]
       : [["views_count", "DESC"]];
   const where = { is_published: true, is_private: false };
 
@@ -161,9 +161,9 @@ export const searchPublicVideosService = async (
   const offset = (page - 1) * limit;
   const order =
     sort === "newest"
-      ? [["created_at", "DESC"]]
+      ? [["publish_at", "DESC"]]
       : sort === "oldest"
-      ? [["created_at", "ASC"]]
+      ? [["publish_at", "ASC"]]
       : sort === "popular"
       ? [["views_count", "DESC"]]
       : []; // relevance
@@ -180,6 +180,8 @@ export const searchPublicVideosService = async (
       },
     ],
   };
+
+  console.log(tags);
 
   const tagCondition = tags ? { name: { [Op.in]: tags } } : {};
 
