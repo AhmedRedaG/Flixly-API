@@ -2,10 +2,8 @@ import { db, sequelize } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
 import { constants } from "../../config/constants.js";
 
-const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
-const { PRIVATE_VIDEO_FIELDS, SHORT_VIDEO_FIELDS } = constants.video;
-const { SHORT_CHANNEL_FIELDS } = constants.channel;
-const { PRIVATE_USER_FIELDS, SHORT_USER_FIELDS } = constants.user;
+const { SHORT_VIDEO_FIELDS } = constants.video;
+const { SHORT_USER_FIELDS } = constants.user;
 const { User, Channel, Subscription } = db;
 
 export const createChannelService = async (
@@ -36,7 +34,6 @@ export const getChannelService = async (user) => {
   if (!channel) throw new AppError("Channel not found", 404);
 
   const recentVideos = await channel.getVideos({
-    attributes: SHORT_VIDEO_FIELDS,
     order: [["publish_at", "DESC"]],
     limit: 10,
   });
@@ -197,6 +194,7 @@ export const getChannelSubscribersService = async (
     sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
   const subscribers = await channel.getSubscriptions({
+    attributes: ["created_at"],
     include: {
       model: User,
       as: "subscriber",
@@ -228,7 +226,7 @@ export const subscribeChannelService = async (user, username) => {
   if (channel.user_id === user.id)
     throw new AppError("Cannot subscribe to own channel", 409);
 
-  const subscription = await channel.getSubscriptions({
+  const [subscription] = await channel.getSubscriptions({
     where: { subscriber_id: user.id },
   });
   if (subscription)
@@ -259,7 +257,7 @@ export const unsubscribeChannelService = async (user, username) => {
   if (channel.user_id === user.id)
     throw new AppError("Cannot unsubscribe to own channel", 409);
 
-  const subscription = await channel.getSubscriptions({
+  const [subscription] = await channel.getSubscriptions({
     where: { subscriber_id: user.id },
   });
   if (!subscription)
