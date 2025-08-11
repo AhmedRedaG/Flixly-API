@@ -2,11 +2,11 @@ import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 
 import AppError from "../utilities/appError.js";
-import { db } from "../../database/models/index.js";
+import { db, sequelize } from "../../database/models/index.js";
 import { constants } from "../../config/constants.js";
 
 const { HASH_PASSWORD_ROUNDS } = constants.bcrypt;
-const { PRIVATE_VIDEO_FIELDS, SHORT_VIDEO_FIELDS } = constants.video;
+const { SHORT_VIDEO_FIELDS } = constants.video;
 const { SHORT_CHANNEL_FIELDS } = constants.channel;
 const { PRIVATE_USER_FIELDS } = constants.user;
 const { User, RefreshToken, Channel, Video, Subscription } = db;
@@ -62,28 +62,41 @@ export const updateUserInfoService = async (
   };
 };
 
-export const changePasswordService = async (user, oldPassword, newPassword) => {
+export const changePasswordService = async (
+  authedUser,
+  oldPassword,
+  newPassword
+) => {
+  // because i excluded the password in the Auth middleware
+  const user = await User.findByPk(authedUser.id);
+
+  // Google acc
   if (!user.password)
     throw new AppError("This account was registered with Google.", 401);
 
-  // verify old password
   const matchedPasswords = await bcrypt.compare(oldPassword, user.password);
   if (!matchedPasswords) throw new AppError("Old password is wrong", 401);
 
   if (newPassword === oldPassword)
     throw new AppError("New password must be different from old password");
 
-  // hash new password and save
   const newHashedPassword = await bcrypt.hash(
     newPassword,
     HASH_PASSWORD_ROUNDS
   );
-  user.password = newHashedPassword;
 
-  await Promise.all([
-    user.save(),
-    RefreshToken.destroy({ where: { user_id: user.id } }),
-  ]);
+  const transaction = await sequelize.transaction();
+  try {
+    await Promise.all([
+      user.update({ password: newHashedPassword }, { transaction }),
+      RefreshToken.destroy({ where: { user_id: user.id }, transaction }),
+    ]);
+
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
 
   return {
     message: "Password has been successfully changed.",
@@ -110,18 +123,21 @@ export const getUserSubscriptionsService = async (
   const order =
     sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
-  const subscriptions = await user.getSubscriptions({
-    include: {
-      model: Channel,
-      as: "channel",
-      attributes: SHORT_CHANNEL_FIELDS,
-    },
-    attributes: ["created_at"],
-    order,
-    limit,
-    offset,
-  });
-  const total = await user.countSubscriptions();
+  const [subscriptions, total] = await Promise.all([
+    user.getSubscriptions({
+      include: {
+        model: Channel,
+        as: "channel",
+        attributes: SHORT_CHANNEL_FIELDS,
+      },
+      attributes: ["created_at"],
+      order,
+      limit,
+      offset,
+    }),
+
+    user.countSubscriptions(),
+  ]);
 
   const pagination = {
     page,
@@ -146,9 +162,7 @@ export const getUserSubscriptionsFeedService = async (
   const offset = (page - 1) * limit;
 
   const subscribedChannelIds = await user
-    .getSubscriptions({
-      attributes: ["channel_id"],
-    })
+    .getSubscriptions({ attributes: ["channel_id"] })
     .then((subs) => subs.map((sub) => sub.channel_id));
 
   if (subscribedChannelIds.length === 0) {
