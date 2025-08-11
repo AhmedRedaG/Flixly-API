@@ -3,20 +3,15 @@ dotenv.config();
 
 export const env = {
   nodeEnv: process.env.NODE_ENV.trim() || "development",
+
   port: {
     development: process.env.DEVELOPMENT_PORT || 3000,
     testing: process.env.TESTING_PORT || 3030,
-  },
-  mongoUri: {
-    development: process.env.DEVELOPMENT_MONGODB_URI,
-    testing: process.env.TESTING_MONGODB_URI,
   },
 
   jwt: {
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
-    resetTokenSecret: process.env.RESET_TOKEN_SECRET,
-    tempTokenSecret: process.env.TEMP_TOKEN_SECRET,
     verifyTokenSecret: process.env.VERIFY_TOKEN_SECRET,
   },
 
@@ -39,5 +34,9 @@ export const env = {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
 
-  frontendUrl: process.env.FRONTEND_URL,
+  url: {
+    clientUrl: process.env.CLIENT_URL,
+    apiUrl: process.env.API_URL,
+    apiVersion: process.env.API_VERSION,
+  },
 };

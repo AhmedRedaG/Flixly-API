@@ -1,11 +1,12 @@
 import AppError from "../../utilities/appError.js";
 import { db, sequelize } from "../../../database/models/index.js";
-import { constants } from "../../../config/constants.js";
+import { constants, env } from "../../../config/index.js";
 
-const { User, Channel, Video, VideoComment, Tag } = db;
 const { PRIVATE_VIDEO_FIELDS } = constants.video;
 const { SHORT_CHANNEL_FIELDS } = constants.channel;
 const { SHORT_USER_FIELDS } = constants.user;
+const { apiUrl, apiVersion } = env.url;
+const { User, Channel, Video, VideoComment, Tag } = db;
 
 export const createVideoService = async (user, title, description, tags) => {
   const channel = await user.getChannel();
@@ -38,14 +39,15 @@ export const createVideoService = async (user, title, description, tags) => {
     throw error;
   }
 
-  // update it to use env as BASE_URL
-  const videoUploadUrl = `https://localhost:3000/upload/video/${video.id}`;
-  const thumbnailUploadUrl = `https://localhost:3000/upload/image/${video.id}?type=thumbnail`;
+  const videoUploadUrl = `${apiUrl}/api/${apiVersion}/upload/video/${video.id}`;
+  const thumbnailUploadUrl = `${apiUrl}/api/${apiVersion}/upload/image/${video.id}?type=thumbnail`;
+  const uploadPage = `${apiUrl}/pages/upload`;
 
   return {
     video,
     videoUploadUrl,
     thumbnailUploadUrl,
+    uploadPage,
   };
 };
 
@@ -74,6 +76,7 @@ export const getPublicVideoService = async (videoId) => {
           attributes: SHORT_USER_FIELDS,
         },
         attributes: ["id", "content", "created_at"],
+        where: { parent_comment_id: null },
         limit: 10,
       },
     ],
@@ -104,6 +107,7 @@ export const getVideoService = async (user, videoId) => {
           attributes: SHORT_USER_FIELDS,
         },
         attributes: ["id", "content", "created_at"],
+        where: { parent_comment_id: null },
         limit: 10,
       },
     ],
@@ -120,7 +124,7 @@ export const updateVideoService = async (
   videoId,
   title,
   description,
-  is_private
+  isPrivate
 ) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
@@ -130,7 +134,7 @@ export const updateVideoService = async (
 
   if (title) video.title = title;
   if (description) video.description = description;
-  if (is_private !== undefined) video.is_private = is_private;
+  if (isPrivate !== undefined) video.is_private = isPrivate;
 
   await video.save();
 
@@ -141,15 +145,11 @@ export const deleteVideoService = async (user, videoId) => {
   const channel = await user.getChannel();
   if (!channel) throw new AppError("Channel not found", 404);
 
+  const [video] = await channel.getVideos({ where: { id: videoId }, limit: 1 });
+  if (!video) throw new AppError("Video not found", 404);
+
   const transaction = await sequelize.transaction();
   try {
-    const [video] = await channel.getVideos({
-      where: { id: videoId },
-      limit: 1,
-      transaction,
-    });
-    if (!video) throw new AppError("Video not found", 404);
-
     const tags = await video.getTags({ transaction });
     if (tags.length > 0) {
       await Tag.decrement("use_count", {
@@ -158,19 +158,19 @@ export const deleteVideoService = async (user, videoId) => {
       });
     }
 
-    await channel.decrement(
-      {
-        views_count: video.views_count,
-        likes_count: video.likes_count,
-        dislikes_count: video.dislikes_count,
-        comments_count: video.comments_count,
-      },
-      { transaction }
-    );
+    await Promise.all([
+      channel.decrement(
+        {
+          views_count: video.views_count,
+          likes_count: video.likes_count,
+          dislikes_count: video.dislikes_count,
+          comments_count: video.comments_count,
+        },
+        { transaction }
+      ),
 
-    // still need to cleanup the associations
-
-    await video.destroy();
+      video.destroy({ transaction }),
+    ]);
 
     await transaction.commit();
   } catch (error) {
