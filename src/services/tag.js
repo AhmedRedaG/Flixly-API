@@ -5,7 +5,7 @@ import AppError from "../utilities/appError.js";
 import { constants } from "../../config/constants.js";
 
 const { SHORT_VIDEO_FIELDS } = constants.video;
-const { Tag, User } = db;
+const { Tag } = db;
 
 export const getTagsService = async (search, inPage, inLimit, popular) => {
   const page = inPage || 1;
