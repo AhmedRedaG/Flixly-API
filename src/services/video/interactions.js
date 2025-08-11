@@ -9,6 +9,9 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  if (video.is_privet || !video.is_published)
+    throw new AppError("Video is privet or not published yet", 401);
+
   let view, created;
   const transaction = await sequelize.transaction();
   try {
@@ -44,6 +47,9 @@ export const recordVideoViewService = async (user, videoId, watchTime) => {
 export const likeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
+
+  if (video.is_privet || !video.is_published)
+    throw new AppError("Video is privet or not published yet", 401);
 
   const channel = await video.getChannel();
 
@@ -85,6 +91,9 @@ export const dislikeVideoService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  if (video.is_privet || !video.is_published)
+    throw new AppError("Video is privet or not published yet", 401);
+
   const channel = await video.getChannel();
 
   const transaction = await sequelize.transaction();
@@ -125,6 +134,9 @@ export const dislikeVideoService = async (user, videoId) => {
 export const removeVideoReactionService = async (user, videoId) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
+
+  if (video.is_privet || !video.is_published)
+    throw new AppError("Video is privet or not published yet", 401);
 
   const channel = await video.getChannel();
 
@@ -224,6 +236,9 @@ export const getPublicVideoCommentsService = async (
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
+  if (video.is_privet || !video.is_published)
+    throw new AppError("Video is privet or not published yet", 401);
+
   const limit = inLimit || 20;
   const page = inPage || 1;
   const offset = (page - 1) * limit;
@@ -269,6 +284,9 @@ export const createVideoCommentService = async (
 ) => {
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
+
+  if (video.is_privet || !video.is_published)
+    throw new AppError("Video is privet or not published yet", 401);
 
   let parentComment;
   if (parentCommentId) {
