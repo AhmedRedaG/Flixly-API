@@ -1351,7 +1351,7 @@ paths:
     post:
       tags: [Upload]
       summary: Upload video file
-      description: Uploads a video file for a draft video. Only the channel owner of the draft can upload.
+      description: Uploads a video file once for a draft video. Only the channel owner of the draft can upload.
       security: [{ BearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/videoId"
@@ -1387,7 +1387,7 @@ paths:
     post:
       tags: [Upload]
       summary: Upload image file
-      description: Uploads an image for user avatar, channel avatar/banner, or video thumbnail.
+      description: Uploads an image for first time or update exist one for user avatar, channel avatar/banner, or video thumbnail.
       security: [{ BearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/processId"
