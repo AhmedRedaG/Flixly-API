@@ -203,21 +203,20 @@ export const requestResetPasswordMailService = async (email) => {
   if (user) {
     const otp = crypto.randomInt(OTP_MIN, OTP_MAX);
 
-    // get the last otp
-    const [oldOtp] = await user.getResetOtps({
+    const [lastOtp] = await user.getResetOtps({
       order: [["created_at", "DESC"]],
       limit: 1,
     });
 
-    if (oldOtp) {
+    if (lastOtp) {
       // double time for every wrong try over allowed tries
       const addedMinutes =
-        2 ** Math.max(oldOtp.tries - ALLOWED_OTP_TRIES, BASE_BACKOFF_MINUTES);
+        2 ** Math.max(lastOtp.tries - ALLOWED_OTP_TRIES, BASE_BACKOFF_MINUTES);
 
-      const allowAfter = new Date(oldOtp.created_at);
+      const allowAfter = new Date(lastOtp.created_at);
       allowAfter.setMinutes(allowAfter.getMinutes() + addedMinutes);
 
-      if (oldOtp.tries > ALLOWED_OTP_TRIES && allowAfter > new Date())
+      if (lastOtp.tries > ALLOWED_OTP_TRIES && allowAfter > new Date())
         throw new AppError(
           `Too many requests. Try again after ${Math.ceil(
             (allowAfter - new Date()) / 60000
@@ -229,7 +228,7 @@ export const requestResetPasswordMailService = async (email) => {
     await user.createResetOtp({
       otp,
       expires_at: new Date(Date.now() + OTP_EXPIRES_AFTER_IN_MS),
-      tries: (oldOtp?.tries || 0) + 1,
+      tries: (lastOtp?.tries || 0) + 1,
     });
 
     // async mail request without await to avoid blocking I/O
