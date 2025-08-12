@@ -1,8 +1,6 @@
-import rateLimit from "express-rate-limit";
-
 export const constants = {
   jwt: {
-    ACCESS_TOKEN_AGE: "15h", // for testing
+    ACCESS_TOKEN_AGE: "15h", // for testing (production => 15m)
     REFRESH_TOKEN_AGE: "7d",
     VERIFY_TOKEN_AGE: "3h",
     REFRESH_TOKEN_AGE_IN_MS: 7 * 24 * 60 * 60 * 1000,
@@ -16,6 +14,11 @@ export const constants = {
   rateLimit: {
     WINDOW_DURATION: 1000 * 60 * 15,
     REQUESTS_BARE_WINDOW: 50,
+  },
+
+  pagination: {
+    DEFAULT_PAGE: 1,
+    DEFAULT_LIMIT: 20,
   },
 
   user: {

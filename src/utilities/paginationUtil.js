@@ -1,9 +1,13 @@
+import { constants } from "../../config";
+
+const { DEFAULT_PAGE, DEFAULT_LIMIT } = constants.pagination;
+
 const getPaginationParams = (
   inPage,
   inLimit,
   options = {
-    page: 1,
-    limit: 20,
+    page: DEFAULT_PAGE,
+    limit: DEFAULT_LIMIT,
   }
 ) => {
   const page = Number(inPage) || options.page;
