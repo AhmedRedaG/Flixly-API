@@ -1,12 +1,15 @@
 import EmailService from "./mailService.js";
-import * as configs from "../../../config/index.js";
+import { env } from "../../../config/env.js";
+
+const { serverEmail, supportEmail } = env.email;
+const { clientUrl } = env.url;
 
 export default class VerifyAccountMail extends EmailService {
   createMail(user, verifyToken) {
-    const verifyUrl = `${configs.env.frontendUrl}/verify-account/${verifyToken}`;
+    const verifyUrl = `${clientUrl}/verify-account/${verifyToken}`;
 
     const mailOptions = {
-      from: `"Flixly" <${configs.env.email.serverEmail}>`,
+      from: `"Flixly" <${serverEmail}>`,
       to: user.email,
       subject: "Verify Your Account",
       text: this.generatePlainTextContent(user, verifyUrl),
@@ -30,7 +33,7 @@ If you did not create this account, please ignore this email. This verification 
 Thanks,
 The Flixly Team
 
-Need help? Contact us at ${configs.env.email.supportEmail}`;
+Need help? Contact us at ${supportEmail}`;
   }
 
   generateHtmlContent(user, verifyUrl) {
@@ -61,9 +64,7 @@ Need help? Contact us at ${configs.env.email.supportEmail}`;
   
   <p style="font-size: 12px; color: #aaa; text-align: center;">
     © ${new Date().getFullYear()} Flixly. All rights reserved.<br>
-    Need help? Contact us at <a href="mailto:${
-      configs.env.email.supportEmail
-    }" style="color: #888;">${configs.env.email.supportEmail}</a>
+    Need help? Contact us at <a href="mailto:${supportEmail}" style="color: #888;">${supportEmail}</a>
   </p>
 </div>`;
   }
