@@ -1,4 +1,4 @@
-import { constants } from "../../config";
+import { constants } from "../../config/constants.js";
 
 const { DEFAULT_PAGE, DEFAULT_LIMIT } = constants.pagination;
 
