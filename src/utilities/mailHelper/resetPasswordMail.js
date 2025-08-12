@@ -1,15 +1,15 @@
 import EmailService from "./mailService.js";
-import * as configs from "../../../config/index.js";
-import { constants } from "../../../config/constants.js";
+import { env, constants } from "../../../config/index.js";
+
+const { OTP_EXPIRES_AFTER_IN_MS } = constants.otp;
+const { serverEmail, supportEmail } = env.email;
 
 export default class ResetPasswordOtpMail extends EmailService {
   createMail(user, otp) {
-    const expiresInMinutes = Math.ceil(
-      constants.otp.OTP_EXPIRES_AFTER_IN_MS / 60000
-    );
+    const expiresInMinutes = Math.ceil(OTP_EXPIRES_AFTER_IN_MS / 60000);
 
     const mailOptions = {
-      from: `"Flixly" <${configs.env.email.serverEmail}>`,
+      from: `"Flixly" <${serverEmail}>`,
       to: user.email,
       subject: "Your password reset code",
       text: this.generatePlainTextContent(user, otp, expiresInMinutes),
@@ -33,7 +33,7 @@ This code will expire in ${expiresInMinutes} minutes. If you did not request thi
 Thanks,
 The Flixly Team
 
-Need help? Contact us at ${configs.env.email.supportEmail}`;
+Need help? Contact us at ${supportEmail}`;
   }
 
   generateHtmlContent(user, otp, expiresInMinutes) {
@@ -67,9 +67,7 @@ Need help? Contact us at ${configs.env.email.supportEmail}`;
   
   <p style="font-size: 12px; color: #aaa; text-align: center;">
     © ${new Date().getFullYear()} Flixly. All rights reserved.<br>
-    Need help? Contact us at <a href="mailto:${
-      configs.env.email.supportEmail
-    }" style="color: #888;">${configs.env.email.supportEmail}</a>
+    Need help? Contact us at <a href="mailto:${supportEmail}" style="color: #888;">${supportEmail}</a>
   </p>
 </div>`;
   }
