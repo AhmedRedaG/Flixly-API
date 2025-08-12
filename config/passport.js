@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Op } from "sequelize";
 
 import * as configs from "./index.js";
 import { db } from "../database/models/index.js";
@@ -13,7 +14,11 @@ const generateUsername = (email) => {
 };
 
 const findOrCreateUser = async (profile) => {
-  const oldUser = await User.findOne({ where: { googleId: profile.id } });
+  const oldUser = await User.findOne({
+    where: {
+      [Op.or]: [{ googleId: profile.id }, { email: profile.emails[0].value }],
+    },
+  });
   if (oldUser) {
     return oldUser;
   }
