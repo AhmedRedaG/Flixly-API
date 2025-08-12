@@ -4,6 +4,12 @@ YouTube‑style backend API with authentication, channels, videos, comments, upl
 
 ---
 
+### Quick Links
+
+- SwaggerHub (Hosted API Docs): https://app.swaggerhub.com/apis/Ahmed-Reda-Freelance/Flixly/1.0.0
+- Postman Collection: https://www.postman.com/ahmedreda-1513276/workspace/flixly/folder/44840624-a806288c-037f-4f32-b310-21afe20d4e1f?action=share&creator=44840624&ctx=documentation
+- Database Diagram: https://dbdiagram.io/d/flixly-api-688a6fd3cca18e685c860fe5
+
 ### Badges
 
 [![Node.js](https://img.shields.io/badge/Node.js-ESM-informational?logo=node.js&labelColor=333&color=339933)](https://nodejs.org)
@@ -46,7 +52,7 @@ Flixly API is a RESTful backend for a video platform, providing user authenticat
 
   - Local register, email verification, login, refresh, logout: `/api/v1/auth/local/*`
   - Google OAuth 2.0 (Passport): `/api/v1/auth/google`, `/api/v1/auth/google/callback`
-  - Password reset via email: `/api/v1/auth/password/reset`
+  - Password reset via email OTP: `/api/v1/auth/password/reset`
 
 - **Users**
 
@@ -243,6 +249,8 @@ Extras:
 ### API Documentation
 
 - Swagger UI available at: `http://localhost:<port>/docs`
+- SwaggerHub (hosted): https://app.swaggerhub.com/apis/Ahmed-Reda-Freelance/Flixly/1.0.0
+- Postman Collection: https://www.postman.com/ahmedreda-1513276/workspace/flixly/folder/44840624-a806288c-037f-4f32-b310-21afe20d4e1f?action=share&creator=44840624&ctx=documentation
 - OpenAPI source: `./swagger.yaml`
 - Security:
   - Most endpoints require `Authorization: Bearer <accessToken>`
@@ -268,7 +276,6 @@ DB_PASSWORD=postgres
 # JWT
 ACCESS_TOKEN_SECRET=your_access_secret
 REFRESH_TOKEN_SECRET=your_refresh_secret
-RESET_TOKEN_SECRET=your_reset_secret
 VERIFY_TOKEN_SECRET=your_verify_secret
 
 # Google OAuth
@@ -287,8 +294,10 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-# Frontend (for email links)
-FRONTEND_URL=http://localhost:5173
+# URLs
+CLIENT_URL=http://localhost:5173
+API_URL=http://localhost:3000
+API_VERSION=v1
 ```
 
 Notes:
@@ -299,7 +308,23 @@ Notes:
 
 ### Screenshots / Demo
 
-- Upload helper page: `http://localhost:<port>/pages/upload`
+- Upload helper page
+
+![Upload Helper Page](screenshots/sampleUploadPage.png)
+
+- Verification email
+
+![Verification Email](screenshots/verificationMail.png)
+
+- Reset password email (OTP)
+
+![Reset Password Email](screenshots/resetPasswordMail.png)
+
+- Database ERD
+
+![Database ERD](screenshots/dbdiagramErd.png)
+
+- Database Diagram (Live): https://dbdiagram.io/d/flixly-api-688a6fd3cca18e685c860fe5
 
 ### Testing
 
