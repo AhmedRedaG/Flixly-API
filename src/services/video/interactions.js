@@ -1,4 +1,5 @@
 import AppError from "../../utilities/appError.js";
+import getPaginationParams from "../../utilities/paginationUtil.js";
 import { db, sequelize } from "../../../database/models/index.js";
 import { constants } from "../../../config/constants.js";
 
@@ -182,18 +183,16 @@ export const getVideoReactionsService = async (
   sort,
   type
 ) => {
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
   const channel = await user.getChannel();
   if (video.channel_id !== channel.id)
     throw new AppError("Unauthorized to view reactions", 401);
-
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
-  const order =
-    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
   const where = type ? { is_like: type === "like" } : {};
 
@@ -233,17 +232,15 @@ export const getPublicVideoCommentsService = async (
   sort,
   parentCommentId
 ) => {
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
+  const order =
+    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
   const video = await Video.findByPk(videoId);
   if (!video) throw new AppError("Video not found", 404);
 
   if (video.is_privet || !video.is_published)
     throw new AppError("Video is privet or not published yet", 401);
-
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
-  const order =
-    sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
   const [comments, total] = await Promise.all([
     VideoComment.findAll({

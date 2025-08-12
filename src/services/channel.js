@@ -1,5 +1,6 @@
 import { db, sequelize } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
+import getPaginationParams from "../utilities/paginationUtil.js";
 import { constants } from "../../config/constants.js";
 
 const { SHORT_VIDEO_FIELDS } = constants.video;
@@ -99,12 +100,7 @@ export const getChannelVideosService = async (
   privateOnly,
   unpublishedOnly
 ) => {
-  const channel = await user.getChannel();
-  if (!channel) throw new AppError("Channel not found", 404);
-
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest"
       ? [["created_at", "DESC"]]
@@ -116,6 +112,9 @@ export const getChannelVideosService = async (
     : unpublishedOnly
     ? { is_published: false }
     : {};
+
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
 
   const [videos, total] = await Promise.all([
     channel.getVideos({ where, order, limit, offset }),
@@ -141,18 +140,16 @@ export const getPublicChannelVideosService = async (
   inLimit,
   sort
 ) => {
-  const channel = await Channel.findOne({ where: { username } });
-  if (!channel) throw new AppError("Channel not found", 404);
-
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest"
       ? [["created_at", "DESC"]]
       : sort === "oldest"
       ? [["created_at", "ASC"]]
       : [["views_count", "DESC"]];
+
+  const channel = await Channel.findOne({ where: { username } });
+  if (!channel) throw new AppError("Channel not found", 404);
 
   const [videos, total] = await Promise.all([
     channel.getVideos({
@@ -184,14 +181,12 @@ export const getChannelSubscribersService = async (
   inLimit,
   sort
 ) => {
-  const channel = await user.getChannel();
-  if (!channel) throw new AppError("Channel not found", 404);
-
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
+
+  const channel = await user.getChannel();
+  if (!channel) throw new AppError("Channel not found", 404);
 
   const subscribers = await channel.getSubscriptions({
     attributes: ["created_at"],

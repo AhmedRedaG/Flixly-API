@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 
 import AppError from "../utilities/appError.js";
+import getPaginationParams from "../utilities/paginationUtil.js";
 import { db, sequelize } from "../../database/models/index.js";
 import { constants } from "../../config/constants.js";
 
@@ -117,9 +118,7 @@ export const getUserSubscriptionsService = async (
   inLimit,
   sort
 ) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest" ? [["created_at", "DESC"]] : [["created_at", "ASC"]];
 
@@ -157,9 +156,7 @@ export const getUserSubscriptionsFeedService = async (
   inPage,
   inLimit
 ) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
 
   const subscribedChannelIds = await user
     .getSubscriptions({ attributes: ["channel_id"] })
@@ -219,9 +216,7 @@ export const getUserSubscriptionsFeedService = async (
 // Response: { playlists[], pagination }
 
 export const getUserViewsService = async (user, inPage, inLimit) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
 
   const [videos, total] = await Promise.all([
     user.getVideoViews({
@@ -261,9 +256,7 @@ export const getUserViewsService = async (user, inPage, inLimit) => {
 };
 
 export const getUserLikesService = async (user, inPage, inLimit) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
 
   const [videos, total] = await Promise.all([
     user.getVideoReactions({

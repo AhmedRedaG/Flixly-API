@@ -1,4 +1,5 @@
 import AppError from "../utilities/appError.js";
+import getPaginationParams from "../utilities/paginationUtil.js";
 import { db, sequelize } from "../../database/models/index.js";
 import { constants } from "../../config/constants.js";
 
@@ -60,9 +61,9 @@ export const deleteCommentService = async (user, commentId) => {
 };
 
 export const getCommentRepliesService = async (commentId, inPage, inLimit) => {
-  const limit = inLimit || 10;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit, {
+    limit: 10,
+  });
 
   const [replies, total] = await Promise.all([
     VideoComment.findAll({

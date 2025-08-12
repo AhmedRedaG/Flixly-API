@@ -2,15 +2,14 @@ import { Op } from "sequelize";
 
 import { db } from "../../database/models/index.js";
 import AppError from "../utilities/appError.js";
+import getPaginationParams from "../utilities/paginationUtil.js";
 import { constants } from "../../config/constants.js";
 
 const { SHORT_VIDEO_FIELDS } = constants.video;
 const { Tag } = db;
 
 export const getTagsService = async (search, inPage, inLimit, popular) => {
-  const page = inPage || 1;
-  const limit = inLimit || 20;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order = popular ? [["use_count", "DESC"]] : [["name", "ASC"]];
   const where = search ? { name: { [Op.iLike]: `%${search}%` } } : {};
 
@@ -33,18 +32,16 @@ export const getTagsService = async (search, inPage, inLimit, popular) => {
 };
 
 export const getTagVideosService = async (tagId, inPage, inLimit, sort) => {
-  const tag = await Tag.findByPk(tagId);
-  if (!tag) throw new AppError("Tag not found", 404);
-
-  const page = inPage || 1;
-  const limit = inLimit || 20;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest"
       ? [["created_at", "DESC"]]
       : sort === "oldest"
       ? [["created_at", "ASC"]]
       : [["views_count", "DESC"]];
+
+  const tag = await Tag.findByPk(tagId);
+  if (!tag) throw new AppError("Tag not found", 404);
 
   const [videos, total] = await Promise.all([
     tag.getVideos({

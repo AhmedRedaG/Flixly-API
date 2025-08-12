@@ -2,15 +2,14 @@ import { Op, Sequelize } from "sequelize";
 
 import { db } from "../../../database/models/index.js";
 import { constants } from "../../../config/constants.js";
+import getPaginationParams from "../../utilities/paginationUtil.js";
 
 const { Channel, Video, Tag } = db;
 const { SHORT_VIDEO_FIELDS } = constants.video;
 const { SHORT_CHANNEL_FIELDS } = constants.channel;
 
 export const getMainPublicVideosService = async (inPage, inLimit, sort) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest"
       ? [["publish_at", "DESC"]]
@@ -54,9 +53,7 @@ export const getTrendingPublicVideosService = async (
   inLimit,
   timeframe
 ) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
 
   const X_DAYS = timeframe === "week" ? 7 : timeframe === "month" ? 30 : 1;
 
@@ -156,9 +153,7 @@ export const searchPublicVideosService = async (
   sort,
   tags
 ) => {
-  const limit = inLimit || 20;
-  const page = inPage || 1;
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = getPaginationParams(inPage, inLimit);
   const order =
     sort === "newest"
       ? [["publish_at", "DESC"]]
