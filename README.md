@@ -4,12 +4,6 @@ YouTube‑style backend API with authentication, channels, videos, comments, upl
 
 ---
 
-### Quick Links
-
-- SwaggerHub (Hosted API Docs): https://app.swaggerhub.com/apis/Ahmed-Reda-Freelance/Flixly/1.0.0
-- Postman Collection: https://www.postman.com/ahmedreda-1513276/workspace/flixly/folder/44840624-a806288c-037f-4f32-b310-21afe20d4e1f?action=share&creator=44840624&ctx=documentation
-- Database Diagram: https://dbdiagram.io/d/flixly-api-688a6fd3cca18e685c860fe5
-
 ### Badges
 
 [![Node.js](https://img.shields.io/badge/Node.js-ESM-informational?logo=node.js&labelColor=333&color=339933)](https://nodejs.org)
@@ -94,7 +88,7 @@ Flixly API is a RESTful backend for a video platform, providing user authenticat
 
 - **Operational**
   - Rate limiting with express-rate-limit
-  - Request duration logging
+  - Structured request/response logging to files via Winston
   - JSend responses, centralized validation and error handling
   - Swagger UI served at `/docs`, spec in `swagger.yaml`
 
@@ -106,7 +100,7 @@ Flixly API is a RESTful backend for a video platform, providing user authenticat
 - **Validation**: `express-validator`
 - **Uploads/Media**: `multer`, `file-type`, Cloudinary SDK
 - **Email**: `nodemailer`
-- **Security/Utility**: `cors`, `helmet`, `cookie-parser`, `express-rate-limit`, `jsend-middleware`, `dotenv`
+- **Security/Utility**: `cors`, `helmet`, `cookie-parser`, `express-rate-limit`, `jsend-middleware`, `dotenv`, `winston`
 - **Docs**: `swagger-ui-express`, `yamljs`
 - **Testing**: `jest`, `supertest`
 
@@ -245,6 +239,7 @@ Extras:
 - Static helper UI for uploads: `GET /pages/upload`
 - JSend responses: `{ status: "success" | "fail" | "error", data? }`
 - Rate limit enabled globally
+- Logs written to `logs/app.log` (info/warn) and `logs/error.log` (errors). Configure in `config/logger.js`.
 
 ### API Documentation
 
@@ -360,7 +355,7 @@ Contributions are welcome!
 
 ### License
 
-This project is licensed under the ISC License. See the license field in `package.json`.
+This project is licensed under the ISC License.
 
 ### Credits
 
